@@ -11,8 +11,7 @@ HomeScreen::HomeScreen(Font& f)
   searchbar("../assets/search_bar.png"),
   sprite1(background),
   sprite2(searchbar),
-  dropdownBox({210.f, 120.f}),
-  myticketsButton(font, L"Vé của tôi", 18, Vector2f(0.f, 0.f)),
+  dropdownBox({210.f, 90.f}),
   accountButton(font, L"Tài khoản của tôi", 18, Vector2f(0.f, 0.f)),
   logoutButton(font, L"Đăng xuất", 18, Vector2f(0.f, 0.f)),
   searchBox(nullptr),
@@ -67,9 +66,8 @@ void HomeScreen::updateDropdownPosition() {
 
     Vector2f dropdownPos = {dropdownX, dropdownY};
     dropdownBox.setPosition(dropdownPos);
-    myticketsButton.setPosition({dropdownPos.x + 15.f, dropdownPos.y + 15.f});
-    accountButton.setPosition({dropdownPos.x + 15.f, dropdownPos.y + 45.f});
-    logoutButton.setPosition({dropdownPos.x + 15.f, dropdownPos.y + 75.f});
+    accountButton.setPosition({dropdownPos.x + 15.f, dropdownPos.y + 15.f});
+    logoutButton.setPosition({dropdownPos.x + 15.f, dropdownPos.y + 45.f});
 }
 
 void HomeScreen::update(Vector2f mouse, bool mousePressed, AppState& state, const Event* event) {
@@ -98,15 +96,11 @@ void HomeScreen::update(Vector2f mouse, bool mousePressed, AppState& state, cons
     if (isUserLoggedIn && showDropdown) {
         updateDropdownPosition(); // ✅ đảm bảo luôn ở đúng vị trí
 
-        myticketsButton.update(mouse);
         accountButton.update(mouse);
         logoutButton.update(mouse);
 
         if (mousePressed) {
-            if (myticketsButton.isClicked(mouse, mousePressed)) {
-                showDropdown = false;
-            }
-            else if (accountButton.isClicked(mouse, mousePressed)) {
+            if (accountButton.isClicked(mouse, mousePressed)) {
                 state = AppState::ACCOUNT;
                 showDropdown = false;
             }
@@ -170,7 +164,6 @@ void HomeScreen::drawSearchBox(RenderWindow& window) {
 void HomeScreen::drawDropdown(RenderWindow& window) {
     if (isUserLoggedIn && showDropdown) {
         window.draw(dropdownBox);
-        myticketsButton.draw(window);
         accountButton.draw(window);
         logoutButton.draw(window);
     }

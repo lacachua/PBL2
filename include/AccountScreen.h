@@ -8,10 +8,24 @@ using namespace std;
 
 class AccountScreen {
 private:
+    // Font reference
+    const Font& font;
+    
+    // Current active tab
+    AccountTab currentTab = AccountTab::CUSTOMER_INFO;
+    
+    // Sidebar menu items
+    RectangleShape sidebarBg;
+    RectangleShape menuItem1, menuItem2, menuItem3;
+    Text menuText1, menuText2, menuText3;
+    RectangleShape menuIcon1Bg, menuIcon2Bg, menuIcon3Bg;
+    CircleShape menuIcon1, menuIcon2, menuIcon3;
+    
     // Title
     Text titleText;
     
     // Personal Info Section
+    RectangleShape infoBg; // Background for personal info card
     Text personalInfoTitle;
     Text usernameLabel, fullNameLabel, birthDateLabel, phoneLabel, emailLabel;
     RectangleShape usernameBox, fullNameBox, birthDateBox, phoneBox, emailBox;
@@ -21,6 +35,7 @@ private:
     wstring fullNameInput, birthDateInput, phoneInput;
     
     // Change Password Section
+    RectangleShape passwordBg; // Background for password card
     Text changePasswordTitle;
     Text oldPasswordLabel, newPasswordLabel, confirmPasswordLabel;
     RectangleShape oldPasswordBox, newPasswordBox, confirmPasswordBox;

@@ -58,8 +58,13 @@ void AuthService::loadUsers() {
 }
 
 void AuthService::saveUsers() {
-    ofstream file(filePath, ios::out | ios::trunc);
+    // Mở file với UTF-8 BOM để hỗ trợ tiếng Việt
+    ofstream file(filePath, ios::out | ios::trunc | ios::binary);
     if (!file.is_open()) return;
+    
+    // Write UTF-8 BOM
+    const char bom[] = { (char)0xEF, (char)0xBB, (char)0xBF };
+    file.write(bom, 3);
     
     // Write header
     file << "email,passwordHash,fullName,birthDate,phone,registeredAt\n";
