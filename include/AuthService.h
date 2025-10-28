@@ -7,6 +7,7 @@
 using namespace std;
 
 struct User {
+    string username;      // Tên người dùng (từ phần đầu email)
     string email;
     string passwordHash;
     string fullName;
@@ -16,7 +17,11 @@ struct User {
     
     User() : registeredAt(0) {}
     User(const string& e, const string& h) 
-        : email(e), passwordHash(h), registeredAt(time(nullptr)) {}
+        : email(e), passwordHash(h), registeredAt(time(nullptr)) {
+        // Tự động tạo username từ email
+        size_t atPos = e.find('@');
+        username = (atPos != string::npos) ? e.substr(0, atPos) : e;
+    }
 };
 
 class AuthService {

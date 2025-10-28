@@ -107,6 +107,7 @@ void HomeScreen::update(Vector2f mouse, bool mousePressed, AppState& state, cons
                 showDropdown = false;
             }
             else if (accountButton.isClicked(mouse, mousePressed)) {
+                state = AppState::ACCOUNT;
                 showDropdown = false;
             }
             else if (logoutButton.isClicked(mouse, mousePressed)) {

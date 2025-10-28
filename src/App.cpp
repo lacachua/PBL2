@@ -13,7 +13,8 @@ App::App() :
     auth("../data/users.csv"),
     login(font, auth),
     registerScreen(font, auth),
-    booking(font)
+    booking(font),
+    accountScreen(font, auth)
     { 
         window.setFramerateLimit(60);
         Image icon("../assets/icon.png");
@@ -66,7 +67,7 @@ void App::processEvents() {
             case AppState::LOGIN:
                 // Cho phép SearchBox hoạt động ở màn LOGIN
                 home.update(mousePos, mousePressed, state, &event);
-                if (login.update(mousePos, mousePressed, event, currentUser, state)) {
+                if (login.update(mousePos, mousePressed, event, currentUser, currentUserEmail, state)) {
                     home.setLoggedUser(currentUser);
                     state = AppState::HOME;
                 }
@@ -77,6 +78,15 @@ void App::processEvents() {
                 home.update(mousePos, mousePressed, state, &event);
                 if (registerScreen.update(mousePos, mousePressed, event))
                     state = AppState::LOGIN;
+                break;
+            
+            case AppState::ACCOUNT:
+                // Let HomeScreen handle events (logo click, dropdown, etc.)
+                home.setLoggedUser(currentUser);
+                home.update(mousePos, mousePressed, state, &event);
+                
+                // Then let AccountScreen handle its own events
+                accountScreen.update(mousePos, mousePressed, &event, state);
                 break;
 
             default:
@@ -163,6 +173,22 @@ void App::render() {
             booking.update(mousePos, mousePressed, state);
             booking.draw(window);
 // >>>>>>> feature-datvengay
+            break;
+        }
+        
+        case AppState::ACCOUNT: {
+            // Draw home screen (background + header) without slider
+            home.draw(window);
+            // Don't draw slider
+            home.drawSearchBox(window);
+            
+            // Only set user when state changes (not every frame)
+            if (previousState != AppState::ACCOUNT) {
+                accountScreen.setCurrentUser(currentUserEmail);
+            }
+            
+            // Draw account screen on top
+            accountScreen.draw(window);
             break;
         }
 

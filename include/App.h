@@ -9,6 +9,7 @@
 #include "RegisterScreen.h"
 #include "AuthService.h"
 #include "BookingScreen.h"
+#include "AccountScreen.h"
 
 class App {
     public:
@@ -27,10 +28,12 @@ class App {
         AuthService auth;
         RegisterScreen registerScreen;
         BookingScreen booking;
+        AccountScreen accountScreen;
         
         bool mousePressed = false;
         Vector2f mousePos;
-        string currentUser;
+        string currentUser;      // Username để hiển thị
+        string currentUserEmail; // Email để lookup trong database
         const Event* currentEvent = nullptr;
 
         void processEvents();

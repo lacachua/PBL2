@@ -46,6 +46,10 @@ void AuthService::loadUsers() {
                 user.registeredAt = time(nullptr);
             }
             
+            // Tạo username từ email
+            size_t atPos = user.email.find('@');
+            user.username = (atPos != string::npos) ? user.email.substr(0, atPos) : user.email;
+            
             userByEmail.insert(user.email, user);
         }
     }
@@ -95,6 +99,10 @@ bool AuthService::registerUser(const string& email, const string& password,
     newUser.birthDate = birthDate;
     newUser.phone = phone;
     newUser.registeredAt = time(nullptr);
+    
+    // Tạo username từ email
+    size_t atPos = email.find('@');
+    newUser.username = (atPos != string::npos) ? email.substr(0, atPos) : email;
     
     // Insert into hash table
     userByEmail.insert(email, newUser);

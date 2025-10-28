@@ -9,7 +9,7 @@ using namespace std;
 class LoginScreen {
 public:
     LoginScreen(const Font&, AuthService&);
-    bool update(Vector2f, bool, const Event&, string&, AppState&);
+    bool update(Vector2f, bool, const Event&, string& currentUser, string& currentUserEmail, AppState&);
     void draw(RenderWindow&);
 
 private:
