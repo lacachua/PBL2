@@ -31,19 +31,27 @@ void AuthService::loadUsers() {
         stringstream ss(line);
         User user;
         
-        string regTimeStr;
+        string regTimeStr, roleStr;
         getline(ss, user.email, ',');
         getline(ss, user.passwordHash, ',');
         getline(ss, user.fullName, ',');
         getline(ss, user.birthDate, ',');
         getline(ss, user.phone, ',');
         getline(ss, regTimeStr, ',');
+        getline(ss, roleStr, ',');
         
         if (!user.email.empty() && !user.passwordHash.empty()) {
             try {
                 user.registeredAt = stoll(regTimeStr);
             } catch (...) {
                 user.registeredAt = time(nullptr);
+            }
+            
+            // Parse role (default to USER if not specified)
+            if (roleStr == "ADMIN") {
+                user.role = UserRole::ADMIN;
+            } else {
+                user.role = UserRole::USER;
             }
             
             userByEmail.insert(user.email, user);
@@ -58,16 +66,18 @@ void AuthService::saveUsers() {
     if (!file.is_open()) return;
     
     // Write header
-    file << "email,passwordHash,fullName,birthDate,phone,registeredAt\n";
+    file << "email,passwordHash,fullName,birthDate,phone,registeredAt,role\n";
     
     // Write all users
     userByEmail.forEach([&](const string& email, User& user) {
+        string roleStr = (user.role == UserRole::ADMIN) ? "ADMIN" : "USER";
         file << user.email << ","
              << user.passwordHash << ","
              << user.fullName << ","
              << user.birthDate << ","
              << user.phone << ","
-             << user.registeredAt << "\n";
+             << user.registeredAt << ","
+             << roleStr << "\n";
     });
     
     file.close();
@@ -75,7 +85,7 @@ void AuthService::saveUsers() {
 
 bool AuthService::registerUser(const string& email, const string& password,
                                const string& fullName, const string& birthDate,
-                               const string& phone) {
+                               const string& phone, UserRole role) {
     // Validate inputs
     if (email.empty() || password.empty()) return false;
     if (!Validator::isValidEmail(email)) return false;
@@ -95,6 +105,7 @@ bool AuthService::registerUser(const string& email, const string& password,
     newUser.birthDate = birthDate;
     newUser.phone = phone;
     newUser.registeredAt = time(nullptr);
+    newUser.role = role;
     
     // Insert into hash table
     userByEmail.insert(email, newUser);
@@ -127,5 +138,17 @@ bool AuthService::emailExists(const string& email) {
 void AuthService::ensureSampleUser() {
     if (!emailExists("test@gmail.com")) {
         registerUser("test@gmail.com", "Test1234", "Test User", "01/01/2000", "0901234567");
+    }
+}
+
+void AuthService::ensureAdminAccounts() {
+    // Admin 1 - For you
+    if (!emailExists("admin1@pbl2.com")) {
+        registerUser("admin1@pbl2.com", "Admin1234!", "Admin Principal", "01/01/1990", "0900000001", UserRole::ADMIN);
+    }
+    
+    // Admin 2 - For your partner
+    if (!emailExists("admin2@pbl2.com")) {
+        registerUser("admin2@pbl2.com", "Admin1234!", "Admin Partner", "01/01/1990", "0900000002", UserRole::ADMIN);
     }
 }

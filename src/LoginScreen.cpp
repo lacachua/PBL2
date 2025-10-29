@@ -61,7 +61,7 @@ LoginScreen::LoginScreen(const Font& font, AuthService& authRef)
 
 std::wstring LoginScreen::bullets(std::size_t n) { return std::wstring(n, L'\u2022'); }
 
-bool LoginScreen::update(Vector2f mouse, bool mousePressed, const Event& event, string& currentUser, AppState& state) {
+bool LoginScreen::update(Vector2f mouse, bool mousePressed, const Event& event, string& currentUser, AppState& state, UserRole& userRole) {
     // click ra ngoài card -> đóng
     if (mousePressed && !card.getGlobalBounds().contains(mouse)) return true;
 
@@ -80,7 +80,17 @@ bool LoginScreen::update(Vector2f mouse, bool mousePressed, const Event& event, 
             std::string p(passInput.begin(), passInput.end());
             if (auth.verify(u, p)) {
                 msg.setFillColor(Color(60, 160, 90));
-                msg.setString(L"Đăng nhập thành công.");
+                
+                // Get user role
+                User* user = auth.getUser(u);
+                if (user) {
+                    userRole = user->role;
+                    if (userRole == UserRole::ADMIN) {
+                        msg.setString(L"Đăng nhập Admin thành công.");
+                    } else {
+                        msg.setString(L"Đăng nhập thành công.");
+                    }
+                }
 
                 // ensure button flow matches Enter key flow
                 loginSuccess = true;
@@ -122,7 +132,17 @@ bool LoginScreen::update(Vector2f mouse, bool mousePressed, const Event& event, 
             // Verify credentials
             if (auth.verify(email, password)) {
                 msg.setFillColor(Color(60, 160, 90));
-                msg.setString(L"Đăng nhập thành công.");
+                
+                // Get user role
+                User* user = auth.getUser(email);
+                if (user) {
+                    userRole = user->role;
+                    if (userRole == UserRole::ADMIN) {
+                        msg.setString(L"Đăng nhập Admin thành công.");
+                    } else {
+                        msg.setString(L"Đăng nhập thành công.");
+                    }
+                }
                 
                 loginSuccess = true;
                 loggedUser = email;

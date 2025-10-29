@@ -4,5 +4,7 @@ enum class AppState {
     LOGIN,
     REGISTER,
     BOOKING,
-    MOVIE_DETAILS
+    MOVIE_DETAILS,
+    ACCOUNT,
+    ADMIN
 };

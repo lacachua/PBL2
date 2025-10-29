@@ -6,6 +6,11 @@
 #include "Validator.h"
 using namespace std;
 
+enum class UserRole {
+    USER,
+    ADMIN
+};
+
 struct User {
     string email;
     string passwordHash;
@@ -13,10 +18,11 @@ struct User {
     string birthDate;
     string phone;
     time_t registeredAt;
+    UserRole role;
     
-    User() : registeredAt(0) {}
-    User(const string& e, const string& h) 
-        : email(e), passwordHash(h), registeredAt(time(nullptr)) {}
+    User() : registeredAt(0), role(UserRole::USER) {}
+    User(const string& e, const string& h, UserRole r = UserRole::USER) 
+        : email(e), passwordHash(h), registeredAt(time(nullptr)), role(r) {}
 };
 
 class AuthService {
@@ -27,7 +33,7 @@ public:
     // Registration with validation
     bool registerUser(const string& email, const string& password, 
                      const string& fullName = "", const string& birthDate = "", 
-                     const string& phone = "");
+                     const string& phone = "", UserRole role = UserRole::USER);
 
     // Login verification
     bool verify(const string& email, const string& password);
@@ -42,6 +48,9 @@ public:
     
     // Create sample user for testing
     void ensureSampleUser();
+    
+    // Create admin accounts
+    void ensureAdminAccounts();
 
 private:
     string filePath;

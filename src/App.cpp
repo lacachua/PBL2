@@ -20,14 +20,18 @@ App::App() :
         window.setIcon(icon);
 
         auth.ensureSampleUser();
+        auth.ensureAdminAccounts(); // Create admin accounts
 
         vector<string> paths = getMoviePosterPaths("../data/movies.csv");        
         slider.loadPosters(paths, font);
 // <<<<<<< HEAD
         
 //         // Load movies for search functionality
-        vector<Movie> movies = loadMoviesFromCSV("../data/movies.csv");
+        movies = loadMoviesFromCSV("../data/movies.csv");
         home.initializeSearch(movies);
+        
+        // Load showtimes for admin
+        showtimes = loadShowtimesFromCSV("../data/showtimes.csv");
 
 // =======
 // >>>>>>> feature-datvengay
@@ -66,9 +70,14 @@ void App::processEvents() {
             case AppState::LOGIN:
                 // Cho phép SearchBox hoạt động ở màn LOGIN
                 home.update(mousePos, mousePressed, state, &event);
-                if (login.update(mousePos, mousePressed, event, currentUser, state)) {
+                if (login.update(mousePos, mousePressed, event, currentUser, state, currentUserRole)) {
                     home.setLoggedUser(currentUser);
-                    state = AppState::HOME;
+                    // Check if user is admin
+                    if (currentUserRole == UserRole::ADMIN) {
+                        state = AppState::ADMIN;
+                    } else {
+                        state = AppState::HOME;
+                    }
                 }
                 break;
             
@@ -77,6 +86,18 @@ void App::processEvents() {
                 home.update(mousePos, mousePressed, state, &event);
                 if (registerScreen.update(mousePos, mousePressed, event))
                     state = AppState::LOGIN;
+                break;
+            
+            case AppState::ADMIN:
+                if (!adminScreen) {
+                    adminScreen = new AdminScreen(font, showtimes, movies);
+                }
+                adminScreen->update(mousePos, mousePressed, event);
+                if (adminScreen->shouldClose()) {
+                    delete adminScreen;
+                    adminScreen = nullptr;
+                    state = AppState::HOME;
+                }
                 break;
 
             default:
@@ -163,6 +184,18 @@ void App::render() {
             booking.update(mousePos, mousePressed, state);
             booking.draw(window);
 // >>>>>>> feature-datvengay
+            break;
+        }
+        
+        case AppState::ADMIN: {
+            // Vẽ background và buttons của HomeScreen trước
+            home.draw(window);
+            // Không vẽ slider - AdminScreen sẽ vẽ lên vùng này
+            home.drawSearchBox(window);
+            // Vẽ AdminScreen lên trên vùng slider
+            if (adminScreen) {
+                adminScreen->draw(window);
+            }
             break;
         }
 

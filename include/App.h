@@ -9,6 +9,9 @@
 #include "RegisterScreen.h"
 #include "AuthService.h"
 #include "BookingScreen.h"
+#include "AdminScreen.h"
+#include "Movie.h"
+#include "Showtime.h"
 
 class App {
     public:
@@ -27,6 +30,12 @@ class App {
         AuthService auth;
         RegisterScreen registerScreen;
         BookingScreen booking;
+        
+        // Admin
+        UserRole currentUserRole = UserRole::USER;
+        vector<Showtime> showtimes;
+        vector<Movie> movies;
+        AdminScreen* adminScreen = nullptr;
         
         bool mousePressed = false;
         Vector2f mousePos;
