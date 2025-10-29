@@ -5,29 +5,27 @@ AccountScreen::AccountScreen(const Font& f, AuthService& auth)
     : font(f),
       authService(&auth),
       titleText(f, L"THÔNG TIN KHÁCH HÀNG", 28),
-      menuText1(f, L"THÔNG TIN KHÁCH HÀNG", 16),
-      menuText2(f, L"LỊCH SỬ ĐẶT VÉ", 16),
-      menuText3(f, L"QUÀ TẶNG CỦA TÔI", 16),
-      personalInfoTitle(f, L"THÔNG TIN CÁ NHÂN", 20),
-      usernameLabel(f, L"Username", 16),
-      fullNameLabel(f, L"Họ và tên", 16),
-      birthDateLabel(f, L"Ngày sinh", 16),
-      phoneLabel(f, L"Số điện thoại", 16),
-      emailLabel(f, L"Email", 16),
-      usernameText(f, "", 16),
-      fullNameText(font, "", 16),
-      birthDateText(font, "", 16),
-      phoneText(font, "", 16),
-      emailText(font, "", 16),
-      changePasswordTitle(font, L"ĐỔI MẬT KHẨU", 20),
-      oldPasswordLabel(font, L"Mật khẩu cũ *", 16),
-      newPasswordLabel(font, L"Mật khẩu mới *", 16),
-      confirmPasswordLabel(font, L"Xác thực mật khẩu *", 16),
-      oldPasswordText(font, "", 16),
-      newPasswordText(font, "", 16),
-      confirmPasswordText(font, "", 16),
-      saveInfoBtnText(font, L"LƯU THÔNG TIN", 16),
-      changePasswordBtnText(font, L"ĐỔI MẬT KHẨU", 16),
+      menuItem1(f, L"Thông tin khách\nhàng", 220.f, 52.f, 14),
+      menuItem2(f, L"Lịch sử đặt vé", 220.f, 52.f, 14),
+      menuItem3(f, L"Thành viên\nCinestar", 220.f, 52.f, 14),
+      personalInfoTitle(f, L"Thông tin cá nhân", 18),
+      fullNameLabel(f, L"Họ và tên", 14),
+      birthDateLabel(f, L"Ngày sinh", 14),
+      phoneLabel(f, L"Số điện thoại", 14),
+      emailLabel(f, L"Email", 14),
+      fullNameText(font, "", 14),
+      birthDateText(font, "", 14),
+      phoneText(font, "", 14),
+      emailText(font, "", 14),
+      changePasswordTitle(font, L"Đổi mật khẩu", 18),
+      oldPasswordLabel(font, L"Mật khẩu cũ *", 14),
+      newPasswordLabel(font, L"Mật khẩu mới *", 14),
+      confirmPasswordLabel(font, L"Xác thực mật khẩu *", 14),
+      oldPasswordText(font, "", 14),
+      newPasswordText(font, "", 14),
+      confirmPasswordText(font, "", 14),
+      saveInfoBtn(f, L"LƯU THÔNG TIN", 220.f, 45.f, 14),
+      changePasswordBtn(f, L"ĐỔI MẬT KHẨU", 220.f, 45.f, 14),
       infoMessage(font, "", 14),
       passwordMessage(font, "", 14)
 {
@@ -35,14 +33,13 @@ AccountScreen::AccountScreen(const Font& f, AuthService& auth)
     titleText.setFillColor(Color::White);
     titleText.setStyle(Text::Bold);
     
-    // Setup section titles - Montserrat SemiBold, #EEEEEE
+    // Setup section titles - như cũ
     personalInfoTitle.setFillColor(Color(238, 238, 238));
     personalInfoTitle.setStyle(Text::Bold);
     changePasswordTitle.setFillColor(Color(238, 238, 238));
     changePasswordTitle.setStyle(Text::Bold);
     
-    // Setup labels - Montserrat Medium, #BFD7EA
-    usernameLabel.setFillColor(Color(191, 215, 234));
+    // Setup labels - như cũ
     fullNameLabel.setFillColor(Color(191, 215, 234));
     birthDateLabel.setFillColor(Color(191, 215, 234));
     phoneLabel.setFillColor(Color(191, 215, 234));
@@ -51,47 +48,43 @@ AccountScreen::AccountScreen(const Font& f, AuthService& auth)
     newPasswordLabel.setFillColor(Color(191, 215, 234));
     confirmPasswordLabel.setFillColor(Color(191, 215, 234));
     
-    // Setup input boxes - Personal Info (376px x 40px)
-    fullNameBox.setSize({376.f, 40.f});
-    birthDateBox.setSize({376.f, 40.f});
-    phoneBox.setSize({376.f, 40.f});
-    emailBox.setSize({376.f, 40.f});
+    // Setup input boxes - giữ kích thước như ảnh
+    fullNameBox.setSize({220.f, 35.f});
+    birthDateBox.setSize({220.f, 35.f});
+    phoneBox.setSize({220.f, 35.f});
+    emailBox.setSize({220.f, 35.f});
     
-    // Input background: #F5F5F5
-    usernameBox.setFillColor(Color(245, 245, 245));
-    fullNameBox.setFillColor(Color(245, 245, 245));
-    birthDateBox.setFillColor(Color(245, 245, 245));
-    phoneBox.setFillColor(Color(245, 245, 245));
-    emailBox.setFillColor(Color(245, 245, 245));
+    // Input background: White (như ảnh)
+    fullNameBox.setFillColor(Color::White);
+    birthDateBox.setFillColor(Color::White);
+    phoneBox.setFillColor(Color::White);
+    emailBox.setFillColor(Color::White);
     
-    usernameBox.setOutlineThickness(1.f);
     fullNameBox.setOutlineThickness(1.f);
     birthDateBox.setOutlineThickness(1.f);
     phoneBox.setOutlineThickness(1.f);
     emailBox.setOutlineThickness(1.f);
     
-    // Viền thường: #C9D6E2
-    usernameBox.setOutlineColor(Color(201, 214, 226));
+    // Border color - xám nhạt
     fullNameBox.setOutlineColor(Color(201, 214, 226));
     birthDateBox.setOutlineColor(Color(201, 214, 226));
     phoneBox.setOutlineColor(Color(201, 214, 226));
     emailBox.setOutlineColor(Color(201, 214, 226));
     
-    // Setup input text - chữ: #0D1B2A
-    usernameText.setFillColor(Color(13, 27, 42));
+    // Setup input text - đen
     fullNameText.setFillColor(Color(13, 27, 42));
     birthDateText.setFillColor(Color(13, 27, 42));
     phoneText.setFillColor(Color(13, 27, 42));
     emailText.setFillColor(Color(13, 27, 42));
     
-    // Setup input boxes - Password Change (376px x 40px)
-    oldPasswordBox.setSize({376.f, 40.f});
-    newPasswordBox.setSize({376.f, 40.f});
-    confirmPasswordBox.setSize({376.f, 40.f});
+    // Setup input boxes - Password Change
+    oldPasswordBox.setSize({420.f, 35.f}); // Full width trong card
+    newPasswordBox.setSize({420.f, 35.f});
+    confirmPasswordBox.setSize({420.f, 35.f});
     
-    oldPasswordBox.setFillColor(Color(245, 245, 245));
-    newPasswordBox.setFillColor(Color(245, 245, 245));
-    confirmPasswordBox.setFillColor(Color(245, 245, 245));
+    oldPasswordBox.setFillColor(Color::White);
+    newPasswordBox.setFillColor(Color::White);
+    confirmPasswordBox.setFillColor(Color::White);
     
     oldPasswordBox.setOutlineThickness(1.f);
     newPasswordBox.setOutlineThickness(1.f);
@@ -101,24 +94,21 @@ AccountScreen::AccountScreen(const Font& f, AuthService& auth)
     newPasswordBox.setOutlineColor(Color(201, 214, 226));
     confirmPasswordBox.setOutlineColor(Color(201, 214, 226));
     
-    // Setup password text - chữ: #0D1B2A
+    // Setup password text
     oldPasswordText.setFillColor(Color(13, 27, 42));
     newPasswordText.setFillColor(Color(13, 27, 42));
     confirmPasswordText.setFillColor(Color(13, 27, 42));
     
-    // Setup buttons - spec: 160x40
-    saveInfoBtn.setSize({160.f, 40.f});
-    changePasswordBtn.setSize({160.f, 40.f});
+    // Setup buttons - màu xanh như cũ
+    saveInfoBtn.setNormalColor(Color(0, 153, 255));
+    saveInfoBtn.setHoverColor(Color(0, 191, 255));
+    saveInfoBtn.setTextFillColor(Color::White);
     
-    saveInfoBtn.setFillColor(Color(0, 153, 255)); // #0099FF
-    changePasswordBtn.setFillColor(Color(0, 153, 255));
+    changePasswordBtn.setNormalColor(Color(0, 153, 255));
+    changePasswordBtn.setHoverColor(Color(0, 191, 255));
+    changePasswordBtn.setTextFillColor(Color::White);
     
-    saveInfoBtnText.setFillColor(Color::White);
-    changePasswordBtnText.setFillColor(Color::White);
-    saveInfoBtnText.setStyle(Text::Bold);
-    changePasswordBtnText.setStyle(Text::Bold);
-    
-    // Setup cursor - màu cyan
+    // Setup cursor
     cursor.setSize({2.f, 20.f});
     cursor.setFillColor(Color(0, 153, 255));
     
@@ -126,42 +116,27 @@ AccountScreen::AccountScreen(const Font& f, AuthService& auth)
     infoMessage.setFillColor(Color(60, 160, 90)); // Green for success
     passwordMessage.setFillColor(Color(60, 160, 90));
     
-    // Setup sidebar - spec: 240px width
-    sidebarBg.setSize({240.f, 550.f});
+    // Setup main card background - xanh navy đậm như cũ
+    mainCardBg.setFillColor(Color(0, 24, 48, 235)); // rgba(0,24,48,0.92)
+    mainCardBg.setOutlineThickness(1.f);
+    mainCardBg.setOutlineColor(Color(10, 51, 92));
+    
+    // Setup sidebar - giữ nguyên như cũ
+    sidebarBg.setSize({340.f, 550.f});
     sidebarBg.setFillColor(Color(15, 35, 65, 200));
     
-    // Setup menu items
-    menuItem1.setSize({220.f, 52.f});
-    menuItem2.setSize({220.f, 52.f});
-    menuItem3.setSize({220.f, 52.f});
+    // Setup menu items - màu xanh navy như cũ
+    menuItem1.setNormalColor(Color(60, 130, 210, 200)); // Active - xanh sáng
+    menuItem1.setHoverColor(Color(80, 150, 230, 220));
+    menuItem1.setTextFillColor(Color(220, 240, 255));
     
-    menuItem1.setFillColor(Color(60, 130, 210, 200));
-    menuItem2.setFillColor(Color(25, 45, 80, 150));
-    menuItem3.setFillColor(Color(25, 45, 80, 150));
+    menuItem2.setNormalColor(Color(25, 45, 80, 150)); // Inactive - xanh đậm
+    menuItem2.setHoverColor(Color(45, 65, 100, 170));
+    menuItem2.setTextFillColor(Color(160, 180, 210));
     
-    // Setup menu texts - màu sáng phù hợp với background xanh
-    menuText1.setFillColor(Color(220, 240, 255)); // Light blue-white for active
-    menuText2.setFillColor(Color(160, 180, 210)); // Lighter gray-blue for inactive
-    menuText3.setFillColor(Color(160, 180, 210));
-    menuText1.setStyle(Text::Bold);
-    
-    // Setup menu icon backgrounds - lighter blue
-    menuIcon1Bg.setSize({40.f, 40.f});
-    menuIcon2Bg.setSize({40.f, 40.f});
-    menuIcon3Bg.setSize({40.f, 40.f});
-    
-    menuIcon1Bg.setFillColor(Color(100, 160, 220, 150)); // Active light blue
-    menuIcon2Bg.setFillColor(Color(50, 80, 120, 100)); // Inactive mid blue
-    menuIcon3Bg.setFillColor(Color(50, 80, 120, 100));
-    
-    // Setup icons (simple circles for now)
-    menuIcon1.setRadius(7.f);
-    menuIcon2.setRadius(7.f);
-    menuIcon3.setRadius(7.f);
-    
-    menuIcon1.setFillColor(Color::White);
-    menuIcon2.setFillColor(Color(160, 180, 200));
-    menuIcon3.setFillColor(Color(160, 180, 200));
+    menuItem3.setNormalColor(Color(25, 45, 80, 150));
+    menuItem3.setHoverColor(Color(45, 65, 100, 170));
+    menuItem3.setTextFillColor(Color(160, 180, 210));
 }
 
 void AccountScreen::setCurrentUser(const string& email) {
@@ -170,13 +145,12 @@ void AccountScreen::setCurrentUser(const string& email) {
     
     if (currentUser) {
         // Set text displays
-        usernameText.setString(currentUser->username);  // Show username
         fullNameText.setString(currentUser->fullName);
         birthDateText.setString(currentUser->birthDate);
         phoneText.setString(currentUser->phone);
         emailText.setString(currentUser->email);
         
-        // Initialize editable inputs (không bao gồm username và email)
+        // Initialize editable inputs
         fullNameInput = wstring(currentUser->fullName.begin(), currentUser->fullName.end());
         birthDateInput = wstring(currentUser->birthDate.begin(), currentUser->birthDate.end());
         phoneInput = wstring(currentUser->phone.begin(), currentUser->phone.end());
@@ -184,143 +158,84 @@ void AccountScreen::setCurrentUser(const string& email) {
 }
 
 void AccountScreen::updatePositions(Vector2u windowSize) {
-    float windowWidth = static_cast<float>(windowSize.x);
-    float windowHeight = static_cast<float>(windowSize.y);
+    // Sidebar - giữ nguyên vị trí cũ (60, 200)
+    float sidebarX = 60.f;
+    float sidebarY = 200.f;
+    sidebarBg.setPosition({sidebarX, sidebarY});
     
-    // Sidebar positioning - spec: 240px width
-    float sidebarWidth = 240.f;
-    sidebarBg.setPosition({50.f, 170.f});
-    
-    float sidebarX = sidebarBg.getPosition().x;
-    float sidebarY = sidebarBg.getPosition().y;
+    // Menu items inside sidebar (10px padding)
     float menuStartY = sidebarY + 40.f;
-    float menuItemHeight = 70.f;
-    float menuItemWidth = 220.f;
+    menuItem1.setPosition(sidebarX + 10.f, menuStartY);
+    menuItem2.setPosition(sidebarX + 10.f, menuStartY + 70.f);
+    menuItem3.setPosition(sidebarX + 10.f, menuStartY + 140.f);
     
-    // Menu items
-    menuItem1.setSize({menuItemWidth, 52.f});
-    menuItem1.setPosition({sidebarX + 10.f, menuStartY});
-    menuIcon1Bg.setPosition({menuItem1.getPosition().x + 10.f, menuItem1.getPosition().y + 6.f});
-    menuIcon1.setPosition({menuIcon1Bg.getPosition().x + 13.f, menuIcon1Bg.getPosition().y + 13.f});
-    menuText1.setPosition({menuItem1.getPosition().x + 58.f, menuItem1.getPosition().y + 14.f});
+    // Main card - white background bên phải sidebar
+    float cardX = sidebarX + 340.f + 20.f; // sidebar width + gap
+    float cardY = 200.f;
+    float cardWidth = 780.f;
+    float cardHeight = 600.f;
+    float cardPadding = 30.f;
     
-    menuItem2.setSize({menuItemWidth, 52.f});
-    menuItem2.setPosition({sidebarX + 10.f, menuStartY + menuItemHeight});
-    menuIcon2Bg.setPosition({menuItem2.getPosition().x + 10.f, menuItem2.getPosition().y + 6.f});
-    menuIcon2.setPosition({menuIcon2Bg.getPosition().x + 13.f, menuIcon2Bg.getPosition().y + 13.f});
-    menuText2.setPosition({menuItem2.getPosition().x + 58.f, menuItem2.getPosition().y + 14.f});
+    mainCardBg.setSize({cardWidth, cardHeight});
+    mainCardBg.setPosition({cardX, cardY});
     
-    menuItem3.setSize({menuItemWidth, 52.f});
-    menuItem3.setPosition({sidebarX + 10.f, menuStartY + menuItemHeight * 2});
-    menuIcon3Bg.setPosition({menuItem3.getPosition().x + 10.f, menuItem3.getPosition().y + 6.f});
-    menuIcon3.setPosition({menuIcon3Bg.getPosition().x + 13.f, menuIcon3Bg.getPosition().y + 13.f});
-    menuText3.setPosition({menuItem3.getPosition().x + 58.f, menuItem3.getPosition().y + 14.f});
+    // Section 1: Thông tin cá nhân (top section)
+    float section1Y = cardY + cardPadding;
+    personalInfoTitle.setPosition({cardX + cardPadding, section1Y});
     
-    // Content area - spec cho 1366x768
-    // contentLeft = sidebarWidth + 20 = 260px
-    float contentLeft = 260.f;
-    float contentTop = 150.f;
-    float cardGap = 40.f;
-    float cardWidth = 420.f;
-    float cardHeight = 380.f;
-    float cardPaddingLeft = 22.f;
+    // Two columns layout for personal info
+    float col1X = cardX + cardPadding;
+    float col2X = cardX + cardPadding + 230.f; // 220px box + 10px gap
+    float inputStartY = section1Y + 35.f; // Below title
+    float rowHeight = 65.f;
     
-    // Responsive adjustments cho màn hình lớn
-    if (windowWidth >= 1280.f) {
-        contentLeft = max(260.f, sidebarWidth + 0.05f * windowWidth);
-        cardWidth = min(480.f, max(380.f, 0.30f * windowWidth));
-        cardGap = min(56.f, max(32.f, 0.03f * windowWidth));
-        contentTop = max(130.f, 0.2f * windowHeight);
-    }
+    // Column 1: Họ và tên, Số điện thoại
+    fullNameLabel.setPosition({col1X, inputStartY});
+    fullNameBox.setPosition({col1X, inputStartY + 20.f});
+    fullNameText.setPosition({col1X + 8.f, inputStartY + 28.f});
     
-    // Personal Information Card position (260, 150)
-    infoBg.setSize({ cardWidth, cardHeight });
-    infoBg.setPosition({contentLeft, contentTop});
+    phoneLabel.setPosition({col1X, inputStartY + rowHeight});
+    phoneBox.setPosition({col1X, inputStartY + rowHeight + 20.f});
+    phoneText.setPosition({col1X + 8.f, inputStartY + rowHeight + 28.f});
     
-    // Title position (cardPaddingLeft, 18px)
-    personalInfoTitle.setPosition({contentLeft + cardPaddingLeft, contentTop + 18.f});
+    // Column 2: Ngày sinh, Email
+    birthDateLabel.setPosition({col2X, inputStartY});
+    birthDateBox.setPosition({col2X, inputStartY + 20.f});
+    birthDateText.setPosition({col2X + 8.f, inputStartY + 28.f});
     
-    // Card content - padding 22px, label cách title 18px
-    float leftCardX = contentLeft + cardPaddingLeft;
-    float topY = contentTop + 18.f + 18.f; // title + 18px spacing
-    float inputVGap = 14.f; // Spacing giữa các input
+    emailLabel.setPosition({col2X, inputStartY + rowHeight});
+    emailBox.setPosition({col2X, inputStartY + rowHeight + 20.f});
+    emailText.setPosition({col2X + 8.f, inputStartY + rowHeight + 28.f});
     
-    // Họ và tên - Row 1
-    fullNameLabel.setPosition({leftCardX, topY});
-    fullNameBox.setPosition({leftCardX, topY + 14.f + 8.f}); // label height + 8px
-    fullNameText.setPosition({leftCardX + 10, topY + 14.f + 8.f + 11.f});
+    // Save button for personal info
+    float saveInfoBtnY = inputStartY + rowHeight * 2 + 10.f;
+    saveInfoBtn.setPosition(col1X, saveInfoBtnY);
+    infoMessage.setPosition({col1X, saveInfoBtnY + 50.f});
     
-    // Ngày sinh - Row 2
-    float row2Y = topY + 14.f + 8.f + 40.f + inputVGap;
-    birthDateLabel.setPosition({leftCardX, row2Y});
-    birthDateBox.setPosition({leftCardX, row2Y + 14.f + 8.f});
-    birthDateText.setPosition({leftCardX + 10, row2Y + 14.f + 8.f + 11.f});
+    // Section 2: Đổi mật khẩu (bottom section)
+    float section2Y = saveInfoBtnY + 70.f;
+    changePasswordTitle.setPosition({cardX + cardPadding, section2Y});
     
-    // Số điện thoại - Row 3
-    float row3Y = row2Y + 14.f + 8.f + 40.f + inputVGap;
-    phoneLabel.setPosition({leftCardX, row3Y});
-    phoneBox.setPosition({leftCardX, row3Y + 14.f + 8.f});
-    phoneText.setPosition({leftCardX + 10, row3Y + 14.f + 8.f + 11.f});
+    float pwdInputStartY = section2Y + 35.f;
+    float pwdRowHeight = 60.f;
     
-    // Email - Row 4
-    float row4Y = row3Y + 14.f + 8.f + 40.f + inputVGap;
-    emailLabel.setPosition({leftCardX, row4Y});
-    emailBox.setPosition({leftCardX, row4Y + 14.f + 8.f});
-    emailText.setPosition({leftCardX + 10, row4Y + 14.f + 8.f + 11.f});
+    // Password fields - full width
+    oldPasswordLabel.setPosition({col1X, pwdInputStartY});
+    oldPasswordBox.setPosition({col1X, pwdInputStartY + 20.f});
+    oldPasswordText.setPosition({col1X + 8.f, pwdInputStartY + 28.f});
     
-    // Save Info Button - 24px dưới input cuối
-    float btnY = row4Y + 14.f + 8.f + 40.f + 24.f;
-    saveInfoBtn.setPosition({leftCardX, btnY});
-    FloatRect saveTextBounds = saveInfoBtnText.getLocalBounds();
-    saveInfoBtnText.setPosition({
-        leftCardX + 80.f - saveTextBounds.size.x / 2.f,
-        btnY + 11.f
-    });
+    newPasswordLabel.setPosition({col1X, pwdInputStartY + pwdRowHeight});
+    newPasswordBox.setPosition({col1X, pwdInputStartY + pwdRowHeight + 20.f});
+    newPasswordText.setPosition({col1X + 8.f, pwdInputStartY + pwdRowHeight + 28.f});
     
-    // Info message below save button
-    infoMessage.setPosition({leftCardX, btnY + 45.f});
+    confirmPasswordLabel.setPosition({col1X, pwdInputStartY + pwdRowHeight * 2});
+    confirmPasswordBox.setPosition({col1X, pwdInputStartY + pwdRowHeight * 2 + 20.f});
+    confirmPasswordText.setPosition({col1X + 8.f, pwdInputStartY + pwdRowHeight * 2 + 28.f});
     
-    // Password Change Card (Right side) - spec: (720, 150)
-    float passwordCardX = contentLeft + cardWidth + cardGap;
-    float rightCardX = passwordCardX + cardPaddingLeft;
-    
-    passwordBg.setSize({ cardWidth, cardHeight });
-    passwordBg.setPosition({passwordCardX, contentTop});
-    
-    // Title
-    changePasswordTitle.setPosition({passwordCardX + cardPaddingLeft, contentTop + 18.f});
-    
-    // Password fields - giống layout bên trái
-    float pwTopY = contentTop + 18.f + 18.f;
-    
-    // Old Password - Row 1
-    oldPasswordLabel.setPosition({rightCardX, pwTopY});
-    oldPasswordBox.setPosition({rightCardX, pwTopY + 14.f + 8.f});
-    oldPasswordText.setPosition({rightCardX + 10, pwTopY + 14.f + 8.f + 11.f});
-    
-    // New Password - Row 2
-    float pwRow2Y = pwTopY + 14.f + 8.f + 40.f + inputVGap;
-    newPasswordLabel.setPosition({rightCardX, pwRow2Y});
-    newPasswordBox.setPosition({rightCardX, pwRow2Y + 14.f + 8.f});
-    newPasswordText.setPosition({rightCardX + 10, pwRow2Y + 14.f + 8.f + 11.f});
-    
-    // Confirm Password - Row 3
-    float pwRow3Y = pwRow2Y + 14.f + 8.f + 40.f + inputVGap;
-    confirmPasswordLabel.setPosition({rightCardX, pwRow3Y});
-    confirmPasswordBox.setPosition({rightCardX, pwRow3Y + 14.f + 8.f});
-    confirmPasswordText.setPosition({rightCardX + 10, pwRow3Y + 14.f + 8.f + 11.f});
-    
-    // Change Password Button - 24px dưới input cuối
-    float pwBtnY = pwRow3Y + 14.f + 8.f + 40.f + 24.f;
-    changePasswordBtn.setPosition({rightCardX, pwBtnY});
-    FloatRect changeTextBounds = changePasswordBtnText.getLocalBounds();
-    changePasswordBtnText.setPosition({
-        rightCardX + 80.f - changeTextBounds.size.x / 2.f,
-        pwBtnY + 11.f
-    });
-    
-    // Password message below change password button
-    passwordMessage.setPosition({rightCardX, pwBtnY + 45.f});
+    // Change password button
+    float changePwdBtnY = pwdInputStartY + pwdRowHeight * 3 + 10.f;
+    changePasswordBtn.setPosition(col1X, changePwdBtnY);
+    passwordMessage.setPosition({col1X, changePwdBtnY + 50.f});
 }
 
 void AccountScreen::handlePasswordInput(const Event* event) {
@@ -517,71 +432,46 @@ void AccountScreen::saveInfoChange() {
 }
 
 void AccountScreen::update(Vector2f mousePos, bool mousePressed, const Event* event, AppState& state) {
+    // Update menu buttons hover state
+    menuItem1.update(mousePos);
+    menuItem2.update(mousePos);
+    menuItem3.update(mousePos);
+    
     // Handle menu clicks
     if (mousePressed) {
-        if (menuItem1.getGlobalBounds().contains(mousePos)) {
+        if (menuItem1.isClicked(mousePos, mousePressed)) {
             currentTab = AccountTab::CUSTOMER_INFO;
             // Update menu colors - blue theme
-            menuItem1.setFillColor(Color(60, 130, 210, 200)); // Active
-            menuItem2.setFillColor(Color(25, 45, 80, 150)); // Inactive
-            menuItem3.setFillColor(Color(25, 45, 80, 150));
+            menuItem1.setNormalColor(Color(60, 130, 210, 200)); // Active
+            menuItem1.setTextFillColor(Color(220, 240, 255));
             
-            menuIcon1Bg.setFillColor(Color(100, 160, 220, 150));
-            menuIcon2Bg.setFillColor(Color(50, 80, 120, 100));
-            menuIcon3Bg.setFillColor(Color(50, 80, 120, 100));
+            menuItem2.setNormalColor(Color(25, 45, 80, 150)); // Inactive
+            menuItem2.setTextFillColor(Color(160, 180, 210));
             
-            menuIcon1.setFillColor(Color::White);
-            menuIcon2.setFillColor(Color(160, 180, 200));
-            menuIcon3.setFillColor(Color(160, 180, 200));
-            
-            menuText1.setFillColor(Color(220, 240, 255));
-            menuText2.setFillColor(Color(160, 180, 210));
-            menuText3.setFillColor(Color(160, 180, 210));
-            menuText1.setStyle(Text::Bold);
-            menuText2.setStyle(Text::Regular);
-            menuText3.setStyle(Text::Regular);
+            menuItem3.setNormalColor(Color(25, 45, 80, 150));
+            menuItem3.setTextFillColor(Color(160, 180, 210));
         }
-        else if (menuItem2.getGlobalBounds().contains(mousePos)) {
+        else if (menuItem2.isClicked(mousePos, mousePressed)) {
             currentTab = AccountTab::PURCHASE_HISTORY;
-            menuItem1.setFillColor(Color(25, 45, 80, 150));
-            menuItem2.setFillColor(Color(60, 130, 210, 200)); // Active
-            menuItem3.setFillColor(Color(25, 45, 80, 150));
+            menuItem1.setNormalColor(Color(25, 45, 80, 150));
+            menuItem1.setTextFillColor(Color(160, 180, 210));
             
-            menuIcon1Bg.setFillColor(Color(50, 80, 120, 100));
-            menuIcon2Bg.setFillColor(Color(100, 160, 220, 150));
-            menuIcon3Bg.setFillColor(Color(50, 80, 120, 100));
+            menuItem2.setNormalColor(Color(60, 130, 210, 200)); // Active
+            menuItem2.setTextFillColor(Color(220, 240, 255));
             
-            menuIcon1.setFillColor(Color(160, 180, 200));
-            menuIcon2.setFillColor(Color::White);
-            menuIcon3.setFillColor(Color(160, 180, 200));
-            
-            menuText1.setFillColor(Color(160, 180, 210));
-            menuText2.setFillColor(Color(220, 240, 255));
-            menuText3.setFillColor(Color(160, 180, 210));
-            menuText1.setStyle(Text::Regular);
-            menuText2.setStyle(Text::Bold);
-            menuText3.setStyle(Text::Regular);
+            menuItem3.setNormalColor(Color(25, 45, 80, 150));
+            menuItem3.setTextFillColor(Color(160, 180, 210));
         }
-        else if (menuItem3.getGlobalBounds().contains(mousePos)) {
+        else if (menuItem3.isClicked(mousePos, mousePressed)) {
             currentTab = AccountTab::MY_GIFTS;
-            menuItem1.setFillColor(Color(25, 45, 80, 150));
-            menuItem2.setFillColor(Color(25, 45, 80, 150));
-            menuItem3.setFillColor(Color(60, 130, 210, 200)); // Active
+            menuItem1.setNormalColor(Color(25, 45, 80, 150));
+            menuItem1.setTextFillColor(Color(160, 180, 210));
             
-            menuIcon1Bg.setFillColor(Color(50, 80, 120, 100));
-            menuIcon2Bg.setFillColor(Color(50, 80, 120, 100));
-            menuIcon3Bg.setFillColor(Color(100, 160, 220, 150));
+            menuItem2.setNormalColor(Color(25, 45, 80, 150));
+            menuItem2.setTextFillColor(Color(160, 180, 210));
             
-            menuIcon1.setFillColor(Color(160, 180, 200));
-            menuIcon2.setFillColor(Color(160, 180, 200));
-            menuIcon3.setFillColor(Color::White);
-            
-            menuText1.setFillColor(Color(160, 180, 210));
-            menuText2.setFillColor(Color(160, 180, 210));
-            menuText3.setFillColor(Color(220, 240, 255));
-            menuText1.setStyle(Text::Regular);
-            menuText2.setStyle(Text::Regular);
-            menuText3.setStyle(Text::Bold);
+            menuItem3.setNormalColor(Color(60, 130, 210, 200)); // Active
+            menuItem3.setTextFillColor(Color(220, 240, 255));
         }
     }
     
@@ -696,120 +586,63 @@ void AccountScreen::update(Vector2f mousePos, bool mousePressed, const Event* ev
     newPasswordBox.setOutlineThickness(activeField == 1 ? 2.f : 1.f);
     confirmPasswordBox.setOutlineThickness(activeField == 2 ? 2.f : 1.f);
     
-    // Check button hovers - hover cyan sáng hơn
-    isSaveInfoHovered = saveInfoBtn.getGlobalBounds().contains(mousePos);
-    isChangePasswordHovered = changePasswordBtn.getGlobalBounds().contains(mousePos);
-    
-    // Update button colors - #00BFFF khi hover
-    saveInfoBtn.setFillColor(isSaveInfoHovered ? Color(0, 191, 255) : Color(0, 153, 255));
-    changePasswordBtn.setFillColor(isChangePasswordHovered ? Color(0, 191, 255) : Color(0, 153, 255));
+    // Update buttons using Button class
+    saveInfoBtn.update(mousePos);
+    changePasswordBtn.update(mousePos);
     
     // Handle button clicks
     if (mousePressed) {
-        if (isChangePasswordHovered) {
+        if (changePasswordBtn.isClicked(mousePos, mousePressed)) {
             savePasswordChange();
         }
-        else if (isSaveInfoHovered) {
+        else if (saveInfoBtn.isClicked(mousePos, mousePressed)) {
             saveInfoChange();
         }
     }
 }
 
 void AccountScreen::draw(RenderWindow& window) {
-    // Don't clear or draw header - HomeScreen already did that
-    // Background gradient is already beautiful, no need for overlay!
-    
+    // Update positions
     updatePositions(window.getSize());
     
     // Draw Sidebar
     window.draw(sidebarBg);
     
-    // Draw menu items
-    window.draw(menuItem1);
-    window.draw(menuIcon1Bg);
-    window.draw(menuIcon1);
-    window.draw(menuText1);
-    
-    window.draw(menuItem2);
-    window.draw(menuIcon2Bg);
-    window.draw(menuIcon2);
-    window.draw(menuText2);
-    
-    window.draw(menuItem3);
-    window.draw(menuIcon3Bg);
-    window.draw(menuIcon3);
-    window.draw(menuText3);
+    // Draw menu items using Button class
+    menuItem1.draw(window);
+    menuItem2.draw(window);
+    menuItem3.draw(window);
     
     // Draw content based on active tab
     if (currentTab == AccountTab::CUSTOMER_INFO) {
-        // Định nghĩa kích thước và vị trí cards theo spec
-        float contentLeft = 260.f;
-        float contentTop = 150.f;
-        float cardGap = 40.f;
-        float cardWidth = 420.f;
-        float cardHeight = 380.f;
+        // Draw main white card
+        window.draw(mainCardBg);
         
-        // Responsive adjustments
-        if (window.getSize().x >= 1280) {
-            contentLeft = max(260.f, 240.f + 0.05f * window.getSize().x);
-            cardWidth = min(480.f, max(380.f, 0.30f * window.getSize().x));
-            cardGap = min(56.f, max(32.f, 0.03f * window.getSize().x));
-            contentTop = max(130.f, 0.2f * window.getSize().y);
-        }
-        
-        // Shadow cho personal info card - spec: (0, 6px, 20px, #00000033)
-        RectangleShape personalShadow({cardWidth + 8.f, cardHeight + 8.f});
-        personalShadow.setPosition({contentLeft - 4.f, contentTop + 2.f});
-        personalShadow.setFillColor(Color(0, 0, 0, 51)); // #00000033
-        window.draw(personalShadow);
-        
-        // Personal info card - nền: #001830 alpha 0.92
-        RectangleShape personalCard({cardWidth, cardHeight});
-        personalCard.setPosition({contentLeft, contentTop});
-        personalCard.setFillColor(Color(0, 24, 48, 235)); // rgba(0,24,48,0.92)
-        personalCard.setOutlineThickness(1.f);
-        personalCard.setOutlineColor(Color(10, 51, 92)); // #0A335C
-        window.draw(personalCard);
-        
-        // Shadow cho password card
-        float passwordCardX = contentLeft + cardWidth + cardGap;
-        RectangleShape passwordShadow({cardWidth + 8.f, cardHeight + 8.f});
-        passwordShadow.setPosition({passwordCardX - 4.f, contentTop + 2.f});
-        passwordShadow.setFillColor(Color(0, 0, 0, 51));
-        window.draw(passwordShadow);
-        
-        // Password card - nền: #001830 alpha 0.92
-        RectangleShape passwordCard({cardWidth, cardHeight});
-        passwordCard.setPosition({passwordCardX, contentTop});
-        passwordCard.setFillColor(Color(0, 24, 48, 235));
-        passwordCard.setOutlineThickness(1.f);
-        passwordCard.setOutlineColor(Color(10, 51, 92));
-        window.draw(passwordCard);
-        
-        // Draw Personal Info Section
+        // Draw Section 1: Thông tin cá nhân
         window.draw(personalInfoTitle);
         
-        // Chỉ hiển thị 4 field theo layout dọc (không có username)
+        // Column 1: Họ và tên, Số điện thoại
         window.draw(fullNameLabel);
         window.draw(fullNameBox);
         window.draw(fullNameText);
-        
-        window.draw(birthDateLabel);
-        window.draw(birthDateBox);
-        window.draw(birthDateText);
         
         window.draw(phoneLabel);
         window.draw(phoneBox);
         window.draw(phoneText);
         
+        // Column 2: Ngày sinh, Email
+        window.draw(birthDateLabel);
+        window.draw(birthDateBox);
+        window.draw(birthDateText);
+        
         window.draw(emailLabel);
         window.draw(emailBox);
         window.draw(emailText);
         
-        window.draw(saveInfoBtn);
-        window.draw(saveInfoBtnText);
+        // Save info button
+        saveInfoBtn.draw(window);
         
-        // Draw Change Password Section
+        // Draw Section 2: Đổi mật khẩu
         window.draw(changePasswordTitle);
         
         window.draw(oldPasswordLabel);
@@ -824,8 +657,8 @@ void AccountScreen::draw(RenderWindow& window) {
         window.draw(confirmPasswordBox);
         window.draw(confirmPasswordText);
         
-        window.draw(changePasswordBtn);
-        window.draw(changePasswordBtnText);
+        // Change password button
+        changePasswordBtn.draw(window);
         
         // Draw cursor for active fields
         if (showCursor) {
@@ -857,44 +690,30 @@ void AccountScreen::draw(RenderWindow& window) {
             else if (activeField == 2) { // Confirm password
                 FloatRect bounds = confirmPasswordText.getLocalBounds();
                 cursor.setPosition({confirmPasswordText.getPosition().x + bounds.size.x + 2.f, confirmPasswordText.getPosition().y - 2.f});
-            window.draw(cursor);
+                window.draw(cursor);
+            }
+        }
+        
+        // Draw messages
+        if (showInfoMessage) {
+            window.draw(infoMessage);
+        }
+        if (showPasswordMessage) {
+            window.draw(passwordMessage);
         }
     }
-    
-    // Draw messages if active
-    if (showInfoMessage) {
-        window.draw(infoMessage);
-    }
-    if (showPasswordMessage) {
-        window.draw(passwordMessage);
-    }
-    }
     else if (currentTab == AccountTab::PURCHASE_HISTORY) {
-        // Placeholder for purchase history
-        Text placeholderText(font, L"Lịch sử đặt vé", 32);
-        placeholderText.setFillColor(Color::White);
-        placeholderText.setStyle(Text::Bold);
-        float contentX = sidebarBg.getPosition().x + sidebarBg.getSize().x + 100.f;
-        placeholderText.setPosition({contentX, 200.f});
-        window.draw(placeholderText);
-        
-        Text subText(font, L"Chức năng đang được phát triển...", 20);
-        subText.setFillColor(Color(200, 200, 200));
-        subText.setPosition({contentX, 250.f});
-        window.draw(subText);
+        // TODO: Draw purchase history
+        Text placeholder(font, L"Lịch sử mua hàng - Chưa triển khai", 24);
+        placeholder.setPosition({400.f, 300.f});
+        placeholder.setFillColor(Color::White);
+        window.draw(placeholder);
     }
     else if (currentTab == AccountTab::MY_GIFTS) {
-        // Placeholder for my gifts
-        Text placeholderText(font, L"Quà tặng của tôi", 32);
-        placeholderText.setFillColor(Color::White);
-        placeholderText.setStyle(Text::Bold);
-        float contentX = sidebarBg.getPosition().x + sidebarBg.getSize().x + 100.f;
-        placeholderText.setPosition({contentX, 200.f});
-        window.draw(placeholderText);
-        
-        Text subText(font, L"Chức năng đang được phát triển...", 20);
-        subText.setFillColor(Color(200, 200, 200));
-        subText.setPosition({contentX, 250.f});
-        window.draw(subText);
+        // TODO: Draw gifts
+        Text placeholder(font, L"Quà tặng của tôi - Chưa triển khai", 24);
+        placeholder.setPosition({400.f, 300.f});
+        placeholder.setFillColor(Color::White);
+        window.draw(placeholder);
     }
 }
