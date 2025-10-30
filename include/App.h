@@ -12,6 +12,7 @@
 #include "AdminScreen.h"
 #include "Movie.h"
 #include "Showtime.h"
+#include "AdminScreen.h"
 
 class App {
     public:
@@ -35,7 +36,7 @@ class App {
         UserRole currentUserRole = UserRole::USER;
         vector<Showtime> showtimes;
         vector<Movie> movies;
-        AdminScreen* adminScreen = nullptr;
+        AdminScreen adminScreen;
         
         bool mousePressed = false;
         Vector2f mousePos;

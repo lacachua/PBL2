@@ -1,7 +1,5 @@
 #include "App.h"
 #include "DetailScreen.h"
-#include "Movie.h"
-#include "BookingScreen.h"
 #include <fstream>
 #include <sstream>
 
@@ -13,7 +11,8 @@ App::App() :
     auth("../data/users.csv"),
     login(font, auth),
     registerScreen(font, auth),
-    booking(font)
+    booking(font),
+    adminScreen(window)
     { 
         window.setFramerateLimit(60);
         Image icon("../assets/icon.png");
@@ -89,17 +88,8 @@ void App::processEvents() {
                 break;
             
             case AppState::ADMIN:
-                if (!adminScreen) {
-                    adminScreen = new AdminScreen(font, showtimes, movies);
-                }
-                adminScreen->update(mousePos, mousePressed, event);
-                if (adminScreen->shouldClose()) {
-                    delete adminScreen;
-                    adminScreen = nullptr;
-                    state = AppState::HOME;
-                }
+                
                 break;
-
             default:
                 break;
         }
@@ -141,24 +131,6 @@ void App::render() {
         }
 
         case AppState::MOVIE_DETAILS: {
-// <<<<<<< HEAD
-//             // Check if navigation came from search
-//             int searchMovieIdx = home.getSelectedMovieIndex();
-//             if (searchMovieIdx >= 0) {
-//                 DetailScreen detail(font, searchMovieIdx, currentUser);
-//                 detail.update(mousePos, mousePressed, state, currentEvent);
-//                 detail.draw(window);
-                
-//                 // Clear the selection when returning to home
-//                 if (state != AppState::MOVIE_DETAILS) {
-//                     home.clearSelectedMovieIndex();
-//                 }
-//             } else {
-//                 DetailScreen detail(font, slider.getSelectedIndex(), currentUser);
-//                 detail.update(mousePos, mousePressed, state, currentEvent);
-//                 detail.draw(window);
-//             }
-// =======
             static DetailScreen* detailScreen = nullptr;
             int currentIndex = slider.getSelectedIndex();
             
@@ -183,19 +155,17 @@ void App::render() {
             booking.handleEvent(window, mousePos, mousePressed);
             booking.update(mousePos, mousePressed, state);
             booking.draw(window);
-// >>>>>>> feature-datvengay
             break;
         }
         
         case AppState::ADMIN: {
-            // Vẽ background và buttons của HomeScreen trước
-            home.draw(window);
-            // Không vẽ slider - AdminScreen sẽ vẽ lên vùng này
-            home.drawSearchBox(window);
-            // Vẽ AdminScreen lên trên vùng slider
-            if (adminScreen) {
-                adminScreen->draw(window);
-            }
+            // static bool adminInitialized = false;
+            // if (!adminInitialized) {
+            //     AdminScreen adminScreen(window, font);
+            //     adminInitialized = true;
+            // }
+            adminScreen.update(mousePos, mousePressed);
+            adminScreen.draw(window);
             break;
         }
 

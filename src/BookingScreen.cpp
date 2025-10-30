@@ -125,18 +125,18 @@ vector<Showtime> BookingScreen::generateShowtimesForNext30Days(int movieId) {
     vector<vector<string>> timeVariants = {
         {"09:00", "11:30", "14:00", "16:30", "19:00", "21:30", "22:00", "23:30"},  // Variant 1
         {"10:00", "12:00", "14:30", "17:00", "19:30", "21:00", "22:30", "00:00"},  // Variant 2
-        {"09:30", "11:00", "13:30", "16:00", "18:30", "20:00", "22:00", "23:00"},  // Variant 3
-        {"10:30", "13:00", "15:00", "17:30", "19:00", "21:00", "22:00", "23:30"},  // Variant 4
-        {"08:30", "11:00", "14:00", "16:00", "18:00", "20:30", "22:30", "00:30"}   // Variant 5
+        {"09:30", "11:00", "13:30", "16:00", "18:30", "20:00", "22:00", "23:00"}  // Variant 3
+        // {"10:30", "13:00", "15:00", "17:30", "19:00", "21:00", "22:00", "23:30"},  // Variant 4
+        // {"08:30", "11:00", "14:00", "16:00", "18:00", "20:30", "22:30", "00:30"}   // Variant 5
     };
     
     // ✅ Định nghĩa bộ phòng chiếu tương ứng
     vector<vector<string>> roomVariants = {
         {"Phòng 1", "Phòng 2", "Phòng 1", "Phòng 3", "Phòng 2", "Phòng 1", "Phòng 3", "Phòng 2"},
         {"Phòng 2", "Phòng 1", "Phòng 3", "Phòng 2", "Phòng 1", "Phòng 3", "Phòng 1", "Phòng 2"},
-        {"Phòng 3", "Phòng 1", "Phòng 2", "Phòng 1", "Phòng 3", "Phòng 2", "Phòng 1", "Phòng 3"},
-        {"Phòng 1", "Phòng 3", "Phòng 2", "Phòng 3", "Phòng 1", "Phòng 2", "Phòng 3", "Phòng 1"},
-        {"Phòng 2", "Phòng 3", "Phòng 1", "Phòng 2", "Phòng 3", "Phòng 1", "Phòng 2", "Phòng 3"}
+        {"Phòng 3", "Phòng 1", "Phòng 2", "Phòng 1", "Phòng 3", "Phòng 2", "Phòng 1", "Phòng 3"}
+        // {"Phòng 1", "Phòng 3", "Phòng 2", "Phòng 3", "Phòng 1", "Phòng 2", "Phòng 3", "Phòng 1"},
+        // {"Phòng 2", "Phòng 3", "Phòng 1", "Phòng 2", "Phòng 3", "Phòng 1", "Phòng 2", "Phòng 3"}
     };
     
     // Tạo suất chiếu cho 30 ngày
