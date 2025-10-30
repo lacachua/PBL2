@@ -1,5 +1,40 @@
 #include "AccountScreen.h"
 #include "PasswordHasher.h"
+#ifdef _WIN32
+#define NOMINMAX
+#define WIN32_LEAN_AND_MEAN
+#include <windows.h>
+#endif
+
+// Helper function: Convert UTF-8 string to wstring
+static std::wstring utf8_to_wstring(const std::string& str) {
+    if (str.empty()) return L"";
+    
+#ifdef _WIN32
+    int size_needed = MultiByteToWideChar(CP_UTF8, 0, str.c_str(), (int)str.length(), NULL, 0);
+    std::wstring wstrTo(size_needed, 0);
+    MultiByteToWideChar(CP_UTF8, 0, str.c_str(), (int)str.length(), &wstrTo[0], size_needed);
+    return wstrTo;
+#else
+    std::wstring_convert<std::codecvt_utf8<wchar_t>> converter;
+    return converter.from_bytes(str);
+#endif
+}
+
+// Helper function: Convert wstring to UTF-8 string
+static std::string wstring_to_utf8(const std::wstring& wstr) {
+    if (wstr.empty()) return "";
+    
+#ifdef _WIN32
+    int size_needed = WideCharToMultiByte(CP_UTF8, 0, wstr.c_str(), (int)wstr.length(), NULL, 0, NULL, NULL);
+    std::string strTo(size_needed, 0);
+    WideCharToMultiByte(CP_UTF8, 0, wstr.c_str(), (int)wstr.length(), &strTo[0], size_needed, NULL, NULL);
+    return strTo;
+#else
+    std::wstring_convert<std::codecvt_utf8<wchar_t>> converter;
+    return converter.to_bytes(wstr);
+#endif
+}
 
 AccountScreen::AccountScreen(const Font& f, AuthService& auth) 
     : font(f),
@@ -147,23 +182,28 @@ AccountScreen::AccountScreen(const Font& f, AuthService& auth)
     menuItem3.setOutlineThickness(0.f);
 }
 
-void AccountScreen::setCurrentUser(const string& email) {
+void AccountScreen::setCurrentUser(const std::string& email) {
     currentUserEmail = email;
     currentUser = authService->getUser(email);
-    
+
     if (currentUser) {
-        // Set text displays
-        fullNameText.setString(currentUser->fullName);
-        birthDateText.setString(currentUser->birthDate);
-        phoneText.setString(currentUser->phone);
-        emailText.setString(currentUser->email);
-        
-        // Initialize editable inputs
-        fullNameInput = wstring(currentUser->fullName.begin(), currentUser->fullName.end());
-        birthDateInput = wstring(currentUser->birthDate.begin(), currentUser->birthDate.end());
-        phoneInput = wstring(currentUser->phone.begin(), currentUser->phone.end());
+        // Hiển thị: CHUYỂN UTF-8 -> sf::String
+        fullNameText.setString(sf::String::fromUtf8(
+            currentUser->fullName.begin(), currentUser->fullName.end()));
+        birthDateText.setString(sf::String::fromUtf8(
+            currentUser->birthDate.begin(), currentUser->birthDate.end()));
+        phoneText.setString(sf::String::fromUtf8(
+            currentUser->phone.begin(), currentUser->phone.end()));
+        emailText.setString(sf::String::fromUtf8(
+            currentUser->email.begin(), currentUser->email.end()));
+
+        // Input editable: UTF-8 -> wstring (bạn đã có helper)
+        fullNameInput  = utf8_to_wstring(currentUser->fullName);
+        birthDateInput = utf8_to_wstring(currentUser->birthDate);
+        phoneInput     = utf8_to_wstring(currentUser->phone);
     }
 }
+
 
 void AccountScreen::updatePositions(Vector2u windowSize) {
     float windowW = static_cast<float>(windowSize.x);
@@ -403,10 +443,10 @@ void AccountScreen::savePasswordChange() {
 void AccountScreen::saveInfoChange() {
     if (!currentUser) return;
     
-    // Convert wstring to string
-    string newFullName(fullNameInput.begin(), fullNameInput.end());
-    string newBirthDate(birthDateInput.begin(), birthDateInput.end());
-    string newPhone(phoneInput.begin(), phoneInput.end());
+    // Convert wstring to UTF-8 string using helper function
+    string newFullName = wstring_to_utf8(fullNameInput);
+    string newBirthDate = wstring_to_utf8(birthDateInput);
+    string newPhone = wstring_to_utf8(phoneInput);
     
     // Validate full name - không rỗng, không chứa số
     if (newFullName.empty()) {
