@@ -23,3 +23,8 @@ target_include_directories(app PRIVATE ${CMAKE_SOURCE_DIR}/include)
 
 # Link với SFML
 target_link_libraries(app PRIVATE SFML::Graphics SFML::Window SFML::Network)
+
+# Windows-specific: Fix std::byte conflict with Windows headers
+if(WIN32)
+    target_compile_definitions(app PRIVATE NOMINMAX WIN32_LEAN_AND_MEAN)
+endif()

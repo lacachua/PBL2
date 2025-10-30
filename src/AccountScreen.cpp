@@ -1,8 +1,6 @@
 #include "AccountScreen.h"
 #include "PasswordHasher.h"
 #ifdef _WIN32
-#define NOMINMAX
-#define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 #endif
 
