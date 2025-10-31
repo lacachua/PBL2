@@ -13,7 +13,7 @@ App::App() :
     auth("../data/users.csv"),
     login(font, auth),
     registerScreen(font, auth),
-    booking(font),
+    booking(font, auth),  // ✅ Truyền AuthService vào BookingScreen
     accountScreen(font, auth)
     { 
         window.setFramerateLimit(60);
@@ -169,7 +169,7 @@ void App::render() {
         }
 
         case AppState::BOOKING: {
-            booking.handleEvent(window, mousePos, mousePressed);
+            booking.handleEvent(window, mousePos, mousePressed, state);  // ✅ Thêm state
             booking.update(mousePos, mousePressed, state);
             booking.draw(window);
 // >>>>>>> feature-datvengay

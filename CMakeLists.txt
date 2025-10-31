@@ -28,3 +28,16 @@ target_link_libraries(app PRIVATE SFML::Graphics SFML::Window SFML::Network)
 if(WIN32)
     target_compile_definitions(app PRIVATE NOMINMAX WIN32_LEAN_AND_MEAN)
 endif()
+
+# Test executables
+add_executable(test_showtimes test_showtimes.cpp 
+    src/ShowtimeScheduler.cpp
+    src/RoomsRepository.cpp
+    src/CSVReader.cpp
+    src/Showtime.cpp
+    src/SeatStatusRepository.cpp
+)
+target_include_directories(test_showtimes PRIVATE ${CMAKE_SOURCE_DIR}/include)
+if(WIN32)
+    target_compile_definitions(test_showtimes PRIVATE NOMINMAX WIN32_LEAN_AND_MEAN)
+endif()

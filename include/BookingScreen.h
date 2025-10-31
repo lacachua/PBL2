@@ -48,6 +48,9 @@ private:
     Texture tex;
     Sprite sprite;
     RectangleShape content_area;
+    
+    // ✅ Reference to AuthService
+    class AuthService& authService;
 
     vector<Showtime> allShowtimes;
     vector<Showtime> showtimesForSelectedDate;
@@ -90,6 +93,7 @@ private:
     bool isSeatSelected(const string& seat) const;
     void loadOccupiedSeatsFromSeatMap(const string& seat_map); // ✅ Load ghế đã đặt từ bitmap
     void saveSelectedSeatsToSeatMap(); // ✅ Lưu ghế đã chọn vào file
+    string getMovieTitleById(int movie_id); // ✅ Helper to get movie title from CSV
     void buildDateButtons();
     void buildTimeButtons();
     void initializeSnackMenu(); // ✅ Khởi tạo menu đồ ăn
@@ -98,8 +102,8 @@ private:
 
     vector<Showtime> generateShowtimesForNext30Days(int);
 public:
-    BookingScreen(Font&);
-    void handleEvent(const RenderWindow&, const Vector2f&, bool);
+    BookingScreen(Font&, AuthService&);  // ✅ Constructor nhận AuthService
+    void handleEvent(const RenderWindow&, const Vector2f&, bool, AppState&);  // ✅ Thêm AppState
     void update(Vector2f, bool, AppState&); // ✅ Thêm tham số giống HomeScreen
     void draw(RenderWindow&);
 

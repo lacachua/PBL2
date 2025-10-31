@@ -36,6 +36,13 @@ public:
 
     // Login verification
     bool verify(const string& email, const string& password);
+    
+    // ✅ Session management
+    bool login(const string& email, const string& password);
+    void logout();
+    bool isLoggedIn() const;
+    string getCurrentUserEmail() const;
+    User* getCurrentUser();
 
     // User management
     User* getUser(const string& email);
@@ -51,4 +58,8 @@ public:
 private:
     string filePath;
     HashTable<string, User> userByEmail;  // email -> User (O(1) lookup)
+    
+    // ✅ Current session
+    string currentUserEmail;
+    bool loggedIn;
 };

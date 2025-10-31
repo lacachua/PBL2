@@ -75,10 +75,10 @@ bool LoginScreen::update(Vector2f mouse, bool mousePressed, const Event& event, 
 
         // click Continue
         if (btn.getGlobalBounds().contains(mouse)) {
-            // verify
+            // ✅ verify and login
             std::string u(emailInput.begin(), emailInput.end());
             std::string p(passInput.begin(), passInput.end());
-            if (auth.verify(u, p)) {
+            if (auth.login(u, p)) {  // ✅ Gọi login() thay vì verify()
                 msg.setFillColor(Color(60, 160, 90));
                 msg.setString(L"Đăng nhập thành công.");
 
@@ -119,8 +119,8 @@ bool LoginScreen::update(Vector2f mouse, bool mousePressed, const Event& event, 
                 return false;
             }
             
-            // Verify credentials
-            if (auth.verify(email, password)) {
+            // ✅ Verify credentials and login
+            if (auth.login(email, password)) {  // ✅ Gọi login() thay vì verify()
                 msg.setFillColor(Color(60, 160, 90));
                 msg.setString(L"Đăng nhập thành công.");
                 
