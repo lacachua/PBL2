@@ -23,17 +23,13 @@ App::App() :
 
         vector<string> paths = getMoviePosterPaths("../data/movies.csv");        
         slider.loadPosters(paths, font);
-// <<<<<<< HEAD
         
-//         // Load movies for search functionality
+        // Load movies for search functionality
         movies = loadMoviesFromCSV("../data/movies.csv");
         home.initializeSearch(movies);
         
         // Load showtimes for admin
         showtimes = loadShowtimesFromCSV("../data/showtimes.csv");
-
-// =======
-// >>>>>>> feature-datvengay
 }
 
 void App::run() {
@@ -88,7 +84,7 @@ void App::processEvents() {
                 break;
             
             case AppState::ADMIN:
-                
+                adminScreen.handleEvent(event, mousePos, mousePressed);
                 break;
             default:
                 break;

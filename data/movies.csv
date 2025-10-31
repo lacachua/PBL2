@@ -1,4 +1,4 @@
-﻿film_id,title,age_rating,country,language,genres,duration_min,release_date,director,cast,synopsis,poster_path,status
+film_id,title,age_rating,country,language,genres,duration_min,release_date,director,cast,synopsis,poster_path,status
 F0001,TỬ CHIẾN TRÊN KHÔNG,T16,Việt Nam,Tiếng Việt,Hồi Hộp; Hành Động,118,19/9/2025,Hàm Trần,Thái Hòa; Kaity Nguyễn; Thanh Sơn; Xuân Phúc; Võ Điền Gia Huy; Trần Ngọc Vàng; Ma Ran Đô; Lợi Trần; Trâm Anh; Xuân Văn; Bảo Định; Ray Nguyễn,Phim hành động – kịch tính lấy cảm hứng từ vụ cướp máy bay có thật tại Việt Nam sau 1975.,../assets/posters/tu-chien-tren-khong.png,Sắp chiếu
 F0002,MAI,T13,Việt Nam,Tiếng Việt,Tâm Lý; Lãng Mạn,132,10/2/2024,Trấn Thành,Phương Anh Đào; Tuấn Trần; Trấn Thành,Câu chuyện chữa lành về người phụ nữ tên Mai sau những tổn thương.,../assets/posters/mai.png,Đã chiếu
 F0003,"ĐÀO, PHỞ VÀ PIANO",T16,Việt Nam,Tiếng Việt,Tâm Lý; Lãng Mạn; Lịch Sử,116,10/2/2024,Phi Tiến Sơn,Đỗ Thị Hải Yến; Trung Anh; Công Dũng,Chuyện tình trên nền bối cảnh Hà Nội mùa đông 1946.,../assets/posters/dao-pho-va-piano.png,Đã chiếu

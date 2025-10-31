@@ -230,26 +230,14 @@ void DetailScreen::loadMovieData(int movieIndex) {
     } else {
         cout << "⚠️ Không thể tải poster: " << currentMovie.poster_path << endl;
     }
-
-    // FloatRect descBounds = descriptionText.getGlobalBounds();
-    // float bookingX = bookingButton.getPosition().x;
-    // float bookingY = descriptionText.getPosition().y + descBounds.size.y + 22.f;
-    // bookingButton.setPosition({bookingX, bookingY});
 }
 
 void DetailScreen::update(Vector2f mouse, bool mousePressed, AppState& state) {
     HomeScreen::update(mouse, mousePressed, state);
-// <<<<<<< HEAD
-// }
-
-// void DetailScreen::update(Vector2f mouse, bool mousePressed, AppState& state, const Event* event) {
-//     HomeScreen::update(mouse, mousePressed, state, event);
-// =======
     bool hovered = isButtonHovered(mouse);
     highlightButton(hovered);
     if (isButtonClicked(mouse, mousePressed)) 
         state = AppState::BOOKING;
-// >>>>>>> feature-datvengay
 } 
 
 void DetailScreen::draw(RenderWindow& window) {
