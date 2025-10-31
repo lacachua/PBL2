@@ -314,6 +314,20 @@ void BookingScreen::loadFromDetail(const DetailScreen& detail) {
         
         // ✅ Filter showtimes for selected date
         updateShowtimesForSelectedDate(currentHour, currentMinute, todayStr);
+        
+        // ✅ QUAN TRỌNG: Nếu ngày đầu tiên không có suất chiếu (đã qua giờ), tự động chọn ngày tiếp theo
+        int attemptedDates = 0;
+        while (showtimesForSelectedDate.empty() && attemptedDates < (int)availableDates.size()) {
+            cout << "[BookingScreen] No showtimes for " << selectedDate << ", trying next date..." << endl;
+            attemptedDates++;
+            if (attemptedDates < (int)availableDates.size()) {
+                selectedDate = availableDates[attemptedDates];
+                updateShowtimesForSelectedDate(currentHour, currentMinute, todayStr);
+            }
+        }
+        
+        cout << "[BookingScreen] Final selected date: " << selectedDate 
+             << " with " << showtimesForSelectedDate.size() << " showtimes" << endl;
 
         // build date/time buttons
         buildDateButtons();
@@ -389,7 +403,16 @@ void BookingScreen::buildTimeButtons() {
 void BookingScreen::updateShowtimesForSelectedDate(int currentHour, int currentMinute, const string& todayStr) {
     showtimesForSelectedDate.clear();
     
+    cout << "[BookingScreen] updateShowtimesForSelectedDate:" << endl;
+    cout << "  currentMovieId = " << currentMovieId << endl;
+    cout << "  selectedDate = " << selectedDate << endl;
+    cout << "  allShowtimes.size() = " << allShowtimes.size() << endl;
+    
     for (const auto& show : allShowtimes) {
+        cout << "  Checking: movie_id=" << show.movie_id 
+             << " date=" << show.date 
+             << " time=" << show.time << endl;
+             
         if (show.movie_id != currentMovieId || show.date != selectedDate) continue;
         
         // If selected date is today, filter by time
@@ -406,6 +429,8 @@ void BookingScreen::updateShowtimesForSelectedDate(int currentHour, int currentM
         
         showtimesForSelectedDate.push_back(show);
     }
+    
+    cout << "  showtimesForSelectedDate.size() = " << showtimesForSelectedDate.size() << endl;
 }
 
 void BookingScreen::handleEvent(const RenderWindow& window, const Vector2f& mousePos, bool mousePressed, AppState& state) {
@@ -1710,3 +1735,4 @@ void BookingScreen::resetBookingData() {
         buttons_box[i].setFillColor(Color(80, 80, 90));
     }
 }
+
