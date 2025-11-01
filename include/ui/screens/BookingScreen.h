@@ -1,10 +1,17 @@
 #pragma once
 #include <SFML/Graphics.hpp>
-#include "HomeScreen.h"
-#include "DetailScreen.h"
+#include "ui/screens/HomeScreen.h"
+#include "ui/screens/DetailScreen.h"
 #include "models/Showtime.h"
+#include "ui/components/Button.h"
+#include "ui/components/SeatSelector.h"
+#include "ui/components/SnackMenu.h"
+#include "ui/components/PaymentSummary.h"
+#include "ui/components/BookingConfirmation.h"
 #include <vector>
-#include "UI/components/Button.h"
+
+using namespace sf;
+using namespace std;
 
 enum class BookingStep {
     SELECT_DATE,
@@ -14,44 +21,25 @@ enum class BookingStep {
     CONFIRM
 };
 
-// ✅ Struct cho món ăn/combo
-struct SnackItem {
-    string name;
-    int price;
-    string imagePath;
-    Texture texture;
-    int quantity; // Số lượng đã chọn
-    
-    SnackItem(const string& n, int p, const string& img) 
-        : name(n), price(p), imagePath(img), quantity(0) {
-        // Texture sẽ được load sau
-    }
-    
-    // Helper để vẽ sprite
-    void draw(RenderWindow& window, float x, float y, float size) {
-        Sprite sprite(texture);
-        sprite.setPosition({x, y});
-        float scaleX = size / texture.getSize().x;
-        float scaleY = size / texture.getSize().y;
-        sprite.setScale({scaleX, scaleY});
-        window.draw(sprite);
-    }
-};
-
 class BookingScreen : public HomeScreen {
 private:
+    // Fonts
     Font buttons_font;
     Font detailFont;
+    
+    // Current step
     BookingStep current_step;
+    
+    // Step indicator UI
     Text suat_chieu, ghe_ngoi, food, thanh_toan, xac_nhan;
     RectangleShape buttons_box[5];
+    
+    // Background
     Texture tex;
     Sprite sprite;
     RectangleShape content_area;
-    
-    // ✅ Reference to AuthService
-    class AuthService& authService;
 
+    // Showtime data
     vector<Showtime> allShowtimes;
     vector<Showtime> showtimesForSelectedDate;
     vector<string> availableDates;
@@ -59,53 +47,42 @@ private:
     int currentMovieId;
     int selectedShowtimeIndex;
 
+    // Date/Time selection buttons
     vector<Button> dateButtons;
     vector<Button> timeButtons;
     
-    // ✅ Action buttons: Xác nhận & Quay lại
+    // Action buttons (Confirm & Back)
     Button confirmButton;
     Button backButton;
-    bool hasConfirmedShowtime; // Đã xác nhận suất chiếu chưa
-    bool shouldReturnHome; // ✅ Flag để quay về home
-    string bookingCode; // ✅ Mã vé được tạo 1 lần duy nhất
     
-    // ✅ Seat selection data
-    vector<string> selectedSeats; // Danh sách ghế đã chọn (VD: "A1", "B5")
-    static const int SEAT_ROWS = 9; // A-I
-    static const int SEAT_COLS = 9; // 1-9
-    vector<string> occupiedSeats; // Ghế đã được đặt (từ database/showtime)
+    // State flags
+    bool hasConfirmedShowtime;
+    bool shouldReturnHome;
+    string bookingCode;
     
-    // ✅ Snack menu data
-    vector<SnackItem> snackItems;
-    vector<Button> plusButtons;  // Nút + cho mỗi combo
-    vector<Button> minusButtons; // Nút - cho mỗi combo
-
+    // Components (NEW!)
+    SeatSelector seatSelector;
+    SnackMenu snackMenu;
+    PaymentSummary paymentSummary;
+    BookingConfirmation confirmation;
+    
+    // Helper methods
     void drawStepContent(RenderWindow&);
     void drawDateSelection(RenderWindow&);
     void drawTimeSelection(RenderWindow&);
-    void drawActionButtons(RenderWindow&); // Vẽ nút Xác nhận/Quay lại
-    void drawSeatSelection(RenderWindow&); // Vẽ sơ đồ ghế
-    void drawSeatSummary(RenderWindow&);   // Vẽ thông tin ghế đã chọn
-    void drawSnackMenu(RenderWindow&);     // ✅ Vẽ menu đồ ăn
-    void drawPaymentSummary(RenderWindow&); // ✅ Vẽ tổng hợp thanh toán
-    void drawConfirmation(RenderWindow&);   // ✅ Vẽ xác nhận đặt vé thành công
-    bool isSeatOccupied(const string& seat) const;
-    bool isSeatSelected(const string& seat) const;
-    void loadOccupiedSeatsFromSeatMap(const string& seat_map); // ✅ Load ghế đã đặt từ bitmap
-    void saveSelectedSeatsToSeatMap(); // ✅ Lưu ghế đã chọn vào file
-    string getMovieTitleById(int movie_id); // ✅ Helper to get movie title from CSV
+    void drawActionButtons(RenderWindow&);
+    
     void buildDateButtons();
     void buildTimeButtons();
-    void initializeSnackMenu(); // ✅ Khởi tạo menu đồ ăn
-    void resetBookingData(); // ✅ Reset toàn bộ dữ liệu đặt vé
-    void updateShowtimesForSelectedDate(int, int, const string&);
+    void resetBookingData();
+    void updateShowtimesForSelectedDate(int currentHour, int currentMinute, const string& todayStr);
+    vector<Showtime> generateShowtimesForNext30Days(int movieId);
 
-    vector<Showtime> generateShowtimesForNext30Days(int);
 public:
-    BookingScreen(Font&, AuthService&);  // ✅ Constructor nhận AuthService
-    void handleEvent(const RenderWindow&, const Vector2f&, bool, AppState&);  // ✅ Thêm AppState
-    void update(Vector2f, bool, AppState&); // ✅ Thêm tham số giống HomeScreen
+    BookingScreen(Font&);
+    
+    void handleEvent(const RenderWindow&, const Vector2f&, bool);
+    void update(Vector2f, bool, AppState&);
     void draw(RenderWindow&);
-
     void loadFromDetail(const DetailScreen&);
 };
