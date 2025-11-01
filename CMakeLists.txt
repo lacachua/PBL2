@@ -21,7 +21,11 @@ set_target_properties(app PROPERTIES WIN32_EXECUTABLE TRUE)
 # Thêm đường dẫn header
 target_include_directories(app PRIVATE 
     ${CMAKE_SOURCE_DIR}/include
+    ${CMAKE_SOURCE_DIR}/include/core
     ${CMAKE_SOURCE_DIR}/include/data-structures
+    ${CMAKE_SOURCE_DIR}/include/models
+    ${CMAKE_SOURCE_DIR}/include/services
+    ${CMAKE_SOURCE_DIR}/include/utils
     ${CMAKE_SOURCE_DIR}/include/ui/components
     ${CMAKE_SOURCE_DIR}/include/ui/screens
 )

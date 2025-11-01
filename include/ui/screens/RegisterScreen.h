@@ -1,7 +1,7 @@
 #pragma once
 #include <SFML/Graphics.hpp>
 #include <string>
-#include "AuthService.h"
+#include "services/AuthService.h"
 
 using namespace sf;
 using namespace std;

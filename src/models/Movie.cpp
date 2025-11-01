@@ -1,4 +1,4 @@
-#include "Movie.h"
+#include "models/Movie.h"
 
 vector<Movie> loadMoviesFromCSV(const string& filePath) {
     vector<Movie> movies;

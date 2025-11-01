@@ -2,7 +2,7 @@
 #include <SFML/Graphics.hpp>
 #include "HomeScreen.h"
 #include "DetailScreen.h"
-#include "Showtime.h"
+#include "models/Showtime.h"
 #include <vector>
 #include "UI/components/Button.h"
 

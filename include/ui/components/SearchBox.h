@@ -2,7 +2,7 @@
 #include <SFML/Graphics.hpp>
 #include <string>
 #include <vector>
-#include "MovieSearchManager.h"
+#include "services/MovieSearchManager.h"
 
 using namespace sf;
 using namespace std;

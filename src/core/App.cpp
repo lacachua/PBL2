@@ -1,6 +1,6 @@
-#include "App.h"
+#include "core/App.h"
 #include "UI/screens/DetailScreen.h"
-#include "Movie.h"
+#include "models/Movie.h"
 #include "UI/screens/BookingScreen.h"
 #include <fstream>
 #include <sstream>

@@ -2,7 +2,7 @@
 #include <string>
 #include <vector>
 #include <map>
-#include "Movie.h"
+#include "models/Movie.h"
 #include "../include/data-structures/Trie.h"
 
 using namespace std;

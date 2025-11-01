@@ -2,7 +2,7 @@
 #include <SFML/Graphics.hpp>
 #include <vector>
 #include <string>
-#include "AppState.h"
+#include "core/AppState.h"
 #include "Slide.h"
 
 using namespace std;

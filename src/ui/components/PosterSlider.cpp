@@ -1,5 +1,5 @@
 #include "UI/components/PosterSlider.h"
-#include "Movie.h"
+#include "models/Movie.h"
 #include <cmath>
 
 PosterSlider::PosterSlider(Font& font, RenderWindow& window) : 

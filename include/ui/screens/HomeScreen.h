@@ -1,8 +1,8 @@
 #pragma once
 #include "UI/components/TextButton.h"
-#include "AppState.h"
+#include "core/AppState.h"
 #include "UI/components/SearchBox.h"
-#include "MovieSearchManager.h"
+#include "services/MovieSearchManager.h"
 #include <SFML/Graphics.hpp>
 #include <vector>
 #include <string>

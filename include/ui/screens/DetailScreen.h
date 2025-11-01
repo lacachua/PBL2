@@ -40,7 +40,7 @@
 #include <SFML/Graphics.hpp>
 #include "UI/components/Slide.h"
 #include "HomeScreen.h"
-#include "Movie.h"
+#include "models/Movie.h"
 
 using namespace sf;
 using namespace std;
