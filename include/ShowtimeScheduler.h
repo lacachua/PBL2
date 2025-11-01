@@ -2,7 +2,7 @@
 #include <string>
 #include <vector>
 #include <set>
-#include "Showtime.h"
+#include "models/Showtime.h"
 
 /**
  * Thuật toán phân phòng thông minh cho rạp
