@@ -31,6 +31,16 @@ void Button::setPosition(Vector2f pos) {
     text.setPosition({textX, textY});
 }
 
+void Button::setSize(float width, float height) {
+    box.setSize({width, height});
+    // Re-center text sau khi đổi kích thước
+    Vector2f boxPos = box.getPosition();
+    FloatRect textBounds = text.getLocalBounds();
+    float textX = boxPos.x + (width - textBounds.size.x) / 2.f - textBounds.position.x;
+    float textY = boxPos.y + (height - textBounds.size.y) / 2.f - textBounds.position.y;
+    text.setPosition({textX, textY});
+}
+
 void Button::setText(const wstring& label) {
     text.setString(label);
     // Re-center text sau khi đổi nội dung

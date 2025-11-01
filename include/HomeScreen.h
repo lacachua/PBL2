@@ -17,7 +17,7 @@ class HomeScreen {
 
         bool showDropdown = false;
         RectangleShape dropdownBox;
-        TextButton myticketsButton, accountButton, logoutButton;
+        TextButton accountButton, logoutButton;
 
         string currentUser;
         bool isUserLoggedIn = false;

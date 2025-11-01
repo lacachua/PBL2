@@ -1,0 +1,7 @@
+room_id,room_name,rows,cols,total_seats,screen_type,sound_system
+R001,Phòng 1,9,9,81,2D,Dolby 7.1
+R002,Phòng 2,10,10,100,3D,Dolby Atmos
+R003,Phòng 3,9,9,81,2D,Dolby 7.1
+R004,Phòng 4,10,10,100,IMAX,Dolby Atmos
+R005,Phòng 5,8,10,80,2D,Dolby 5.1
+R006,Phòng 6,9,11,99,4DX,Dolby Atmos

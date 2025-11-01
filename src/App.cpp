@@ -13,7 +13,8 @@ App::App() :
     auth("../data/users.csv"),
     login(font, auth),
     registerScreen(font, auth),
-    booking(font)
+    booking(font, auth),  // ✅ Truyền AuthService vào BookingScreen
+    accountScreen(font, auth)
     { 
         window.setFramerateLimit(60);
         Image icon("../assets/icon.png");
@@ -23,14 +24,9 @@ App::App() :
 
         vector<string> paths = getMoviePosterPaths("../data/movies.csv");        
         slider.loadPosters(paths, font);
-// <<<<<<< HEAD
-        
-//         // Load movies for search functionality
+        // Load movies for search functionality
         vector<Movie> movies = loadMoviesFromCSV("../data/movies.csv");
         home.initializeSearch(movies);
-
-// =======
-// >>>>>>> feature-datvengay
 }
 
 void App::run() {
@@ -66,7 +62,7 @@ void App::processEvents() {
             case AppState::LOGIN:
                 // Cho phép SearchBox hoạt động ở màn LOGIN
                 home.update(mousePos, mousePressed, state, &event);
-                if (login.update(mousePos, mousePressed, event, currentUser, state)) {
+                if (login.update(mousePos, mousePressed, event, currentUser, currentUserEmail, state)) {
                     home.setLoggedUser(currentUser);
                     state = AppState::HOME;
                 }
@@ -77,6 +73,15 @@ void App::processEvents() {
                 home.update(mousePos, mousePressed, state, &event);
                 if (registerScreen.update(mousePos, mousePressed, event))
                     state = AppState::LOGIN;
+                break;
+            
+            case AppState::ACCOUNT:
+                // Let HomeScreen handle events (logo click, dropdown, etc.)
+                home.setLoggedUser(currentUser);
+                home.update(mousePos, mousePressed, state, &event);
+                
+                // Then let AccountScreen handle its own events
+                accountScreen.update(mousePos, mousePressed, &event, state);
                 break;
 
             default:
@@ -120,24 +125,6 @@ void App::render() {
         }
 
         case AppState::MOVIE_DETAILS: {
-// <<<<<<< HEAD
-//             // Check if navigation came from search
-//             int searchMovieIdx = home.getSelectedMovieIndex();
-//             if (searchMovieIdx >= 0) {
-//                 DetailScreen detail(font, searchMovieIdx, currentUser);
-//                 detail.update(mousePos, mousePressed, state, currentEvent);
-//                 detail.draw(window);
-                
-//                 // Clear the selection when returning to home
-//                 if (state != AppState::MOVIE_DETAILS) {
-//                     home.clearSelectedMovieIndex();
-//                 }
-//             } else {
-//                 DetailScreen detail(font, slider.getSelectedIndex(), currentUser);
-//                 detail.update(mousePos, mousePressed, state, currentEvent);
-//                 detail.draw(window);
-//             }
-// =======
             static DetailScreen* detailScreen = nullptr;
             int currentIndex = slider.getSelectedIndex();
             
@@ -159,10 +146,19 @@ void App::render() {
         }
 
         case AppState::BOOKING: {
-            booking.handleEvent(window, mousePos, mousePressed);
+            booking.handleEvent(window, mousePos, mousePressed, state);
             booking.update(mousePos, mousePressed, state);
             booking.draw(window);
-// >>>>>>> feature-datvengay
+            break;
+        }
+        
+        case AppState::ACCOUNT: {
+            home.draw(window);
+            home.drawSearchBox(window);
+            if (previousState != AppState::ACCOUNT) {
+                accountScreen.setCurrentUser(currentUserEmail);
+            }
+            accountScreen.draw(window);
             break;
         }
 

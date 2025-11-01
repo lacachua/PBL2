@@ -5,7 +5,8 @@
 
 using namespace std;
 
-AuthService::AuthService(const string& filePath) : filePath(filePath) {
+AuthService::AuthService(const string& filePath) 
+    : filePath(filePath), currentUserEmail(""), loggedIn(false) {
     namespace fs = filesystem;
     fs::path p(filePath);
     fs::create_directories(p.parent_path());
@@ -18,44 +19,61 @@ AuthService::~AuthService() {
 }
 
 void AuthService::loadUsers() {
-    ifstream file(filePath);
+    std::ifstream file(filePath, std::ios::binary);
     if (!file.is_open()) return;
-    
-    string line;
-    // Skip header if exists
-    getline(file, line);
-    
-    while (getline(file, line)) {
+
+    // đọc toàn bộ file
+    std::string data((std::istreambuf_iterator<char>(file)), {});
+    file.close();
+
+    // bỏ BOM nếu có
+    if (data.size() >= 3 &&
+        (unsigned char)data[0] == 0xEF &&
+        (unsigned char)data[1] == 0xBB &&
+        (unsigned char)data[2] == 0xBF) {
+        data.erase(0, 3);
+    }
+
+    // parse CSV
+    std::stringstream ss(data);
+    std::string line;
+    std::getline(ss, line); // bỏ header
+
+    while (std::getline(ss, line)) {
         if (line.empty()) continue;
-        
-        stringstream ss(line);
+        std::stringstream ls(line);
+
         User user;
-        
-        string regTimeStr;
-        getline(ss, user.email, ',');
-        getline(ss, user.passwordHash, ',');
-        getline(ss, user.fullName, ',');
-        getline(ss, user.birthDate, ',');
-        getline(ss, user.phone, ',');
-        getline(ss, regTimeStr, ',');
-        
+        std::string regTimeStr;
+        std::getline(ls, user.email, ',');
+        std::getline(ls, user.passwordHash, ',');
+        std::getline(ls, user.fullName, ',');
+        std::getline(ls, user.birthDate, ',');
+        std::getline(ls, user.phone, ',');
+        std::getline(ls, regTimeStr, ',');
+
         if (!user.email.empty() && !user.passwordHash.empty()) {
-            try {
-                user.registeredAt = stoll(regTimeStr);
-            } catch (...) {
-                user.registeredAt = time(nullptr);
-            }
-            
+            try { user.registeredAt = std::stoll(regTimeStr); }
+            catch (...) { user.registeredAt = time(nullptr); }
+
+            size_t atPos = user.email.find('@');
+            user.username = (atPos != std::string::npos)
+                ? user.email.substr(0, atPos) : user.email;
+
             userByEmail.insert(user.email, user);
         }
     }
-    
-    file.close();
 }
 
+
 void AuthService::saveUsers() {
-    ofstream file(filePath, ios::out | ios::trunc);
+    // Mở file với UTF-8 BOM để hỗ trợ tiếng Việt
+    ofstream file(filePath, ios::out | ios::trunc | ios::binary);
     if (!file.is_open()) return;
+    
+    // Write UTF-8 BOM
+    const char bom[] = { (char)0xEF, (char)0xBB, (char)0xBF };
+    file.write(bom, 3);
     
     // Write header
     file << "email,passwordHash,fullName,birthDate,phone,registeredAt\n";
@@ -96,6 +114,10 @@ bool AuthService::registerUser(const string& email, const string& password,
     newUser.phone = phone;
     newUser.registeredAt = time(nullptr);
     
+    // Tạo username từ email
+    size_t atPos = email.find('@');
+    newUser.username = (atPos != string::npos) ? email.substr(0, atPos) : email;
+    
     // Insert into hash table
     userByEmail.insert(email, newUser);
     
@@ -114,6 +136,34 @@ bool AuthService::verify(const string& email, const string& password) {
     
     // Verify password
     return PasswordHasher::verifyPassword(password, user->passwordHash);
+}
+
+// ✅ Session management implementation
+bool AuthService::login(const string& email, const string& password) {
+    if (verify(email, password)) {
+        currentUserEmail = email;
+        loggedIn = true;
+        return true;
+    }
+    return false;
+}
+
+void AuthService::logout() {
+    currentUserEmail = "";
+    loggedIn = false;
+}
+
+bool AuthService::isLoggedIn() const {
+    return loggedIn && !currentUserEmail.empty();
+}
+
+string AuthService::getCurrentUserEmail() const {
+    return currentUserEmail;
+}
+
+User* AuthService::getCurrentUser() {
+    if (!isLoggedIn()) return nullptr;
+    return getUser(currentUserEmail);
 }
 
 User* AuthService::getUser(const string& email) {

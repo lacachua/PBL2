@@ -4,6 +4,7 @@
 using namespace std;
 
 struct Showtime {
+    string showtime_id;  // ✅ NEW: Unique identifier (e.g., ST20251024-001)
     int movie_id;
     string date;
     string time;
@@ -11,9 +12,9 @@ struct Showtime {
     int available_seats;
     int total_seats;
     int price;
-    string seat_map; // ✅ Bitmap 81 ký tự (9x9): 1=trống, 0=đã đặt
+    string seat_map; // ✅ Bitmap 81 ký tự (9x9): 1=trống, 0=đã đặt (loaded from seats_status.csv)
     
-    Showtime() : movie_id(0), available_seats(0), total_seats(0), price(0), seat_map("") {}
+    Showtime() : showtime_id(""), movie_id(0), available_seats(0), total_seats(0), price(0), seat_map("") {}
 };
 
 // Function to load showtimes from CSV

@@ -3,7 +3,7 @@
 #include <vector>
 #include <map>
 #include "Movie.h"
-#include "Trie.h"
+#include "../include/data-structures/Trie.h"
 
 using namespace std;
 

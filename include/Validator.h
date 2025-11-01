@@ -134,6 +134,20 @@ public:
         
         return true;
     }
+    
+    // Full name validation - không chứa số
+    static bool isValidFullName(const string& fullName) {
+        if (fullName.empty()) return false;
+        if (fullName.length() > 100) return false;
+        
+        // Kiểm tra không chứa số
+        for (char c : fullName) {
+            if (isdigit(c)) return false;
+        }
+        
+        // Cho phép chữ cái, khoảng trắng, và các ký tự Unicode (tiếng Việt)
+        return true;
+    }
 };
 
 #endif

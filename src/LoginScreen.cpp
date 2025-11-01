@@ -61,7 +61,7 @@ LoginScreen::LoginScreen(const Font& font, AuthService& authRef)
 
 std::wstring LoginScreen::bullets(std::size_t n) { return std::wstring(n, L'\u2022'); }
 
-bool LoginScreen::update(Vector2f mouse, bool mousePressed, const Event& event, string& currentUser, AppState& state) {
+bool LoginScreen::update(Vector2f mouse, bool mousePressed, const Event& event, string& currentUser, string& currentUserEmail, AppState& state) {
     // click ra ngoài card -> đóng
     if (mousePressed && !card.getGlobalBounds().contains(mouse)) return true;
 
@@ -75,10 +75,10 @@ bool LoginScreen::update(Vector2f mouse, bool mousePressed, const Event& event, 
 
         // click Continue
         if (btn.getGlobalBounds().contains(mouse)) {
-            // verify
+            // ✅ verify and login
             std::string u(emailInput.begin(), emailInput.end());
             std::string p(passInput.begin(), passInput.end());
-            if (auth.verify(u, p)) {
+            if (auth.login(u, p)) {  // ✅ Gọi login() thay vì verify()
                 msg.setFillColor(Color(60, 160, 90));
                 msg.setString(L"Đăng nhập thành công.");
 
@@ -119,8 +119,8 @@ bool LoginScreen::update(Vector2f mouse, bool mousePressed, const Event& event, 
                 return false;
             }
             
-            // Verify credentials
-            if (auth.verify(email, password)) {
+            // ✅ Verify credentials and login
+            if (auth.login(email, password)) {  // ✅ Gọi login() thay vì verify()
                 msg.setFillColor(Color(60, 160, 90));
                 msg.setString(L"Đăng nhập thành công.");
                 
@@ -155,7 +155,14 @@ bool LoginScreen::update(Vector2f mouse, bool mousePressed, const Event& event, 
     }
 
     if (loginSuccess && loginClock.getElapsedTime().asSeconds() >= 1.f) {
-        currentUser = loggedUser;
+        // Lưu email và lấy username từ User object
+        currentUserEmail = loggedUser;  // Lưu email
+        User* user = auth.getUser(loggedUser);
+        if (user) {
+            currentUser = user->username;  // Chỉ lấy username để hiển thị
+        } else {
+            currentUser = loggedUser;  // Fallback
+        }
         return true;   // báo cho App biết là đóng login và quay lại home
     }
     return false; // không đóng
