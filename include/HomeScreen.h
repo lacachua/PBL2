@@ -1,7 +1,7 @@
 #pragma once
-#include "TextButton.h"
+#include "UI/components/TextButton.h"
 #include "AppState.h"
-#include "SearchBox.h"
+#include "UI/components/SearchBox.h"
 #include "MovieSearchManager.h"
 #include <SFML/Graphics.hpp>
 #include <vector>

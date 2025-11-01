@@ -1,4 +1,4 @@
-#include "PosterSlider.h"
+#include "UI/components/PosterSlider.h"
 #include "Movie.h"
 #include <cmath>
 

@@ -1,4 +1,4 @@
-#include "Button.h"
+#include "UI/components/Button.h"
 
 Button::Button(const Font& font, const wstring& label, float width, float height, unsigned int charSize)
     : text(font, label, charSize), isHovered(false), isDisabled(false), isSelected(false) {
