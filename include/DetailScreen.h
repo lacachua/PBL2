@@ -38,7 +38,7 @@
 
 #pragma once
 #include <SFML/Graphics.hpp>
-#include "Slide.h"
+#include "UI/components/Slide.h"
 #include "HomeScreen.h"
 #include "Movie.h"
 

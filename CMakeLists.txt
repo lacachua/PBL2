@@ -22,6 +22,7 @@ set_target_properties(app PROPERTIES WIN32_EXECUTABLE TRUE)
 target_include_directories(app PRIVATE 
     ${CMAKE_SOURCE_DIR}/include
     ${CMAKE_SOURCE_DIR}/include/data-structures
+    ${CMAKE_SOURCE_DIR}/include/ui/components
 )
 
 # Link với SFML 3
