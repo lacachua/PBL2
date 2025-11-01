@@ -2,14 +2,14 @@
 #include <SFML/Graphics.hpp>
 #include <cmath>
 #include "UI/components/TextButton.h"
-#include "HomeScreen.h"
+#include "UI/screens/HomeScreen.h"
 #include "UI/components/PosterSlider.h"
 #include "AppState.h"
-#include "LoginScreen.h"
-#include "RegisterScreen.h"
+#include "UI/screens/LoginScreen.h"
+#include "UI/screens/RegisterScreen.h"
 #include "AuthService.h"
-#include "BookingScreen.h"
-#include "AccountScreen.h"
+#include "UI/screens/BookingScreen.h"
+#include "UI/screens/AccountScreen.h"
 
 class App {
     public:

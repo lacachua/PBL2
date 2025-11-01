@@ -1,4 +1,4 @@
-#include "DetailScreen.h"
+#include "UI/screens/DetailScreen.h"
 #include <locale>
 #include <codecvt>
 #include <sstream>

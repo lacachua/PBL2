@@ -23,6 +23,7 @@ target_include_directories(app PRIVATE
     ${CMAKE_SOURCE_DIR}/include
     ${CMAKE_SOURCE_DIR}/include/data-structures
     ${CMAKE_SOURCE_DIR}/include/ui/components
+    ${CMAKE_SOURCE_DIR}/include/ui/screens
 )
 
 # Link với SFML 3
