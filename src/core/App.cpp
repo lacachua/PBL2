@@ -1,7 +1,7 @@
 #include "core/App.h"
-#include "UI/screens/DetailScreen.h"
+#include "ui/screens/DetailScreen.h"
 #include "models/Movie.h"
-#include "UI/screens/BookingScreen.h"
+#include "ui/screens/BookingScreen.h"
 #include <fstream>
 #include <sstream>
 
@@ -13,20 +13,21 @@ App::App() :
     auth("../data/users.csv"),
     login(font, auth),
     registerScreen(font, auth),
-    booking(font, auth),  // ✅ Truyền AuthService vào BookingScreen
+    booking(font),
     accountScreen(font, auth)
-    { 
-        window.setFramerateLimit(60);
-        Image icon("../assets/icon.png");
-        window.setIcon(icon);
+{ 
+    window.setFramerateLimit(60);
+    Image icon("../assets/icon.png");
+    window.setIcon(icon);
 
-        auth.ensureSampleUser();
+    auth.ensureSampleUser();
 
-        vector<string> paths = getMoviePosterPaths("../data/movies.csv");        
-        slider.loadPosters(paths, font);
-        // Load movies for search functionality
-        vector<Movie> movies = loadMoviesFromCSV("../data/movies.csv");
-        home.initializeSearch(movies);
+    vector<string> paths = getMoviePosterPaths("../data/movies.csv");        
+    slider.loadPosters(paths, font);
+    
+    // Load movies for search functionality
+    vector<Movie> movies = loadMoviesFromCSV("../data/movies.csv");
+    home.initializeSearch(movies);
 }
 
 void App::run() {
@@ -46,7 +47,7 @@ void App::processEvents() {
 
     while (auto optEvent = window.pollEvent()) {
         const Event& event = *optEvent;
-        currentEvent = &event; // Lưu event để dùng trong render()
+        currentEvent = &event;
         
         if (event.is<Event::Closed>()) window.close();
         if (event.is<Event::MouseButtonPressed>()) mousePressed = true;
@@ -60,7 +61,6 @@ void App::processEvents() {
                 break;
 
             case AppState::LOGIN:
-                // Cho phép SearchBox hoạt động ở màn LOGIN
                 home.update(mousePos, mousePressed, state, &event);
                 if (login.update(mousePos, mousePressed, event, currentUser, currentUserEmail, state)) {
                     home.setLoggedUser(currentUser);
@@ -69,18 +69,14 @@ void App::processEvents() {
                 break;
             
             case AppState::REGISTER:
-                // Cho phép SearchBox hoạt động ở màn REGISTER
                 home.update(mousePos, mousePressed, state, &event);
                 if (registerScreen.update(mousePos, mousePressed, event))
                     state = AppState::LOGIN;
                 break;
             
             case AppState::ACCOUNT:
-                // Let HomeScreen handle events (logo click, dropdown, etc.)
                 home.setLoggedUser(currentUser);
                 home.update(mousePos, mousePressed, state, &event);
-                
-                // Then let AccountScreen handle its own events
                 accountScreen.update(mousePos, mousePressed, &event, state);
                 break;
 
@@ -88,7 +84,7 @@ void App::processEvents() {
                 break;
         }
 
-    slider.handleEvent(mousePos, mousePressed, state);
+        slider.handleEvent(mousePos, mousePressed, state);
     }
 }
 
@@ -103,7 +99,7 @@ void App::render() {
         case AppState::HOME: {
             home.draw(window);
             slider.draw(window);
-            home.drawSearchBox(window); // Vẽ SearchBox SAU slider
+            home.drawSearchBox(window);
             home.drawDropdown(window);
             break;
         }
@@ -111,7 +107,7 @@ void App::render() {
         case AppState::LOGIN: {
             home.draw(window);
             slider.draw(window);
-            home.drawSearchBox(window); // Vẽ SearchBox SAU slider
+            home.drawSearchBox(window);
             login.draw(window);
             break;
         }
@@ -119,7 +115,7 @@ void App::render() {
         case AppState::REGISTER: {
             home.draw(window);
             slider.draw(window);
-            home.drawSearchBox(window); // Vẽ SearchBox SAU slider
+            home.drawSearchBox(window);
             registerScreen.draw(window);
             break;
         }
@@ -128,7 +124,6 @@ void App::render() {
             static DetailScreen* detailScreen = nullptr;
             int currentIndex = slider.getSelectedIndex();
             
-            // Chỉ tạo mới khi chuyển state hoặc đổi phim
             if (previousState != AppState::MOVIE_DETAILS || previousMovieIndex != currentIndex) {
                 delete detailScreen;
                 detailScreen = new DetailScreen(font, currentIndex, currentUser);
@@ -146,7 +141,7 @@ void App::render() {
         }
 
         case AppState::BOOKING: {
-            booking.handleEvent(window, mousePos, mousePressed, state);
+            booking.handleEvent(window, mousePos, mousePressed);
             booking.update(mousePos, mousePressed, state);
             booking.draw(window);
             break;
@@ -155,9 +150,11 @@ void App::render() {
         case AppState::ACCOUNT: {
             home.draw(window);
             home.drawSearchBox(window);
+            
             if (previousState != AppState::ACCOUNT) {
                 accountScreen.setCurrentUser(currentUserEmail);
             }
+            
             accountScreen.draw(window);
             break;
         }
