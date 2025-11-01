@@ -1,4 +1,4 @@
-#include "Slide.h"
+#include "UI/components/Slide.h"
 using namespace std;
 
 Slide::Slide(const Texture& texture, const Font& font) : 

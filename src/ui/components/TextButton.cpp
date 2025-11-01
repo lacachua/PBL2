@@ -1,4 +1,4 @@
-#include "TextButton.h"
+#include "UI/components/TextButton.h"
 
 TextButton::TextButton(const Font& font, const String& str, unsigned int size, Vector2f pos) : text(font, str, size) {
     text.setPosition(pos);

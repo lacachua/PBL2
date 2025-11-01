@@ -1,9 +1,9 @@
 #pragma once
 #include <SFML/Graphics.hpp>
 #include <cmath>
-#include "TextButton.h"
+#include "UI/components/TextButton.h"
 #include "HomeScreen.h"
-#include "PosterSlider.h"
+#include "UI/components/PosterSlider.h"
 #include "AppState.h"
 #include "LoginScreen.h"
 #include "RegisterScreen.h"

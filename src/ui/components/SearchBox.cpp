@@ -1,4 +1,4 @@
-#include "SearchBox.h"
+#include "UI/components/SearchBox.h"
 #include <iostream>
 
 SearchBox::SearchBox(Font& f, Vector2f position, Vector2f size) 
