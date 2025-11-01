@@ -5,7 +5,8 @@
 
 using namespace std;
 
-AuthService::AuthService(const string& filePath) : filePath(filePath) {
+AuthService::AuthService(const string& filePath) 
+    : filePath(filePath), currentUserEmail(""), loggedIn(false) {
     namespace fs = filesystem;
     fs::path p(filePath);
     fs::create_directories(p.parent_path());
@@ -135,6 +136,34 @@ bool AuthService::verify(const string& email, const string& password) {
     
     // Verify password
     return PasswordHasher::verifyPassword(password, user->passwordHash);
+}
+
+// ✅ Session management implementation
+bool AuthService::login(const string& email, const string& password) {
+    if (verify(email, password)) {
+        currentUserEmail = email;
+        loggedIn = true;
+        return true;
+    }
+    return false;
+}
+
+void AuthService::logout() {
+    currentUserEmail = "";
+    loggedIn = false;
+}
+
+bool AuthService::isLoggedIn() const {
+    return loggedIn && !currentUserEmail.empty();
+}
+
+string AuthService::getCurrentUserEmail() const {
+    return currentUserEmail;
+}
+
+User* AuthService::getCurrentUser() {
+    if (!isLoggedIn()) return nullptr;
+    return getUser(currentUserEmail);
 }
 
 User* AuthService::getUser(const string& email) {

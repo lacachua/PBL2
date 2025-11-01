@@ -1,12 +1,26 @@
 #include "BookingScreen.h"
+#include "SeatStatusRepository.h"
+#include "TicketRepository.h"
+#include "RoomLayoutRepository.h"
+#include "MoviesRepository.h"
+#include "FoodsRepository.h"
+#include "ShowtimeScheduler.h"
+#include "CSVReader.h"
+#include "AuthService.h"
 #include <locale>
 #include <codecvt>
 #include <ctime>
 #include <chrono>
 #include <set>
+#include <sstream>
+#include <iostream>
+#include <iomanip>
+#include <algorithm>
+#include <filesystem>
 
-BookingScreen::BookingScreen(Font& font) : 
+BookingScreen::BookingScreen(Font& font, AuthService& auth) : 
     HomeScreen(font),
+    authService(auth),  // ✅ Initialize AuthService reference
     buttons_font("../assets/BEBAS_NEUE_ZSMALL.ttf"),
     detailFont("../assets/quicksand_medium.ttf"),
     current_step(BookingStep::SELECT_DATE),
@@ -114,77 +128,125 @@ BookingScreen::BookingScreen(Font& font) :
     initializeSnackMenu();
 }
 
-// ✅ NEW: Tự động tạo suất chiếu cho 30 ngày với giờ chiếu đa dạng
+// ✅ NEW v3: Load từ showtimes.csv hoặc generate nếu chưa có
 vector<Showtime> BookingScreen::generateShowtimesForNext30Days(int movieId) {
-    vector<Showtime> showtimes;
+    cout << "[BookingScreen] generateShowtimesForNext30Days called for movie_id=" << movieId << endl;
     
-    auto now = std::chrono::system_clock::now();
-    time_t currentTime = std::chrono::system_clock::to_time_t(now);
+    vector<Showtime> allShowtimes;
+    std::filesystem::path showtimesPath("data/showtimes.csv");
     
-    // ✅ Định nghĩa nhiều bộ giờ chiếu khác nhau
-    vector<vector<string>> timeVariants = {
-        {"09:00", "11:30", "14:00", "16:30", "19:00", "21:30", "22:00", "23:30"},  // Variant 1
-        {"10:00", "12:00", "14:30", "17:00", "19:30", "21:00", "22:30", "00:00"},  // Variant 2
-        {"09:30", "11:00", "13:30", "16:00", "18:30", "20:00", "22:00", "23:00"},  // Variant 3
-        {"10:30", "13:00", "15:00", "17:30", "19:00", "21:00", "22:00", "23:30"},  // Variant 4
-        {"08:30", "11:00", "14:00", "16:00", "18:00", "20:30", "22:30", "00:30"}   // Variant 5
-    };
-    
-    // ✅ Định nghĩa bộ phòng chiếu tương ứng
-    vector<vector<string>> roomVariants = {
-        {"Phòng 1", "Phòng 2", "Phòng 1", "Phòng 3", "Phòng 2", "Phòng 1", "Phòng 3", "Phòng 2"},
-        {"Phòng 2", "Phòng 1", "Phòng 3", "Phòng 2", "Phòng 1", "Phòng 3", "Phòng 1", "Phòng 2"},
-        {"Phòng 3", "Phòng 1", "Phòng 2", "Phòng 1", "Phòng 3", "Phòng 2", "Phòng 1", "Phòng 3"},
-        {"Phòng 1", "Phòng 3", "Phòng 2", "Phòng 3", "Phòng 1", "Phòng 2", "Phòng 3", "Phòng 1"},
-        {"Phòng 2", "Phòng 3", "Phòng 1", "Phòng 2", "Phòng 3", "Phòng 1", "Phòng 2", "Phòng 3"}
-    };
-    
-    // Tạo suất chiếu cho 30 ngày
-    for (int day = 0; day < 30; day++) {
-        time_t futureTime = currentTime + (day * 24 * 60 * 60);
-        tm* futureDate = localtime(&futureTime);
+    // ✅ KIỂM TRA: Nếu showtimes.csv đã tồn tại → LOAD từ file
+    if (std::filesystem::exists(showtimesPath)) {
+        cout << "[BookingScreen] Loading showtimes from data/showtimes.csv..." << endl;
         
-        char dateBuffer[11];
-        strftime(dateBuffer, sizeof(dateBuffer), "%Y-%m-%d", futureDate);
-        string dateStr(dateBuffer);
+        allShowtimes = loadShowtimesFromCSV("data/showtimes.csv");
         
-        // ✅ Bỏ qua 2 ngày cuối (ngày 4 và 5 trong 5 ngày đầu)
-        int dayInCycle = day % 5;
-        if (dayInCycle == 3 || dayInCycle == 4) {
-            continue; // Không tạo suất chiếu cho 2 ngày này
-        }
-        
-        // ✅ Chọn variant dựa vào ngày (xoay vòng 5 bộ)
-        int variantIndex = day % 5;
-        vector<string> times = timeVariants[variantIndex];
-        vector<string> rooms = roomVariants[variantIndex];
-        
-        for (size_t i = 0; i < times.size(); i++) {
-            // ✅ Giá động: suất sáng sớm (< 12h) 75k, trưa-chiều (12-18h) 85k, tối (>18h) 95k
-            int price = 85000; // Mặc định
-            int hour = 0;
-            if (sscanf(times[i].c_str(), "%d:", &hour) == 1) {
-                if (hour < 12) price = 75000;       // Sáng
-                else if (hour >= 18) price = 95000; // Tối
-                else price = 85000;                 // Trưa-chiều
-            }
-            
-            // ✅ Số ghế trống ngẫu nhiên (80-100)
-            int availableSeats = 80 + (day * 7 + i * 3) % 21; // Pseudo-random 80-100
-            
-            Showtime show;
-            show.movie_id = movieId;
-            show.date = dateStr;
-            show.time = times[i];
-            show.room = rooms[i];
-            show.available_seats = availableSeats;
-            show.total_seats = 100;
-            show.price = price;
-            showtimes.push_back(show);
+        if (!allShowtimes.empty()) {
+            cout << "[BookingScreen] ✅ Loaded " << allShowtimes.size() 
+                 << " showtimes from CSV" << endl;
+        } else {
+            cout << "[BookingScreen] WARNING: showtimes.csv is empty, regenerating..." << endl;
+            std::filesystem::remove(showtimesPath);  // Delete corrupt file
         }
     }
     
-    return showtimes;
+    // ✅ Nếu chưa có hoặc file corrupt → GENERATE mới
+    if (allShowtimes.empty()) {
+        cout << "[BookingScreen] Generating NEW schedule with ShowtimeScheduler..." << endl;
+        
+        // 1. Load all movie IDs
+        vector<int> allMovieIds;
+        auto movies = CSVReader::readCSV("data/movies.csv", true);
+        for (const auto& row : movies) {
+            if (!row.empty()) {
+                try {
+                    // Parse film_id (F0001 → 1)
+                    std::string film_id = row[0];
+                    if (film_id.length() >= 5 && film_id[0] == 'F') {
+                        int id = std::stoi(film_id.substr(1));  // F0001 → 1
+                        allMovieIds.push_back(id);
+                    }
+                } catch (...) {
+                    // Skip invalid rows
+                }
+            }
+        }
+        
+        if (allMovieIds.empty()) {
+            cout << "[BookingScreen] ERROR: No movies found in movies.csv!" << endl;
+            return {};
+        }
+        
+        cout << "[BookingScreen] Found " << allMovieIds.size() << " movies" << endl;
+        
+        // 2. Get today's date
+        auto now = std::chrono::system_clock::now();
+        time_t currentTime = std::chrono::system_clock::to_time_t(now);
+        tm* localTime = localtime(&currentTime);
+        
+        char todayBuffer[11];
+        strftime(todayBuffer, sizeof(todayBuffer), "%Y-%m-%d", localTime);
+        string startDate(todayBuffer);
+        
+        // 3. Generate với ShowtimeScheduler
+        allShowtimes = ShowtimeScheduler::generateSchedule(allMovieIds, startDate, 30);
+        
+        cout << "[BookingScreen] Generated " << allShowtimes.size() << " showtimes" << endl;
+        
+        // Save to CSV
+        try {
+            if (showtimesPath.has_parent_path()) {
+                std::filesystem::create_directories(showtimesPath.parent_path());
+            }
+            
+            std::string tmpPath = showtimesPath.string() + ".tmp";
+            std::ofstream out(tmpPath, std::ios::out | std::ios::binary | std::ios::trunc);
+            
+            if (out.is_open()) {
+                // Write header
+                out << "showtime_id,movie_id,date,time,room,available_seats,total_seats,price\n";
+                
+                // Write all showtimes
+                for (const auto& st : allShowtimes) {
+                    std::string room_id = SeatStatusRepository::slugifyRoom(st.room);
+                    std::string showtime_key = SeatStatusRepository::makeShowtimeKey(st.date, st.time, room_id);
+                    
+                    out << showtime_key << ","
+                        << st.movie_id << ","
+                        << st.date << ","
+                        << st.time << ","
+                        << st.room << ","
+                        << st.available_seats << ","
+                        << st.total_seats << ","
+                        << st.price << "\n";
+                }
+                
+                out.close();
+                
+                // Atomic rename
+                std::filesystem::remove(showtimesPath);
+                std::filesystem::rename(tmpPath, showtimesPath);
+                
+                cout << "[BookingScreen] ✅ Saved " << allShowtimes.size() 
+                     << " showtimes to data/showtimes.csv" << endl;
+            }
+        } catch (const std::exception& ex) {
+            cout << "[BookingScreen] Failed to save showtimes: " << ex.what() << endl;
+        }
+    }
+    
+    // ✅ 4. Filter để CHỈ trả về showtimes của movie hiện tại
+    vector<Showtime> filteredShowtimes;
+    for (const auto& st : allShowtimes) {
+        if (st.movie_id == movieId) {
+            filteredShowtimes.push_back(st);
+        }
+    }
+    
+    cout << "[BookingScreen] Filtered " << filteredShowtimes.size() 
+         << " showtimes for movie_id=" << movieId << endl;
+    
+    return filteredShowtimes;
 }
 
 void BookingScreen::draw(RenderWindow& window) {
@@ -252,6 +314,20 @@ void BookingScreen::loadFromDetail(const DetailScreen& detail) {
         
         // ✅ Filter showtimes for selected date
         updateShowtimesForSelectedDate(currentHour, currentMinute, todayStr);
+        
+        // ✅ QUAN TRỌNG: Nếu ngày đầu tiên không có suất chiếu (đã qua giờ), tự động chọn ngày tiếp theo
+        int attemptedDates = 0;
+        while (showtimesForSelectedDate.empty() && attemptedDates < (int)availableDates.size()) {
+            cout << "[BookingScreen] No showtimes for " << selectedDate << ", trying next date..." << endl;
+            attemptedDates++;
+            if (attemptedDates < (int)availableDates.size()) {
+                selectedDate = availableDates[attemptedDates];
+                updateShowtimesForSelectedDate(currentHour, currentMinute, todayStr);
+            }
+        }
+        
+        cout << "[BookingScreen] Final selected date: " << selectedDate 
+             << " with " << showtimesForSelectedDate.size() << " showtimes" << endl;
 
         // build date/time buttons
         buildDateButtons();
@@ -327,7 +403,16 @@ void BookingScreen::buildTimeButtons() {
 void BookingScreen::updateShowtimesForSelectedDate(int currentHour, int currentMinute, const string& todayStr) {
     showtimesForSelectedDate.clear();
     
+    cout << "[BookingScreen] updateShowtimesForSelectedDate:" << endl;
+    cout << "  currentMovieId = " << currentMovieId << endl;
+    cout << "  selectedDate = " << selectedDate << endl;
+    cout << "  allShowtimes.size() = " << allShowtimes.size() << endl;
+    
     for (const auto& show : allShowtimes) {
+        cout << "  Checking: movie_id=" << show.movie_id 
+             << " date=" << show.date 
+             << " time=" << show.time << endl;
+             
         if (show.movie_id != currentMovieId || show.date != selectedDate) continue;
         
         // If selected date is today, filter by time
@@ -344,9 +429,11 @@ void BookingScreen::updateShowtimesForSelectedDate(int currentHour, int currentM
         
         showtimesForSelectedDate.push_back(show);
     }
+    
+    cout << "  showtimesForSelectedDate.size() = " << showtimesForSelectedDate.size() << endl;
 }
 
-void BookingScreen::handleEvent(const RenderWindow& window, const Vector2f& mousePos, bool mousePressed) {
+void BookingScreen::handleEvent(const RenderWindow& window, const Vector2f& mousePos, bool mousePressed, AppState& state) {
     if (!mousePressed) return;
 
     // ✅ KHÔNG cho phép click vào step buttons nếu chưa xác nhận suất chiếu
@@ -359,14 +446,47 @@ void BookingScreen::handleEvent(const RenderWindow& window, const Vector2f& mous
     if (confirmButton.isClicked(mousePos, mousePressed) && !confirmButton.getDisabled()) {
         // Logic xác nhận theo từng bước
         if (current_step == BookingStep::SELECT_DATE) {
+            // ✅ Kiểm tra đăng nhập trước khi cho phép chọn ghế
+            if (!authService.isLoggedIn()) {
+                state = AppState::LOGIN;
+                return;
+            }
+            
             // Kiểm tra đã chọn suất chiếu chưa
             if (selectedShowtimeIndex >= 0 && !selectedDate.empty()) {
                 hasConfirmedShowtime = true;
                 current_step = BookingStep::SELECT_SEAT;
                 
-                // ✅ Load occupied seats từ seat_map của suất chiếu đã chọn
+                // ✅ HOOK A: Load occupied seats từ repository
                 if (selectedShowtimeIndex < (int)showtimesForSelectedDate.size()) {
-                    loadOccupiedSeatsFromSeatMap(showtimesForSelectedDate[selectedShowtimeIndex].seat_map);
+                    Showtime& st = showtimesForSelectedDate[selectedShowtimeIndex];
+                    
+                    // ✅ Extract room_id from room name (e.g., "Phòng 1" → "Phong1")
+                    std::string room_id = SeatStatusRepository::slugifyRoom(st.room);
+                    
+                    // ✅ Generate showtime key UNIQUE by (date, time, room_id)
+                    std::string showtime_key = SeatStatusRepository::makeShowtimeKey(
+                        st.date, st.time, room_id
+                    );
+                    
+                    std::cout << "[BookingScreen] HOOK A - Loading seats for: " << showtime_key 
+                              << " (movie_id=" << st.movie_id << ")" << std::endl;
+                    
+                    // Load or create seat layout (NEW API: room_id as 3rd param)
+                    auto layout = SeatStatusRepository::loadOrCreate(
+                        "data/seats_status.csv",
+                        showtime_key,
+                        room_id,
+                        st.movie_id,
+                        st.date,
+                        st.time,
+                        9, 9
+                    );
+                    
+                    std::cout << "[BookingScreen] Loaded seat_bits length: " << layout.seat_bits.length() << std::endl;
+                    
+                    // Parse seat_bits to set occupied seats
+                    loadOccupiedSeatsFromSeatMap(layout.seat_bits);
                 }
                 
                 // Update step button colors
@@ -383,8 +503,13 @@ void BookingScreen::handleEvent(const RenderWindow& window, const Vector2f& mous
             buttons_box[2].setFillColor(Color(80, 80, 90));
             buttons_box[3].setFillColor(Color(52, 62, 209));
         } else if (current_step == BookingStep::PAYMENT) {
+            std::cout << "[DEBUG] PAYMENT step - Confirm button clicked" << std::endl;
+            std::cout << "[DEBUG] Selected seats count: " << selectedSeats.size() << std::endl;
+            
             // ✅ CHỈ KHI THANH TOÁN mới lưu ghế vào file (đánh dấu X)
             saveSelectedSeatsToSeatMap();
+            
+            std::cout << "[DEBUG] After saveSelectedSeatsToSeatMap()" << std::endl;
             
             // ✅ Tạo mã vé 1 lần duy nhất
             srand(time(0));
@@ -680,45 +805,154 @@ void BookingScreen::loadOccupiedSeatsFromSeatMap(const string& seat_map) {
     }
 }
 
-// ✅ Lưu selected seats vào seat_map và ghi file
+// ✅ HOOK B: Lưu selected seats vào seat_bits và ghi tickets
 void BookingScreen::saveSelectedSeatsToSeatMap() {
+    std::cout << "[DEBUG] saveSelectedSeatsToSeatMap() called" << std::endl;
+    
     if (selectedShowtimeIndex < 0 || selectedShowtimeIndex >= (int)showtimesForSelectedDate.size()) {
+        std::cout << "[ERROR] Invalid showtime index: " << selectedShowtimeIndex << std::endl;
         return;
     }
     
     Showtime& showtime = showtimesForSelectedDate[selectedShowtimeIndex];
     
-    // Tạo seat_map mới từ occupied seats hiện tại
-    string seat_map = string(81, '1'); // Mặc định tất cả trống
+    // ✅ Extract room_id (same as Hook A)
+    std::string room_id = SeatStatusRepository::slugifyRoom(showtime.room);
     
-    // Đánh dấu các ghế đã occupied
-    for (const auto& seat : occupiedSeats) {
-        char rowLabel = seat[0];
-        int col = stoi(seat.substr(1)) - 1;
-        int row = rowLabel - 'A';
-        int index = row * 9 + col;
-        if (index >= 0 && index < 81) {
-            seat_map[index] = '0';
-        }
-    }
+    std::cout << "[BookingScreen] HOOK B - Saving seats" << std::endl;
+    std::cout << "  movie_id=" << showtime.movie_id 
+              << " date=" << showtime.date 
+              << " time=" << showtime.time 
+              << " room=" << showtime.room 
+              << " room_id=" << room_id << std::endl;
     
-    // Đánh dấu các ghế vừa chọn (cũng là occupied)
+    // ✅ Generate showtime key UNIQUE by (date, time, room_id)
+    std::string showtime_key = SeatStatusRepository::makeShowtimeKey(
+        showtime.date, showtime.time, room_id
+    );
+    
+    std::cout << "  showtime_key: " << showtime_key << std::endl;
+    
+    // ✅ Load current seat bits from repository (NEW API)
+    auto layout = SeatStatusRepository::loadOrCreate(
+        "data/seats_status.csv",
+        showtime_key,
+        room_id,
+        showtime.movie_id,
+        showtime.date,
+        showtime.time,
+        9, 9
+    );
+    
+    string seat_bits = layout.seat_bits;
+    
+    // ✅ Mark newly selected seats as occupied ('0')
     for (const auto& seat : selectedSeats) {
         char rowLabel = seat[0];
         int col = stoi(seat.substr(1)) - 1;
         int row = rowLabel - 'A';
         int index = row * 9 + col;
         if (index >= 0 && index < 81) {
-            seat_map[index] = '0';
+            seat_bits[index] = '0';
         }
     }
     
-    // Lưu vào file
-    saveSeatMap(showtime.movie_id, showtime.date, showtime.time, showtime.room, seat_map);
+    // ✅ Save updated seat bits atomically
+    std::cout << "[DEBUG] Calling SeatStatusRepository::save()..." << std::endl;
+    bool saveResult = SeatStatusRepository::save(
+        "data/seats_status.csv",
+        showtime_key,
+        seat_bits
+    );
+    std::cout << "[DEBUG] Save result: " << (saveResult ? "SUCCESS" : "FAILED") << std::endl;
+    
+    // ✅ Create ticket record
+    TicketRow ticket;
+    ticket.ticket_id = TicketRepository::makeTicketId();
+    ticket.booking_code = TicketRepository::makeBookingCode();
+    
+    // ✅ Get user email from AuthService (đã đăng nhập)
+    ticket.user_email = authService.getCurrentUserEmail();
+    
+    ticket.movie_id = showtime.movie_id;
+    
+    // ✅ Get movie title from MoviesRepository (proper way)
+    ticket.movie_title = MoviesRepository::getTitleById("data/movies.csv", showtime.movie_id);
+    
+    ticket.date = showtime.date;
+    ticket.time = showtime.time;
+    ticket.room_id = room_id;  // ✅ Use room_id instead of room
+    
+    // ✅ Join selected seats with semicolon
+    std::ostringstream seatsStream;
+    for (size_t i = 0; i < selectedSeats.size(); ++i) {
+        seatsStream << selectedSeats[i];
+        if (i < selectedSeats.size() - 1) seatsStream << ";";
+    }
+    ticket.seats = seatsStream.str();
+    
+    ticket.seat_count = selectedSeats.size();
+    ticket.price_each = showtime.price;
+    
+    // ✅ Calculate food total
+    ticket.food_total = 0;
+    for (const auto& item : snackItems) {
+        ticket.food_total += item.price * item.quantity;
+    }
+    
+    ticket.ticket_total = ticket.price_each * ticket.seat_count;
+    ticket.grand_total = ticket.ticket_total + ticket.food_total;
+    ticket.status = "PAID";
+    
+    // ✅ Thời gian đặt vé thực tế (Unix timestamp + local time)
+    auto now = std::time(nullptr);
+    ticket.created_at_epoch = static_cast<long long>(now);
+    ticket.booked_at_epoch = static_cast<long long>(now);
+    
+    // ✅ Convert to local time string (Asia/Ho_Chi_Minh +07:00)
+    std::tm tm_local{};
+    #if defined(_WIN32)
+        localtime_s(&tm_local, &now);
+    #else
+        tm_local = *std::localtime(&now);
+    #endif
+    
+    std::ostringstream timeStream;
+    timeStream << std::put_time(&tm_local, "%Y-%m-%d %H:%M:%S") << "+07:00";
+    ticket.booked_at_local = timeStream.str();
+    
+    ticket.showtime_key = showtime_key;  // ✅ Add showtime key
+    
+    std::cout << "\n[BookingScreen] TICKET PREPARED:" << std::endl;
+    std::cout << "  ticket_id: " << ticket.ticket_id << std::endl;
+    std::cout << "  movie_id: " << ticket.movie_id << std::endl;
+    std::cout << "  movie_title: " << ticket.movie_title << std::endl;
+    std::cout << "  room_id: " << ticket.room_id << std::endl;
+    std::cout << "  showtime_key: " << ticket.showtime_key << std::endl;
+    std::cout << "  user_email: " << ticket.user_email << std::endl;
+    std::cout << "  seats: " << ticket.seats << std::endl;
+    std::cout << "  grand_total: " << ticket.grand_total << std::endl;
+    std::cout << "  booked_at_local: " << ticket.booked_at_local << std::endl;
+    
+    // ✅ BẮT BUỘC: Append ticket to CSV
+    std::cout << "\n[BookingScreen] Calling TicketRepository::appendTicket('data/tickets.csv')..." << std::endl;
+    bool ticketResult = TicketRepository::appendTicket("data/tickets.csv", ticket);
+    std::cout << "[BookingScreen] Ticket append result: " << (ticketResult ? "✅ SUCCESS" : "❌ FAILED") << std::endl;
     
     // Cập nhật lại occupied seats để bao gồm ghế vừa chọn
     occupiedSeats.insert(occupiedSeats.end(), selectedSeats.begin(), selectedSeats.end());
     // ✅ KHÔNG xóa selectedSeats ở đây vì cần hiển thị trong màn hình confirmation
+}
+
+// ✅ Helper function to get movie title by ID
+string BookingScreen::getMovieTitleById(int movie_id) {
+    auto movies = CSVReader::readCSV("data/movies.csv", true);
+    for (const auto& row : movies) {
+        if (row.size() >= 2 && std::stoi(row[0]) == movie_id) {
+            return row[1];  // Title is in column 1
+        }
+    }
+    return "Unknown Movie";
 }
 
 void BookingScreen::drawSeatSelection(RenderWindow& window) {
@@ -986,17 +1220,21 @@ void BookingScreen::initializeSnackMenu() {
     plusButtons.clear();
     minusButtons.clear();
     
-    // ✅ Tạo các combo với giá
-    snackItems.emplace_back("Combo 1", 65000, "../assets/elements/combo1.png");
-    snackItems.emplace_back("Combo 2", 105000, "../assets/elements/combo2.png");
-    snackItems.emplace_back("Bắp & Nước", 55000, "../assets/elements/pop_and_drink.png");
-    snackItems.emplace_back("Bắp ngô", 35000, "../assets/elements/one_pop.png");
-    snackItems.emplace_back("Nước uống", 25000, "../assets/elements/one_drink.png");
+    // ✅ Load food items từ foods.csv
+    std::cout << "[BookingScreen] Loading food items from foods.csv..." << std::endl;
+    auto foodItems = FoodsRepository::loadAll("data/foods.csv");
+    
+    // Convert FoodItem to SnackItem
+    for (const auto& food : foodItems) {
+        snackItems.emplace_back(food.name, food.price, food.image_path);
+    }
+    
+    std::cout << "[BookingScreen] Loaded " << snackItems.size() << " food items" << std::endl;
     
     // ✅ Load textures cho mỗi combo
     for (auto& item : snackItems) {
         if (!item.texture.loadFromFile(item.imagePath)) {
-            // Handle error - texture failed to load
+            std::cout << "[BookingScreen] Failed to load texture: " << item.imagePath << std::endl;
         }
     }
     
@@ -1497,3 +1735,4 @@ void BookingScreen::resetBookingData() {
         buttons_box[i].setFillColor(Color(80, 80, 90));
     }
 }
+

@@ -1,0 +1,2 @@
+ticket_id,booking_code,user_email,movie_id,movie_title,date,time,room_id,seats,seat_count,price_each,food_total,ticket_total,grand_total,status,created_at_epoch,showtime_key,booked_at_epoch,booked_at_local
+TKT0000001,CX20251031001,test@test.com,1,TỬ CHIẾN TRÊN KHÔNG,2025-10-31,19:30,Phong1,"A1;A2",2,45000,0,90000,90000,PAID,1761853647,ST-20251031-1930-Phong1,1761853647,2025-10-31 19:30:00+07:00

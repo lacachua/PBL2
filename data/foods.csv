@@ -1,0 +1,6 @@
+item_id,name,price_vnd,category,image_path
+COMBO_1,Combo 1,65000,combo,../assets/elements/combo1.png
+COMBO_2,Combo 2,105000,combo,../assets/elements/combo2.png
+POP_DRINK,Bắp và nước,55000,combo,../assets/elements/pop_and_drink.png
+POPCORN,Bắp ngô,35000,snack,../assets/elements/one_pop.png
+DRINK,Nước uống,25000,drink,../assets/elements/one_drink.png

@@ -13,7 +13,7 @@ App::App() :
     auth("../data/users.csv"),
     login(font, auth),
     registerScreen(font, auth),
-    booking(font),
+    booking(font, auth),  // ✅ Truyền AuthService vào BookingScreen
     accountScreen(font, auth)
     { 
         window.setFramerateLimit(60);
@@ -24,14 +24,9 @@ App::App() :
 
         vector<string> paths = getMoviePosterPaths("../data/movies.csv");        
         slider.loadPosters(paths, font);
-// <<<<<<< HEAD
-        
-//         // Load movies for search functionality
+        // Load movies for search functionality
         vector<Movie> movies = loadMoviesFromCSV("../data/movies.csv");
         home.initializeSearch(movies);
-
-// =======
-// >>>>>>> feature-datvengay
 }
 
 void App::run() {
@@ -130,24 +125,6 @@ void App::render() {
         }
 
         case AppState::MOVIE_DETAILS: {
-// <<<<<<< HEAD
-//             // Check if navigation came from search
-//             int searchMovieIdx = home.getSelectedMovieIndex();
-//             if (searchMovieIdx >= 0) {
-//                 DetailScreen detail(font, searchMovieIdx, currentUser);
-//                 detail.update(mousePos, mousePressed, state, currentEvent);
-//                 detail.draw(window);
-                
-//                 // Clear the selection when returning to home
-//                 if (state != AppState::MOVIE_DETAILS) {
-//                     home.clearSelectedMovieIndex();
-//                 }
-//             } else {
-//                 DetailScreen detail(font, slider.getSelectedIndex(), currentUser);
-//                 detail.update(mousePos, mousePressed, state, currentEvent);
-//                 detail.draw(window);
-//             }
-// =======
             static DetailScreen* detailScreen = nullptr;
             int currentIndex = slider.getSelectedIndex();
             
@@ -169,25 +146,18 @@ void App::render() {
         }
 
         case AppState::BOOKING: {
-            booking.handleEvent(window, mousePos, mousePressed);
+            booking.handleEvent(window, mousePos, mousePressed, state);
             booking.update(mousePos, mousePressed, state);
             booking.draw(window);
-// >>>>>>> feature-datvengay
             break;
         }
         
         case AppState::ACCOUNT: {
-            // Draw home screen (background + header) without slider
             home.draw(window);
-            // Don't draw slider
             home.drawSearchBox(window);
-            
-            // Only set user when state changes (not every frame)
             if (previousState != AppState::ACCOUNT) {
                 accountScreen.setCurrentUser(currentUserEmail);
             }
-            
-            // Draw account screen on top
             accountScreen.draw(window);
             break;
         }
