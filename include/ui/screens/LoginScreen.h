@@ -1,8 +1,8 @@
 #pragma once
 #include <SFML/Graphics.hpp> 
 #include <string>
-#include "AuthService.h"
-#include "AppState.h"
+#include "services/AuthService.h"
+#include "core/AppState.h"
 using namespace sf;
 using namespace std;
 

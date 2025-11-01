@@ -1,5 +1,5 @@
 #include "UI/screens/AccountScreen.h"
-#include "PasswordHasher.h"
+#include "utils/PasswordHasher.h"
 #ifdef _WIN32
 #include <windows.h>
 #endif

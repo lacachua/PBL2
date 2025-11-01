@@ -2,8 +2,8 @@
 #include <string>
 #include <ctime>
 #include "../include/data-structures/HashTable.h"
-#include "PasswordHasher.h"
-#include "Validator.h"
+#include "utils/PasswordHasher.h"
+#include "utils/Validator.h"
 using namespace std;
 
 struct User {

@@ -5,8 +5,8 @@
 #include "MoviesRepository.h"
 #include "FoodsRepository.h"
 #include "ShowtimeScheduler.h"
-#include "CSVReader.h"
-#include "AuthService.h"
+#include "utils/CSVReader.h"
+#include "services/AuthService.h"
 #include <locale>
 #include <codecvt>
 #include <ctime>

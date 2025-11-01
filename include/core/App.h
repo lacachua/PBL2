@@ -7,7 +7,7 @@
 #include "AppState.h"
 #include "UI/screens/LoginScreen.h"
 #include "UI/screens/RegisterScreen.h"
-#include "AuthService.h"
+#include "services/AuthService.h"
 #include "UI/screens/BookingScreen.h"
 #include "UI/screens/AccountScreen.h"
 
