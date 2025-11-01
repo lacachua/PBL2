@@ -1,4 +1,4 @@
-#include "RegisterScreen.h"
+#include "UI/screens/RegisterScreen.h"
 
 RegisterScreen::RegisterScreen(const Font& font, AuthService& authRef)
     : auth(authRef),

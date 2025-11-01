@@ -1,7 +1,7 @@
 #include "App.h"
-#include "DetailScreen.h"
+#include "UI/screens/DetailScreen.h"
 #include "Movie.h"
-#include "BookingScreen.h"
+#include "UI/screens/BookingScreen.h"
 #include <fstream>
 #include <sstream>
 

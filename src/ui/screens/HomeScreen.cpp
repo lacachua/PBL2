@@ -1,4 +1,4 @@
-#include "HomeScreen.h"
+#include "UI/screens/HomeScreen.h"
 
 HomeScreen::HomeScreen(Font& f)
 : font(f),

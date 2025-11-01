@@ -1,4 +1,4 @@
-#include "AccountScreen.h"
+#include "UI/screens/AccountScreen.h"
 #include "PasswordHasher.h"
 #ifdef _WIN32
 #include <windows.h>
