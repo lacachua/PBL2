@@ -1,7 +1,7 @@
 #pragma once
 #include <string>
 #include <ctime>
-#include "HashTable.h"
+#include "../include/data-structures/HashTable.h"
 #include "PasswordHasher.h"
 #include "Validator.h"
 using namespace std;
