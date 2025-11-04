@@ -1,64 +1,36 @@
 #include "UI/components/Slide.h"
 using namespace std;
 
-Slide::Slide(const Texture& texture, const Font& font) : 
-buttonLabel(font, L"Xem chi tiết", 22),
-sprite(texture)
+Slide::Slide(const Texture& texture, const Font& font) 
+    :   detail_button(font, L"Xem chi tiết", 150.f, 40.f, 18),
+        poster_sprite(texture)
 {
-    sprite.setScale({0.36, 0.36});
-
-    buttonBox.setSize({200, 45});
-    buttonBox.setFillColor(Color(255, 255, 255, 220));
-    buttonBox.setOutlineThickness(2.f);
-    buttonBox.setOutlineColor(Color(200, 200, 200));
+    poster_sprite.setScale({0.32f, 0.32f});
 }
 
 void Slide::setPosition(Vector2f pos) {
-    sprite.setPosition(pos);
-
-    FloatRect bounds = sprite.getGlobalBounds();
-
-    Vector2f buttonPos = {
-        bounds.position.x + bounds.size.x / 2 - buttonBox.getSize().x / 2,
-        bounds.position.y + bounds.size.y + 25 
+    poster_sprite.setPosition(pos);
+    FloatRect bounds = poster_sprite.getGlobalBounds();
+    Vector2f detailButton_pos = {
+        bounds.position.x + bounds.size.x / 2.f - detail_button.getSize().x / 2.f,
+        bounds.position.y + bounds.size.y + 25
     };
-    buttonBox.setPosition(buttonPos);
-
-    FloatRect txt = buttonLabel.getGlobalBounds();
-    buttonLabel.setPosition({
-        buttonPos.x + (buttonBox.getSize().x - txt.size.x) / 2,
-        buttonPos.y + (buttonBox.getSize().y - txt.size.y) / 2 - 5
-    }); 
+    detail_button.setPosition(detailButton_pos);
 }
 
 void Slide::draw(RenderWindow& window) {
-    window.draw(sprite);
-    window.draw(buttonBox);
-    window.draw(buttonLabel);
+    window.draw(poster_sprite);
+    detail_button.draw(window);
 }
 
-bool Slide::isButtonHovered(Vector2f mousePos) const {
-    return buttonBox.getGlobalBounds().contains(mousePos);
+void Slide::update(Vector2f mousePos, bool mousePressed) {
+    detail_button.update(mousePos, mousePressed);
 }
 
-bool Slide::isButtonClicked(Vector2f mousePos, bool mousePressed) const {
-    return mousePressed && isButtonHovered(mousePos);
-}
-
-void Slide::highlightButton(bool hovered) {
-    if (hovered) {
-        buttonBox.setFillColor(Color(52, 62, 209, 255));
-        buttonLabel.setFillColor(Color::White);
-    } else {
-        buttonBox.setFillColor(Color(255, 255, 255, 235));
-        buttonLabel.setFillColor(Color::Black);
-    }
-}
-
-Sprite& Slide::getPosterSprite() { 
-    return sprite;
+Sprite& Slide::getPosterSprite() {
+    return poster_sprite;
 }
     
 const Texture& Slide::getPosterTexture() const { 
-    return sprite.getTexture(); 
+    return poster_sprite.getTexture(); 
 }

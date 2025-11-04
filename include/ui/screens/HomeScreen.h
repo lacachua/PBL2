@@ -1,42 +1,62 @@
-#pragma once
-#include "UI/components/TextButton.h"
-#include "core/AppState.h"
-#include "UI/components/SearchBox.h"
-#include "services/MovieSearchManager.h"
-#include <SFML/Graphics.hpp>
-#include <vector>
-#include <string>
+// #pragma once
+// #include "UI/components/TextButton.h"
+// #include "core/AppState.h"
+// #include "UI/components/SearchBox.h"
+// #include "services/MovieSearchManager.h"
+// #include <SFML/Graphics.hpp>
+// #include <vector>
+// #include <string>
 
-using namespace sf;
+// using namespace sf;
 
-class HomeScreen {
-    protected:
-        Font& font;
-        Texture background, searchbar;
-        Sprite sprite1, sprite2;
+// class HomeScreen {
+//     protected:
+//         Font& font;
+//         Texture background, searchbar;
+//         Sprite sprite1, sprite2;
 
-        bool showDropdown = false;
-        RectangleShape dropdownBox;
-        TextButton accountButton, logoutButton;
+//         bool showDropdown = false;
+//         RectangleShape dropdownBox;
+//         TextButton accountButton, logoutButton;
 
-        string currentUser;
-        bool isUserLoggedIn = false;
+//         string currentUser;
+//         bool isUserLoggedIn = false;
         
-        SearchBox* searchBox;
-        MovieSearchManager* searchManager;
-        int selectedMovieIndex;
+//         SearchBox* searchBox;
+//         MovieSearchManager* searchManager;
+//         int selectedMovieIndex;
+//     public:
+//         static const int BUTTON_COUNT = 3;
+//         TextButton buttons[BUTTON_COUNT];
+//         HomeScreen(Font&);
+//         ~HomeScreen();
+//         void initializeSearch(const vector<Movie>& movies);
+//         void update(Vector2f, bool, AppState&, const Event* event = nullptr);
+//         void draw(RenderWindow&);
+//         void drawSearchBox(RenderWindow&);
+//         void drawDropdown(RenderWindow& window);
+//         void setLoggedUser(const string& username);
+//         void updateDropdownPosition();
+//         int getSelectedMovieIndex() const { return selectedMovieIndex; }
+//         void clearSelectedMovieIndex() { selectedMovieIndex = -1; }
+// };
+
+#pragma once
+#include "UI/screens/BaseScreen.h"
+#include "models/MovieRepository.h"
+#include "core/AppState.h"
+#include "UI/components/PosterSlider.h"
+#include <memory>
+
+class HomeScreen : public BaseScreen {
+    private:
+        RenderWindow& win;
+        unique_ptr<PosterSlider> slider;
+        unique_ptr<MovieRepository> repo;
+        Clock clock;
     public:
-        static const int BUTTON_COUNT = 3;
-        TextButton buttons[BUTTON_COUNT];
-        HomeScreen(Font&);
-        ~HomeScreen();
-        void initializeSearch(const vector<Movie>& movies);
-        void update(Vector2f, bool, AppState&, const Event* event = nullptr);
-        void draw(RenderWindow&);
-        void drawSearchBox(RenderWindow&);
-        void drawDropdown(RenderWindow& window);
-        void setLoggedUser(const string& username);
-        void updateDropdownPosition();
-        int getSelectedMovieIndex() const { return selectedMovieIndex; }
-        void clearSelectedMovieIndex() { selectedMovieIndex = -1; }
+        HomeScreen(Font&, RenderWindow&);
+        void update(Vector2f, bool) override;
+        void handleEvent(sf::Vector2f, bool, AppState&);
+        void draw(RenderWindow&) override;
 };

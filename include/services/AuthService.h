@@ -1,65 +1,65 @@
-#pragma once
-#include <string>
-#include <ctime>
-#include "../include/data-structures/HashTable.h"
-#include "utils/PasswordHasher.h"
-#include "utils/Validator.h"
-using namespace std;
+// #pragma once
+// #include <string>
+// #include <ctime>
+// #include "../include/data-structures/HashTable.h"
+// #include "utils/PasswordHasher.h"
+// #include "utils/Validator.h"
+// using namespace std;
 
-struct User {
-    string username;      // Tên người dùng (từ phần đầu email)
-    string email;
-    string passwordHash;
-    string fullName;
-    string birthDate;
-    string phone;
-    time_t registeredAt;
+// struct User {
+//     string username;      // Tên người dùng (từ phần đầu email)
+//     string email;
+//     string passwordHash;
+//     string fullName;
+//     string birthDate;
+//     string phone;
+//     time_t registeredAt;
     
-    User() : registeredAt(0) {}
-    User(const string& e, const string& h) 
-        : email(e), passwordHash(h), registeredAt(time(nullptr)) {
-        // Tự động tạo username từ email
-        size_t atPos = e.find('@');
-        username = (atPos != string::npos) ? e.substr(0, atPos) : e;
-    }
-};
+//     User() : registeredAt(0) {}
+//     User(const string& e, const string& h) 
+//         : email(e), passwordHash(h), registeredAt(time(nullptr)) {
+//         // Tự động tạo username từ email
+//         size_t atPos = e.find('@');
+//         username = (atPos != string::npos) ? e.substr(0, atPos) : e;
+//     }
+// };
 
-class AuthService {
-public:
-    explicit AuthService(const string& filePath);
-    ~AuthService();
+// class AuthService {
+// public:
+//     explicit AuthService(const string& filePath);
+//     ~AuthService();
 
-    // Registration with validation
-    bool registerUser(const string& email, const string& password, 
-                     const string& fullName = "", const string& birthDate = "", 
-                     const string& phone = "");
+//     // Registration with validation
+//     bool registerUser(const string& email, const string& password, 
+//                      const string& fullName = "", const string& birthDate = "", 
+//                      const string& phone = "");
 
-    // Login verification
-    bool verify(const string& email, const string& password);
+//     // Login verification
+//     bool verify(const string& email, const string& password);
     
-    // ✅ Session management
-    bool login(const string& email, const string& password);
-    void logout();
-    bool isLoggedIn() const;
-    string getCurrentUserEmail() const;
-    User* getCurrentUser();
+//     // ✅ Session management
+//     bool login(const string& email, const string& password);
+//     void logout();
+//     bool isLoggedIn() const;
+//     string getCurrentUserEmail() const;
+//     User* getCurrentUser();
 
-    // User management
-    User* getUser(const string& email);
-    bool emailExists(const string& email);
+//     // User management
+//     User* getUser(const string& email);
+//     bool emailExists(const string& email);
     
-    // Load/Save
-    void loadUsers();
-    void saveUsers();
+//     // Load/Save
+//     void loadUsers();
+//     void saveUsers();
     
-    // Create sample user for testing
-    void ensureSampleUser();
+//     // Create sample user for testing
+//     void ensureSampleUser();
 
-private:
-    string filePath;
-    HashTable<string, User> userByEmail;  // email -> User (O(1) lookup)
+// private:
+//     string filePath;
+//     HashTable<string, User> userByEmail;  // email -> User (O(1) lookup)
     
-    // ✅ Current session
-    string currentUserEmail;
-    bool loggedIn;
-};
+//     // ✅ Current session
+//     string currentUserEmail;
+//     bool loggedIn;
+// };

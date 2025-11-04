@@ -1,181 +1,181 @@
-#include "services/AuthService.h"
-#include <fstream>
-#include <sstream>
-#include <filesystem>
+// #include "services/AuthService.h"
+// #include <fstream>
+// #include <sstream>
+// #include <filesystem>
 
-using namespace std;
+// using namespace std;
 
-AuthService::AuthService(const string& filePath) 
-    : filePath(filePath), currentUserEmail(""), loggedIn(false) {
-    namespace fs = filesystem;
-    fs::path p(filePath);
-    fs::create_directories(p.parent_path());
+// AuthService::AuthService(const string& filePath) 
+//     : filePath(filePath), currentUserEmail(""), loggedIn(false) {
+//     namespace fs = filesystem;
+//     fs::path p(filePath);
+//     fs::create_directories(p.parent_path());
     
-    loadUsers();
-}
+//     loadUsers();
+// }
 
-AuthService::~AuthService() {
-    saveUsers();
-}
+// AuthService::~AuthService() {
+//     saveUsers();
+// }
 
-void AuthService::loadUsers() {
-    std::ifstream file(filePath, std::ios::binary);
-    if (!file.is_open()) return;
+// void AuthService::loadUsers() {
+//     std::ifstream file(filePath, std::ios::binary);
+//     if (!file.is_open()) return;
 
-    // đọc toàn bộ file
-    std::string data((std::istreambuf_iterator<char>(file)), {});
-    file.close();
+//     // đọc toàn bộ file
+//     std::string data((std::istreambuf_iterator<char>(file)), {});
+//     file.close();
 
-    // bỏ BOM nếu có
-    if (data.size() >= 3 &&
-        (unsigned char)data[0] == 0xEF &&
-        (unsigned char)data[1] == 0xBB &&
-        (unsigned char)data[2] == 0xBF) {
-        data.erase(0, 3);
-    }
+//     // bỏ BOM nếu có
+//     if (data.size() >= 3 &&
+//         (unsigned char)data[0] == 0xEF &&
+//         (unsigned char)data[1] == 0xBB &&
+//         (unsigned char)data[2] == 0xBF) {
+//         data.erase(0, 3);
+//     }
 
-    // parse CSV
-    std::stringstream ss(data);
-    std::string line;
-    std::getline(ss, line); // bỏ header
+//     // parse CSV
+//     std::stringstream ss(data);
+//     std::string line;
+//     std::getline(ss, line); // bỏ header
 
-    while (std::getline(ss, line)) {
-        if (line.empty()) continue;
-        std::stringstream ls(line);
+//     while (std::getline(ss, line)) {
+//         if (line.empty()) continue;
+//         std::stringstream ls(line);
 
-        User user;
-        std::string regTimeStr;
-        std::getline(ls, user.email, ',');
-        std::getline(ls, user.passwordHash, ',');
-        std::getline(ls, user.fullName, ',');
-        std::getline(ls, user.birthDate, ',');
-        std::getline(ls, user.phone, ',');
-        std::getline(ls, regTimeStr, ',');
+//         User user;
+//         std::string regTimeStr;
+//         std::getline(ls, user.email, ',');
+//         std::getline(ls, user.passwordHash, ',');
+//         std::getline(ls, user.fullName, ',');
+//         std::getline(ls, user.birthDate, ',');
+//         std::getline(ls, user.phone, ',');
+//         std::getline(ls, regTimeStr, ',');
 
-        if (!user.email.empty() && !user.passwordHash.empty()) {
-            try { user.registeredAt = std::stoll(regTimeStr); }
-            catch (...) { user.registeredAt = time(nullptr); }
+//         if (!user.email.empty() && !user.passwordHash.empty()) {
+//             try { user.registeredAt = std::stoll(regTimeStr); }
+//             catch (...) { user.registeredAt = time(nullptr); }
 
-            size_t atPos = user.email.find('@');
-            user.username = (atPos != std::string::npos)
-                ? user.email.substr(0, atPos) : user.email;
+//             size_t atPos = user.email.find('@');
+//             user.username = (atPos != std::string::npos)
+//                 ? user.email.substr(0, atPos) : user.email;
 
-            userByEmail.insert(user.email, user);
-        }
-    }
-}
+//             userByEmail.insert(user.email, user);
+//         }
+//     }
+// }
 
 
-void AuthService::saveUsers() {
-    // Mở file với UTF-8 BOM để hỗ trợ tiếng Việt
-    ofstream file(filePath, ios::out | ios::trunc | ios::binary);
-    if (!file.is_open()) return;
+// void AuthService::saveUsers() {
+//     // Mở file với UTF-8 BOM để hỗ trợ tiếng Việt
+//     ofstream file(filePath, ios::out | ios::trunc | ios::binary);
+//     if (!file.is_open()) return;
     
-    // Write UTF-8 BOM
-    const char bom[] = { (char)0xEF, (char)0xBB, (char)0xBF };
-    file.write(bom, 3);
+//     // Write UTF-8 BOM
+//     const char bom[] = { (char)0xEF, (char)0xBB, (char)0xBF };
+//     file.write(bom, 3);
     
-    // Write header
-    file << "email,passwordHash,fullName,birthDate,phone,registeredAt\n";
+//     // Write header
+//     file << "email,passwordHash,fullName,birthDate,phone,registeredAt\n";
     
-    // Write all users
-    userByEmail.forEach([&](const string& email, User& user) {
-        file << user.email << ","
-             << user.passwordHash << ","
-             << user.fullName << ","
-             << user.birthDate << ","
-             << user.phone << ","
-             << user.registeredAt << "\n";
-    });
+//     // Write all users
+//     userByEmail.forEach([&](const string& email, User& user) {
+//         file << user.email << ","
+//              << user.passwordHash << ","
+//              << user.fullName << ","
+//              << user.birthDate << ","
+//              << user.phone << ","
+//              << user.registeredAt << "\n";
+//     });
     
-    file.close();
-}
+//     file.close();
+// }
 
-bool AuthService::registerUser(const string& email, const string& password,
-                               const string& fullName, const string& birthDate,
-                               const string& phone) {
-    // Validate inputs
-    if (email.empty() || password.empty()) return false;
-    if (!Validator::isValidEmail(email)) return false;
-    if (!Validator::isStrongPassword(password)) return false;
+// bool AuthService::registerUser(const string& email, const string& password,
+//                                const string& fullName, const string& birthDate,
+//                                const string& phone) {
+//     // Validate inputs
+//     if (email.empty() || password.empty()) return false;
+//     if (!Validator::isValidEmail(email)) return false;
+//     if (!Validator::isStrongPassword(password)) return false;
     
-    if (!phone.empty() && !Validator::isValidPhone(phone)) return false;
-    if (!birthDate.empty() && !Validator::isValidDate(birthDate)) return false;
+//     if (!phone.empty() && !Validator::isValidPhone(phone)) return false;
+//     if (!birthDate.empty() && !Validator::isValidDate(birthDate)) return false;
     
-    // Check if email already exists
-    if (emailExists(email)) return false;
+//     // Check if email already exists
+//     if (emailExists(email)) return false;
     
-    // Create new user
-    User newUser;
-    newUser.email = email;
-    newUser.passwordHash = PasswordHasher::hashPassword(password);
-    newUser.fullName = fullName;
-    newUser.birthDate = birthDate;
-    newUser.phone = phone;
-    newUser.registeredAt = time(nullptr);
+//     // Create new user
+//     User newUser;
+//     newUser.email = email;
+//     newUser.passwordHash = PasswordHasher::hashPassword(password);
+//     newUser.fullName = fullName;
+//     newUser.birthDate = birthDate;
+//     newUser.phone = phone;
+//     newUser.registeredAt = time(nullptr);
     
-    // Tạo username từ email
-    size_t atPos = email.find('@');
-    newUser.username = (atPos != string::npos) ? email.substr(0, atPos) : email;
+//     // Tạo username từ email
+//     size_t atPos = email.find('@');
+//     newUser.username = (atPos != string::npos) ? email.substr(0, atPos) : email;
     
-    // Insert into hash table
-    userByEmail.insert(email, newUser);
+//     // Insert into hash table
+//     userByEmail.insert(email, newUser);
     
-    // Save to file
-    saveUsers();
+//     // Save to file
+//     saveUsers();
     
-    return true;
-}
+//     return true;
+// }
 
-bool AuthService::verify(const string& email, const string& password) {
-    // Find user
-    User* user = userByEmail.find(email);
-    if (!user) {
-        return false;
-    }
+// bool AuthService::verify(const string& email, const string& password) {
+//     // Find user
+//     User* user = userByEmail.find(email);
+//     if (!user) {
+//         return false;
+//     }
     
-    // Verify password
-    return PasswordHasher::verifyPassword(password, user->passwordHash);
-}
+//     // Verify password
+//     return PasswordHasher::verifyPassword(password, user->passwordHash);
+// }
 
-// ✅ Session management implementation
-bool AuthService::login(const string& email, const string& password) {
-    if (verify(email, password)) {
-        currentUserEmail = email;
-        loggedIn = true;
-        return true;
-    }
-    return false;
-}
+// // ✅ Session management implementation
+// bool AuthService::login(const string& email, const string& password) {
+//     if (verify(email, password)) {
+//         currentUserEmail = email;
+//         loggedIn = true;
+//         return true;
+//     }
+//     return false;
+// }
 
-void AuthService::logout() {
-    currentUserEmail = "";
-    loggedIn = false;
-}
+// void AuthService::logout() {
+//     currentUserEmail = "";
+//     loggedIn = false;
+// }
 
-bool AuthService::isLoggedIn() const {
-    return loggedIn && !currentUserEmail.empty();
-}
+// bool AuthService::isLoggedIn() const {
+//     return loggedIn && !currentUserEmail.empty();
+// }
 
-string AuthService::getCurrentUserEmail() const {
-    return currentUserEmail;
-}
+// string AuthService::getCurrentUserEmail() const {
+//     return currentUserEmail;
+// }
 
-User* AuthService::getCurrentUser() {
-    if (!isLoggedIn()) return nullptr;
-    return getUser(currentUserEmail);
-}
+// User* AuthService::getCurrentUser() {
+//     if (!isLoggedIn()) return nullptr;
+//     return getUser(currentUserEmail);
+// }
 
-User* AuthService::getUser(const string& email) {
-    return userByEmail.find(email);
-}
+// User* AuthService::getUser(const string& email) {
+//     return userByEmail.find(email);
+// }
 
-bool AuthService::emailExists(const string& email) {
-    return userByEmail.exists(email);
-}
+// bool AuthService::emailExists(const string& email) {
+//     return userByEmail.exists(email);
+// }
 
-void AuthService::ensureSampleUser() {
-    if (!emailExists("test@gmail.com")) {
-        registerUser("test@gmail.com", "Test1234", "Test User", "01/01/2000", "0901234567");
-    }
-}
+// void AuthService::ensureSampleUser() {
+//     if (!emailExists("test@gmail.com")) {
+//         registerUser("test@gmail.com", "Test1234", "Test User", "01/01/2000", "0901234567");
+//     }
+// }

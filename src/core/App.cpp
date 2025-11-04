@@ -1,168 +1,198 @@
-#include "core/App.h"
-#include "ui/screens/DetailScreen.h"
-#include "models/Movie.h"
-#include "ui/screens/BookingScreen.h"
-#include <fstream>
-#include <sstream>
+// #include "core/App.h"
+// #include "ui/screens/DetailScreen.h"
+// #include "models/Movie.h"
+// #include "ui/screens/BookingScreen.h"
+// #include <fstream>
+// #include <sstream>
 
-App::App() : 
-    window(VideoMode({1728, 972}), L"CiNeXíNè", Style::Titlebar | Style::Close),
-    font("../assets/Montserrat_SemiBold.ttf"),
-    home(font),
-    slider(font, window),
-    auth("../data/users.csv"),
-    login(font, auth),
-    registerScreen(font, auth),
-    booking(font),
-    accountScreen(font, auth)
-{ 
-    window.setFramerateLimit(60);
-    Image icon("../assets/icon.png");
-    window.setIcon(icon);
+// App::App() : 
+//     window(VideoMode({1728, 972}), L"CiNeXíNè", Style::Titlebar | Style::Close),
+//     font("../assets/Montserrat_SemiBold.ttf"),
+//     home(font),
+//     slider(font, window),
+//     auth("../data/users.csv"),
+//     login(font, auth),
+//     registerScreen(font, auth),
+//     booking(font),
+//     accountScreen(font, auth)
+// { 
+//     window.setFramerateLimit(60);
+//     Image icon("../assets/icon.png");
+//     window.setIcon(icon);
 
-    auth.ensureSampleUser();
+//     auth.ensureSampleUser();
 
-    vector<string> paths = getMoviePosterPaths("../data/movies.csv");        
-    slider.loadPosters(paths, font);
+//     vector<string> paths = getMoviePosterPaths("../data/movies.csv");        
+//     slider.loadPosters(paths, font);
     
-    // Load movies for search functionality
-    vector<Movie> movies = loadMoviesFromCSV("../data/movies.csv");
-    home.initializeSearch(movies);
+//     // Load movies for search functionality
+//     vector<Movie> movies = loadMoviesFromCSV("../data/movies.csv");
+//     home.initializeSearch(movies);
+// }
+
+// void App::run() {
+//     Clock clock;
+
+//     while (window.isOpen()) {
+//         float dt = clock.restart().asSeconds();
+//         processEvents();
+//         update(dt);
+//         render();
+//     }
+// }
+
+// void App::processEvents() {
+//     mousePressed = false;
+//     currentEvent = nullptr;
+
+//     while (auto optEvent = window.pollEvent()) {
+//         const Event& event = *optEvent;
+//         currentEvent = &event;
+        
+//         if (event.is<Event::Closed>()) window.close();
+//         if (event.is<Event::MouseButtonPressed>()) mousePressed = true;
+
+//         mousePos = window.mapPixelToCoords(Mouse::getPosition(window));
+
+//         switch (state) {
+//             case AppState::HOME:
+//                 home.setLoggedUser(currentUser);
+//                 home.update(mousePos, mousePressed, state, &event);
+//                 break;
+
+//             case AppState::LOGIN:
+//                 home.update(mousePos, mousePressed, state, &event);
+//                 if (login.update(mousePos, mousePressed, event, currentUser, currentUserEmail, state)) {
+//                     home.setLoggedUser(currentUser);
+//                     state = AppState::HOME;
+//                 }
+//                 break;
+            
+//             case AppState::REGISTER:
+//                 home.update(mousePos, mousePressed, state, &event);
+//                 if (registerScreen.update(mousePos, mousePressed, event))
+//                     state = AppState::LOGIN;
+//                 break;
+            
+//             case AppState::ACCOUNT:
+//                 home.setLoggedUser(currentUser);
+//                 home.update(mousePos, mousePressed, state, &event);
+//                 accountScreen.update(mousePos, mousePressed, &event, state);
+//                 break;
+
+//             default:
+//                 break;
+//         }
+
+//         slider.handleEvent(mousePos, mousePressed, state);
+//     }
+// }
+
+// void App::update(float dt) {
+//     slider.update(dt, window);
+// }
+
+// void App::render() {
+//     window.clear(Color::Black);
+
+//     switch (state) {
+//         case AppState::HOME: {
+//             home.draw(window);
+//             slider.draw(window);
+//             home.drawSearchBox(window);
+//             home.drawDropdown(window);
+//             break;
+//         }
+
+//         case AppState::LOGIN: {
+//             home.draw(window);
+//             slider.draw(window);
+//             home.drawSearchBox(window);
+//             login.draw(window);
+//             break;
+//         }
+
+//         case AppState::REGISTER: {
+//             home.draw(window);
+//             slider.draw(window);
+//             home.drawSearchBox(window);
+//             registerScreen.draw(window);
+//             break;
+//         }
+
+//         case AppState::MOVIE_DETAILS: {
+//             static DetailScreen* detailScreen = nullptr;
+//             int currentIndex = slider.getSelectedIndex();
+            
+//             if (previousState != AppState::MOVIE_DETAILS || previousMovieIndex != currentIndex) {
+//                 delete detailScreen;
+//                 detailScreen = new DetailScreen(font, currentIndex, currentUser);
+//                 previousMovieIndex = currentIndex;
+//             }
+            
+//             detailScreen->update(mousePos, mousePressed, state);
+//             detailScreen->draw(window);
+
+//             if (state == AppState::BOOKING && detailScreen != nullptr) {
+//                 booking.loadFromDetail(*detailScreen);
+//                 booking.setLoggedUser(currentUser);
+//             }
+//             break;
+//         }
+
+//         case AppState::BOOKING: {
+//             booking.handleEvent(window, mousePos, mousePressed);
+//             booking.update(mousePos, mousePressed, state);
+//             booking.draw(window);
+//             break;
+//         }
+        
+//         case AppState::ACCOUNT: {
+//             home.draw(window);
+//             home.drawSearchBox(window);
+            
+//             if (previousState != AppState::ACCOUNT) {
+//                 accountScreen.setCurrentUser(currentUserEmail);
+//             }
+            
+//             accountScreen.draw(window);
+//             break;
+//         }
+
+//         default:
+//             break;
+//     }
+
+//     previousState = state;
+//     window.display();
+// }
+
+#include "core/App.h"
+
+App::App() 
+    :   window(VideoMode({1728, 972}), L"CiNeXíNè", Style::Titlebar | Style::Close),
+        font("../assets/fonts/Montserrat_SemiBold.ttf"),
+        home(font, window),
+        state(AppState::HOME)
+{
+    window.setFramerateLimit(120);
 }
 
 void App::run() {
-    Clock clock;
-
     while (window.isOpen()) {
-        float dt = clock.restart().asSeconds();
-        processEvents();
-        update(dt);
-        render();
-    }
-}
+        bool mousePressed = false;
+        while (auto event = window.pollEvent()) {
+            if (event->is<Event::Closed>()) window.close();
+            if (event->is<Event::MouseButtonPressed>()) mousePressed = true;
+        }
 
-void App::processEvents() {
-    mousePressed = false;
-    currentEvent = nullptr;
-
-    while (auto optEvent = window.pollEvent()) {
-        const Event& event = *optEvent;
-        currentEvent = &event;
+        Vector2f mousePos = window.mapPixelToCoords(Mouse::getPosition(window));
+        home.update(mousePos, mousePressed);
+        home.handleEvent(mousePos, mousePressed, state);
         
-        if (event.is<Event::Closed>()) window.close();
-        if (event.is<Event::MouseButtonPressed>()) mousePressed = true;
-
-        mousePos = window.mapPixelToCoords(Mouse::getPosition(window));
-
-        switch (state) {
-            case AppState::HOME:
-                home.setLoggedUser(currentUser);
-                home.update(mousePos, mousePressed, state, &event);
-                break;
-
-            case AppState::LOGIN:
-                home.update(mousePos, mousePressed, state, &event);
-                if (login.update(mousePos, mousePressed, event, currentUser, currentUserEmail, state)) {
-                    home.setLoggedUser(currentUser);
-                    state = AppState::HOME;
-                }
-                break;
-            
-            case AppState::REGISTER:
-                home.update(mousePos, mousePressed, state, &event);
-                if (registerScreen.update(mousePos, mousePressed, event))
-                    state = AppState::LOGIN;
-                break;
-            
-            case AppState::ACCOUNT:
-                home.setLoggedUser(currentUser);
-                home.update(mousePos, mousePressed, state, &event);
-                accountScreen.update(mousePos, mousePressed, &event, state);
-                break;
-
-            default:
-                break;
-        }
-
-        slider.handleEvent(mousePos, mousePressed, state);
+        window.clear(Color::White);
+        home.draw(window);
+        window.display();
     }
 }
 
-void App::update(float dt) {
-    slider.update(dt, window);
-}
-
-void App::render() {
-    window.clear(Color::Black);
-
-    switch (state) {
-        case AppState::HOME: {
-            home.draw(window);
-            slider.draw(window);
-            home.drawSearchBox(window);
-            home.drawDropdown(window);
-            break;
-        }
-
-        case AppState::LOGIN: {
-            home.draw(window);
-            slider.draw(window);
-            home.drawSearchBox(window);
-            login.draw(window);
-            break;
-        }
-
-        case AppState::REGISTER: {
-            home.draw(window);
-            slider.draw(window);
-            home.drawSearchBox(window);
-            registerScreen.draw(window);
-            break;
-        }
-
-        case AppState::MOVIE_DETAILS: {
-            static DetailScreen* detailScreen = nullptr;
-            int currentIndex = slider.getSelectedIndex();
-            
-            if (previousState != AppState::MOVIE_DETAILS || previousMovieIndex != currentIndex) {
-                delete detailScreen;
-                detailScreen = new DetailScreen(font, currentIndex, currentUser);
-                previousMovieIndex = currentIndex;
-            }
-            
-            detailScreen->update(mousePos, mousePressed, state);
-            detailScreen->draw(window);
-
-            if (state == AppState::BOOKING && detailScreen != nullptr) {
-                booking.loadFromDetail(*detailScreen);
-                booking.setLoggedUser(currentUser);
-            }
-            break;
-        }
-
-        case AppState::BOOKING: {
-            booking.handleEvent(window, mousePos, mousePressed);
-            booking.update(mousePos, mousePressed, state);
-            booking.draw(window);
-            break;
-        }
-        
-        case AppState::ACCOUNT: {
-            home.draw(window);
-            home.drawSearchBox(window);
-            
-            if (previousState != AppState::ACCOUNT) {
-                accountScreen.setCurrentUser(currentUserEmail);
-            }
-            
-            accountScreen.draw(window);
-            break;
-        }
-
-        default:
-            break;
-    }
-
-    previousState = state;
-    window.display();
-}

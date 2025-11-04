@@ -15,7 +15,7 @@ private:
         
         Node(const K& k, const V& v) : key(k), value(v), next(nullptr) {}
     };
-    
+
     Node** buckets;
     int capacity;
     int size;

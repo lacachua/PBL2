@@ -1,20 +1,18 @@
 #pragma once
 #include <SFML/Graphics.hpp>
+#include "UI/components/Button.h"
 using namespace sf;
 
 class Slide {
 private:
-    Sprite sprite;
-    RectangleShape buttonBox;
-    Text buttonLabel;
+    Sprite poster_sprite;
+    Button detail_button;
 
 public:
     Slide(const Texture&, const Font&);
     void setPosition(Vector2f);
+    void update(Vector2f, bool);
     void draw(RenderWindow&);
-    bool isButtonHovered(Vector2f) const;
-    bool isButtonClicked(Vector2f, bool) const;
-    void highlightButton(bool);
     Sprite& getPosterSprite();
     const Texture& getPosterTexture() const;
 };
