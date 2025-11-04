@@ -13,6 +13,7 @@ public:
     void setPosition(Vector2f);
     void update(Vector2f, bool);
     void draw(RenderWindow&);
+    bool isDetailButtonClicked(Vector2f, bool);
     Sprite& getPosterSprite();
     const Texture& getPosterTexture() const;
 };

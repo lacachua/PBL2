@@ -45,7 +45,7 @@
 #include "UI/screens/BaseScreen.h"
 #include "models/MovieRepository.h"
 #include "core/AppState.h"
-#include "UI/components/PosterSlider.h"
+#include "UI/components/PosterSlider/PosterSlider.h"
 #include <memory>
 
 class HomeScreen : public BaseScreen {

@@ -1,5 +1,5 @@
 #pragma once
-#include "IPosterProvider.h"
+#include "UI/components/PosterSlider/IPosterProvider.h"
 #include "utils/TextFileReader.h"
 
 class MovieRepository : public IPosterProvider {

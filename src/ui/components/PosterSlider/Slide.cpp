@@ -1,4 +1,4 @@
-#include "UI/components/Slide.h"
+#include "UI/components/PosterSlider/Slide.h"
 using namespace std;
 
 Slide::Slide(const Texture& texture, const Font& font) 
@@ -25,6 +25,10 @@ void Slide::draw(RenderWindow& window) {
 
 void Slide::update(Vector2f mousePos, bool mousePressed) {
     detail_button.update(mousePos, mousePressed);
+}
+
+bool Slide::isDetailButtonClicked(Vector2f mousePos, bool mousePressed) {
+    return detail_button.getGlobalBounds().contains(mousePos) && mousePressed;
 }
 
 Sprite& Slide::getPosterSprite() {
