@@ -601,3 +601,23 @@
 //         buttons_box[i].setFillColor(Color(80, 80, 90));
 //     }
 // }
+
+#include "UI/screens/BookingScreen.h"
+using namespace std;
+using namespace sf;
+
+BookingScreen::BookingScreen(Font& f) 
+    :   BaseScreen(f), font(f), title_text(f, L"Dat ve", 30)
+{
+
+}
+
+void BookingScreen::update(Vector2f mousePos, bool mousePressed, AppState& state) {
+    BaseScreen::update(mousePos, mousePressed, state);
+    // Chưa có hành động cụ thể ở đây
+}
+
+void BookingScreen::draw(RenderWindow& window) {
+    BaseScreen::draw(window);
+    window.draw(title_text);
+}

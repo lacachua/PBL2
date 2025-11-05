@@ -85,3 +85,27 @@
 //         }
 //     }
 // };
+
+#pragma once
+#include "BaseScreen.h"
+#include "UI/components/Button.h"
+#include "core/AppState.h"
+
+struct MovieDetail {
+    wstring title, age_rating, country, language, genres, duration_min, release_date, director, cast, synopsis, posterPath, status;
+};
+
+class DetailScreen : public BaseScreen {
+    private:
+        Font subTitle_font, detail_font;
+        Texture poster_tex;
+        Sprite poster;
+        Text title_text, info_text, synopsis_text;
+        TextButton backBtn;
+        Button bookBtn;
+        MovieDetail movie;
+    public:
+        DetailScreen(Font&, const MovieDetail&);
+        void update(Vector2f, bool, AppState&) override;
+        void draw(RenderWindow&) override;
+};

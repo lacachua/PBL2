@@ -311,3 +311,84 @@
 // const Sprite& DetailScreen::getPosterSprite() const {
 //     return poster;
 // }
+
+#include "UI/screens/DetailScreen.h"
+#include <sstream>
+
+using namespace sf;
+using namespace std;
+
+DetailScreen::DetailScreen(Font& f, const MovieDetail& detail)
+    : BaseScreen(f),
+      subTitle_font("../assets/fonts/BEBAS_NEUE_ZSMALL.ttf"),
+      detail_font("../assets/fonts/quicksand_medium.ttf"),
+      movie(detail),
+      backBtn(f, L"← Quay lại", 18, {160.f, 40.f}),
+      bookBtn(f, L"Đặt vé ngay", 180.f, 40.f, 20),
+      poster_tex(detail.posterPath),
+      poster(poster_tex),
+      title_text(f, detail.title, 42),
+      info_text(subTitle_font),
+      synopsis_text(detail_font)
+{
+    poster.setScale({0.32f, 0.32f});
+    poster.setPosition({150.f, 160.f});
+
+    title_text.setFillColor(Color::White);
+    title_text.setPosition({700.f, 150.f});
+    title_text.setOutlineThickness(2.f);
+    title_text.setOutlineColor(Color(20, 118, 172));
+
+    info_text.setCharacterSize(20);
+    info_text.setFillColor(Color(220, 220, 220));
+    info_text.setPosition({700.f, 260.f});
+
+    wstringstream ss;
+    ss << L"🎬 Thể loại: " << detail.genres << L"\n"
+       << L"🌍 Quốc gia: " << detail.country << L"\n"
+       << L"🗣  Ngôn ngữ: " << detail.language << L"\n"
+       << L"👤 Đạo diễn: " << detail.director << L"\n"
+       << L"⭐ Diễn viên: " << detail.cast << L"\n"
+       << L"🕒 Thời lượng: " << detail.duration_min << L" phút\n"
+       << L"📅 Khởi chiếu: " << detail.release_date << L"\n"
+       << L"🔞 Phân loại: " << detail.age_rating;
+    info_text.setString(ss.str());
+
+    // ✅ Tóm tắt phim
+    synopsis_text.setCharacterSize(20);
+    synopsis_text.setFillColor(Color(230, 230, 230));
+    synopsis_text.setPosition({700.f, 550.f});
+    synopsis_text.setString(L"Tóm tắt:\n" + detail.synopsis);
+
+    // ✅ Các nút
+    backBtn.setPosition({150.f, 130.f});
+    bookBtn.setPosition({700.f, 750.f});
+}
+
+void DetailScreen::update(Vector2f mousePos, bool mousePressed, AppState& state) {
+    // Update BaseScreen buttons (header buttons)
+    BaseScreen::update(mousePos, mousePressed, state);
+    
+    // Update detail screen specific buttons
+    backBtn.update(mousePos);
+    bookBtn.update(mousePos, mousePressed);
+
+    // Check button clicks
+    if (backBtn.isClicked(mousePos, mousePressed)) {
+        state = AppState::HOME;
+    }
+    else if (bookBtn.isClicked(mousePos, mousePressed)) {
+        state = AppState::BOOKING;
+    }
+}
+
+void DetailScreen::draw(RenderWindow& window) {
+    BaseScreen::draw(window);
+    window.draw(poster);
+    window.draw(title_text);
+    window.draw(info_text);
+    window.draw(synopsis_text);
+    backBtn.draw(window);
+    bookBtn.draw(window);
+}
+

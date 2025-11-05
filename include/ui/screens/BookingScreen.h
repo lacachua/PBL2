@@ -86,3 +86,19 @@
 //     void draw(RenderWindow&);
 //     void loadFromDetail(const DetailScreen&);
 // };
+
+#pragma once
+#include <SFML/Graphics.hpp>
+#include "data-structures/DLL.h"
+#include "core/AppState.h"
+#include "BaseScreen.h"
+
+class BookingScreen : public BaseScreen {
+    private:
+        Font& font;
+        Text title_text;
+    public:
+        BookingScreen(Font&);
+        void update(Vector2f, bool, AppState&) override;
+        void draw(RenderWindow&) override;
+};  

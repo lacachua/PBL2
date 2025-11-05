@@ -49,6 +49,8 @@
 #pragma once
 #include <SFML/Graphics.hpp>
 #include "UI/screens/HomeScreen.h"
+#include "UI/screens/DetailScreen.h"
+#include "UI/screens/BookingScreen.h"
 #include "core/AppState.h"
 using namespace std;
 using namespace sf;
@@ -57,8 +59,13 @@ class App {
     private:
         RenderWindow window;
         Font font;
-        HomeScreen home;
+        unique_ptr<HomeScreen> homeScreen;
+        unique_ptr<DetailScreen> detailScreen;
+        unique_ptr<BookingScreen> bookingScreen;
         AppState state;
+        AppState previousState;
+
+        void handleStateChange();
     public:
         App();
         void run();

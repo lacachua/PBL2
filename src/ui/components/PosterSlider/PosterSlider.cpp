@@ -34,17 +34,16 @@ void PosterSlider::loadPosters(IPosterProvider& provider, const Font& font) {
         textures.push_back(move(tex));
         slides.push_back(Slide(textures[textures.getSize() - 1], font));
     }
-    float dotRadius = 7.f;
-    float spacing = 25.f;
+
     int numDots = slides.getSize();
-    float startX = (1700.f - (numDots - 1) * spacing) / 2.f;
+    float startX = (1700.f - (numDots - 1) * 25.f) / 2.f;
 
     for (int i = 0; i < numDots; ++i) {
-        CircleShape dot(dotRadius);
+        CircleShape dot(7.f);
         dot.setOutlineThickness(0);
         dot.setOutlineColor(Color::White);
         dot.setFillColor(Color(120, 120, 120));
-        dot.setPosition({startX + i * spacing, 900.f});
+        dot.setPosition({startX + i * 25.f, 900.f});
         dots.push_back(dot);
     }
 
@@ -110,27 +109,47 @@ void PosterSlider::draw(RenderWindow& window) {
 }
 
 void PosterSlider::handleEvent(const Vector2f& mousePos, bool mousePressed, AppState& state) {
-    if (animator.isAnimating() || slides.getSize() == 0 || !mousePressed) return;
+    bool justClicked = mousePressed && !wasMousePressed;
+    wasMousePressed = mousePressed;
+    
+    if (animator.isAnimating() || slides.getSize() == 0 || !justClicked) return;
 
-    if (leftButton.isClicked(mousePos, mousePressed)) {
+    if (leftButton.isClicked(mousePos, true)) {
         targetIndex = (currentIndex - 1 + slides.getSize()) % slides.getSize();
-        animator.start(slides[currentIndex].getPosterSprite().getPosition().x);
+        animator.start(slides[currentIndex].getPosterSprite().getPosition().x, -1);  // Force left direction
     }
-    else if (rightButton.isClicked(mousePos, mousePressed)) {
+    else if (rightButton.isClicked(mousePos, true)) {
         targetIndex = (currentIndex + 1) % slides.getSize();
-        animator.start(slides[currentIndex].getPosterSprite().getPosition().x);
+        animator.start(slides[currentIndex].getPosterSprite().getPosition().x, 1);  // Force right direction
     }
     else {
         for (int i = 0; i < dots.getSize(); i++) {
             if (dots[i].getGlobalBounds().contains(mousePos)) {
                 targetIndex = i;
-                animator.start(slides[currentIndex].getPosterSprite().getPosition().x);
+                
+                // Determine direction based on target position
+                int direction;
+                if (i > currentIndex) {
+                    direction = 1;  // Always go RIGHT to higher index
+                } else if (i < currentIndex) {
+                    direction = -1;  // Always go LEFT to lower index
+                } else {
+                    return;  // Same dot, do nothing
+                }
+                
+                animator.start(slides[currentIndex].getPosterSprite().getPosition().x, direction);
                 return;
             }
         }
-        for (int i = 0; i < slides.getSize(); i++) 
-            if (slides[i].isDetailButtonClicked(mousePos, mousePressed))
+        
+        for (int i = 0 ; i < slides.getSize(); i++) {
+            if (slides[i].isDetailButtonClicked(mousePos, true)) {
+                currentIndex = i;
                 if (onDetailRequested) onDetailRequested(i);
+                state = AppState::MOVIE_DETAILS;
+                return;
+            }
+        }
     }
 }
 

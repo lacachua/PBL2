@@ -42,7 +42,7 @@
 // };
 
 #pragma once
-#include "UI/screens/BaseScreen.h"
+#include "BaseScreen.h"
 #include "models/MovieRepository.h"
 #include "core/AppState.h"
 #include "UI/components/PosterSlider/PosterSlider.h"
@@ -56,7 +56,10 @@ class HomeScreen : public BaseScreen {
         Clock clock;
     public:
         HomeScreen(Font&, RenderWindow&);
-        void update(Vector2f, bool) override;
-        void handleEvent(sf::Vector2f, bool, AppState&);
+        void update(Vector2f, bool, AppState&) override;
+        void handleEvent(Vector2f, bool, AppState&);
         void draw(RenderWindow&) override;
+
+        int getSelectedIndex() const { return repo ? repo->getSelectedIndex() : -1; }
+        MovieDetail getMovieDetailbyIndex(int idx) const { return repo->getMovieDetailbyIndex(idx); }
 };

@@ -1,5 +1,6 @@
 #pragma once
 #include <SFML/Graphics.hpp>
+#include "core/AppState.h"
 #include "UI/components/TextButton.h"
 #include "data-structures/DLL.h"
 using namespace std;
@@ -38,7 +39,7 @@ class BaseScreen {
             searchBar_sprite.setPosition({600.f, 50.f});
         }
 
-        virtual void update(Vector2f mousePos, bool mousePressed) {
+        virtual void update(Vector2f mousePos, bool mousePressed, AppState& state) {
             for (int i = 0; i < buttons.getSize(); i++) 
                 buttons[i].update(mousePos);
         }

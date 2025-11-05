@@ -22,6 +22,7 @@ private:
     int currentIndex = 0;
     int targetIndex = 0;
     bool clickedDot = false;
+    bool wasMousePressed = false;
 
     PosterAnimator animator;
     PosterLoader loader;

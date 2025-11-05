@@ -188,12 +188,16 @@ HomeScreen::HomeScreen(Font& font, RenderWindow& window)
 {
     repo = make_unique<MovieRepository>("../data/movies.txt");
     slider = make_unique<PosterSlider>(font, win);
-    DLL<String> paths = repo->getPosterPaths();
     slider->loadPosters(*repo, font);
+
+    slider->setOnDetailRequested([&](int index) {
+        repo->setSelectedIndex(index);
+        win.setFramerateLimit(60);
+    });
 }
 
-void HomeScreen::update(Vector2f mousePos, bool mousePressed) {
-    BaseScreen::update(mousePos, mousePressed);
+void HomeScreen::update(Vector2f mousePos, bool mousePressed, AppState& state) {
+    BaseScreen::update(mousePos, mousePressed, state);
     float dt = clock.restart().asSeconds();
     slider->update(dt, win);
 }

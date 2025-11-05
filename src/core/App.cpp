@@ -172,13 +172,36 @@
 App::App() 
     :   window(VideoMode({1728, 972}), L"CiNeXíNè", Style::Titlebar | Style::Close),
         font("../assets/fonts/Montserrat_SemiBold.ttf"),
-        home(font, window),
-        state(AppState::HOME)
+        state(AppState::HOME),
+        previousState(AppState::HOME)
 {
-    window.setFramerateLimit(120);
+    window.setFramerateLimit(60);
+    homeScreen = make_unique<HomeScreen>(font, window);
+}
+
+void App::handleStateChange() {
+    if (state != previousState) {
+        switch (state) {
+            case AppState::MOVIE_DETAILS:
+                if (homeScreen) {
+                    MovieDetail detail = homeScreen->getMovieDetailbyIndex(homeScreen->getSelectedIndex());
+                    detailScreen = make_unique<DetailScreen>(font, detail);
+                }
+                break;
+            case AppState::BOOKING:
+                bookingScreen = make_unique<BookingScreen>(font);
+                break;
+            case AppState::HOME:
+                // Home screen always exists
+                break;
+        }
+        previousState = state;
+    }
 }
 
 void App::run() {
+    Clock clock;
+    
     while (window.isOpen()) {
         bool mousePressed = false;
         while (auto event = window.pollEvent()) {
@@ -187,12 +210,37 @@ void App::run() {
         }
 
         Vector2f mousePos = window.mapPixelToCoords(Mouse::getPosition(window));
-        home.update(mousePos, mousePressed);
-        home.handleEvent(mousePos, mousePressed, state);
+        switch (state) {
+            case AppState::HOME:
+                homeScreen->update(mousePos, mousePressed, state);
+                homeScreen->handleEvent(mousePos, mousePressed, state);
+                break;
+            case AppState::MOVIE_DETAILS:
+                if (detailScreen)
+                    detailScreen->update(mousePos, mousePressed, state);
+                break;
+            case AppState::BOOKING:
+                if (bookingScreen)
+                    bookingScreen->update(mousePos, mousePressed, state);
+                break;
+        }
+        
+        handleStateChange();
         
         window.clear(Color::White);
-        home.draw(window);
+        switch (state) {
+            case AppState::HOME:
+                homeScreen->draw(window);
+                break;
+            case AppState::MOVIE_DETAILS:
+                if (detailScreen)
+                    detailScreen->draw(window);
+                break;
+            case AppState::BOOKING:
+                if (bookingScreen)
+                    bookingScreen->draw(window);
+                break;
+        }
         window.display();
     }
 }
-
