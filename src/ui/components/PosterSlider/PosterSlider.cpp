@@ -57,8 +57,8 @@ void PosterSlider::update(float dt, RenderWindow& window) {
     Vector2f mousePos = window.mapPixelToCoords(Mouse::getPosition(window));
     bool mousePressed = Mouse::isButtonPressed(Mouse::Button::Left);
 
-    leftButton.update(mousePos, mousePressed);
-    rightButton.update(mousePos, mousePressed);
+    leftButton.update(mousePos, mousePressed, Color(0, 0, 0, 180), Color(0, 0, 0, 60));
+    rightButton.update(mousePos, mousePressed, Color(0, 0, 0, 180), Color(0, 0, 0, 60));
 
     float slideSpacing = 680.f;
 
@@ -90,9 +90,7 @@ void PosterSlider::draw(RenderWindow& window) {
 
     window.setView(defaultView);
 
-    leftButton.setFillColor(leftButton.isHovered() ? Color(0, 0, 0, 180) : Color(0, 0, 0, 60));
     leftButton.setTextColor(leftButton.isHovered() ? Color(255, 255, 255, 120) : Color(255, 255, 255, 180));
-    rightButton.setFillColor(rightButton.isHovered() ? Color(0, 0, 0, 180) : Color(0, 0, 0, 60));
     rightButton.setTextColor(rightButton.isHovered() ? Color(255, 255, 255, 120) : Color(255, 255, 255, 180));
 
     leftButton.draw(window);

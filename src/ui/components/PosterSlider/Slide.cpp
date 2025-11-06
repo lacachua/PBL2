@@ -24,7 +24,7 @@ void Slide::draw(RenderWindow& window) {
 }
 
 void Slide::update(Vector2f mousePos, bool mousePressed) {
-    detail_button.update(mousePos, mousePressed);
+    detail_button.update(mousePos, mousePressed, Color(30, 41, 202), Color::White);
 }
 
 bool Slide::isDetailButtonClicked(Vector2f mousePos, bool mousePressed) {

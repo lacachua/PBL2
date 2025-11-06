@@ -92,6 +92,7 @@
 #include "core/AppState.h"
 
 struct MovieDetail {
+    String movie_id;
     wstring title, age_rating, country, language, genres, duration_min, release_date, director, cast, synopsis, posterPath, status;
 };
 
@@ -108,4 +109,6 @@ class DetailScreen : public BaseScreen {
         DetailScreen(Font&, const MovieDetail&);
         void update(Vector2f, bool, AppState&) override;
         void draw(RenderWindow&) override;
+        
+        String getMovieId() const { return movie.movie_id; }
 };

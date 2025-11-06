@@ -371,7 +371,7 @@ void DetailScreen::update(Vector2f mousePos, bool mousePressed, AppState& state)
     
     // Update detail screen specific buttons
     backBtn.update(mousePos);
-    bookBtn.update(mousePos, mousePressed);
+    bookBtn.update(mousePos, mousePressed, Color(30, 41, 202), Color::White);
 
     // Check button clicks
     if (backBtn.isClicked(mousePos, mousePressed)) {

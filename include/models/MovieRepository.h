@@ -29,6 +29,7 @@ private:
             if (cols.size() < 13) continue;
 
             MovieDetail m;
+            m.movie_id      = String(cols[0]);
             m.title         = String::fromUtf8(cols[1].begin(), cols[1].end());
             m.age_rating    = String::fromUtf8(cols[2].begin(), cols[2].end());
             m.country       = String::fromUtf8(cols[3].begin(), cols[3].end());

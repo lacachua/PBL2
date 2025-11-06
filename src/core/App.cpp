@@ -189,7 +189,14 @@ void App::handleStateChange() {
                 }
                 break;
             case AppState::BOOKING:
-                bookingScreen = make_unique<BookingScreen>(font);
+                // Get movie_id from DetailScreen if coming from detail page
+                if (detailScreen && previousState == AppState::MOVIE_DETAILS) {
+                    String movieId = detailScreen->getMovieId();
+                    bookingScreen = make_unique<BookingScreen>(font, movieId);
+                } else {
+                    // Default: show all movies (empty filter)
+                    bookingScreen = make_unique<BookingScreen>(font, "");
+                }
                 break;
             case AppState::HOME:
                 // Home screen always exists

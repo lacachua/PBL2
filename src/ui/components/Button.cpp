@@ -37,16 +37,19 @@ void Button::setOutlineThickness(float thickness) {
     box.setOutlineThickness(thickness);
 }
 
+void Button::setOutlineColor(Color color) {
+    box.setOutlineColor(color);
+}
 
-void Button::update(Vector2f mousePos, bool mousePressed) {
+void Button::update(Vector2f mousePos, bool mousePressed, Color hover, Color normal) {
     hovered = box.getGlobalBounds().contains(mousePos);
 
     if (hovered) {
-        box.setFillColor(Color(30, 41, 202));
+        box.setFillColor(hover);
         text.setFillColor(Color::White);
     }
     else {
-        box.setFillColor(Color::White);
+        box.setFillColor(normal);
         text.setFillColor(Color::Black);
     }
 }

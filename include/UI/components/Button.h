@@ -17,6 +17,7 @@ class Button {
         void setFillColor(Color);
         void setTextColor(Color);
         void setOutlineThickness(float);
+        void setOutlineColor(Color);
 
         Vector2f getPosition() const { return box.getPosition(); }
         Vector2f getSize() const { return box.getSize(); }
@@ -25,7 +26,7 @@ class Button {
         bool isHovered() const { return hovered; }
         bool isPressed() const { return pressed; }
 
-        void update(Vector2f, bool);
+        void update(Vector2f, bool, Color, Color);
         bool isClicked(Vector2f, bool);
         void draw(RenderWindow&);
 };
