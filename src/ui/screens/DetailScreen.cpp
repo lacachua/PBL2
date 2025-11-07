@@ -318,18 +318,29 @@
 using namespace sf;
 using namespace std;
 
-DetailScreen::DetailScreen(Font& f, const MovieDetail& detail)
-    : BaseScreen(f),
-      subTitle_font("../assets/fonts/BEBAS_NEUE_ZSMALL.ttf"),
-      detail_font("../assets/fonts/quicksand_medium.ttf"),
-      movie(detail),
-      backBtn(f, L"← Quay lại", 18, {160.f, 40.f}),
-      bookBtn(f, L"Đặt vé ngay", 180.f, 40.f, 20),
-      poster_tex(detail.posterPath),
-      poster(poster_tex),
-      title_text(f, detail.title, 42),
-      info_text(subTitle_font),
-      synopsis_text(detail_font)
+DetailScreen::DetailScreen(Font& headerFont, Font& btnFont, Font& titleFnt, Font& detailFnt, const MovieDetail& detail)
+        : BaseScreen(headerFont),           // Font cho header (logo, search, login buttons)
+        button_font(btnFont),               // Font cho nút quay lại (TextButton)
+        title_font(titleFnt),               // Font cho tiêu đề phim và nút đặt vé
+        detail_font(detailFnt),             // Font cho nội dung chi tiết
+        movie(detail),
+        backBtn(button_font, L"← Quay lại", 18, {160.f, 40.f}),   // Dùng button_font
+        bookBtn(title_font, L"Đặt vé ngay", 180.f, 40.f, 20),     // Dùng title_font
+        poster_tex(detail.posterPath),
+        poster(poster_tex),
+        title_text(title_font, detail.title, 66),                  // Dùng title_font
+        info_text(detail_font),                                     // Dùng detail_font
+        synopsis_text(detail_font),                                 // Dùng detail_font
+        icon1("../assets/elements/genres.png"),
+        genreIcon(icon1),
+        icon2("../assets/elements/duration_time.png"),
+        durationIcon(icon2),
+        icon3("../assets/elements/country.png"),
+        countryIcon(icon3),
+        icon4("../assets/elements/language.png"),
+        languageIcon(icon4),
+        icon5("../assets/elements/ageRating.png"),
+        ageRatingIcon(icon5)
 {
     poster.setScale({0.32f, 0.32f});
     poster.setPosition({150.f, 160.f});
@@ -341,17 +352,19 @@ DetailScreen::DetailScreen(Font& f, const MovieDetail& detail)
 
     info_text.setCharacterSize(20);
     info_text.setFillColor(Color(220, 220, 220));
-    info_text.setPosition({700.f, 260.f});
+    info_text.setPosition({740.f, title_text.getPosition().y + title_text.getGlobalBounds().size.y + 28});
 
     wstringstream ss;
-    ss << L"🎬 Thể loại: " << detail.genres << L"\n"
-       << L"🌍 Quốc gia: " << detail.country << L"\n"
-       << L"🗣  Ngôn ngữ: " << detail.language << L"\n"
-       << L"👤 Đạo diễn: " << detail.director << L"\n"
-       << L"⭐ Diễn viên: " << detail.cast << L"\n"
-       << L"🕒 Thời lượng: " << detail.duration_min << L" phút\n"
-       << L"📅 Khởi chiếu: " << detail.release_date << L"\n"
-       << L"🔞 Phân loại: " << detail.age_rating;
+    ss << detail.genres << L"\n"
+       << detail.duration_min << L" phút\n"
+       << detail.country << L"\n"
+       << detail.language << L"\n"
+       << detail.age_rating << L"\n";
+    //    << L"Đạo diễn: " << detail.director << L"\n"
+    //    << L"Diễn viên: " << detail.cast << L"\n"
+    //    << L"Thời lượng: " 
+    //    << L"Khởi chiếu: " << detail.release_date << L"\n"
+    //    << L"Phân loại: " 
     info_text.setString(ss.str());
 
     // ✅ Tóm tắt phim
@@ -363,6 +376,24 @@ DetailScreen::DetailScreen(Font& f, const MovieDetail& detail)
     // ✅ Các nút
     backBtn.setPosition({150.f, 130.f});
     bookBtn.setPosition({700.f, 750.f});
+
+    genreIcon.setPosition({700, title_text.getPosition().y + title_text.getGlobalBounds().size.y + 30});
+    durationIcon.setPosition({700, title_text.getPosition().y + title_text.getGlobalBounds().size.y + 60});
+    countryIcon.setPosition({700, title_text.getPosition().y + title_text.getGlobalBounds().size.y + 90});
+    languageIcon.setPosition({700, title_text.getPosition().y + title_text.getGlobalBounds().size.y + 120});
+    ageRatingIcon.setPosition({700, title_text.getPosition().y + title_text.getGlobalBounds().size.y + 150});
+
+    genreIcon.setScale({0.048f, 0.048f});
+    durationIcon.setScale({0.048f, 0.048f});
+    countryIcon.setScale({0.048f, 0.048f});
+    languageIcon.setScale({0.048f, 0.048f});
+    ageRatingIcon.setScale({0.048f, 0.048f});
+    
+    // genreText.setPosition({834, title_text.getPosition().y + title_text.getGlobalBounds().size.y + 20});
+    // durationText.setPosition({834, title_text.getPosition().y + title_text.getGlobalBounds().size.y + 50});
+    // countryText.setPosition({834, title_text.getPosition().y + title_text.getGlobalBounds().size.y + 80});
+    // languageText.setPosition({834, title_text.getPosition().y + title_text.getGlobalBounds().size.y + 110});
+    // statusText.setPosition({834, title_text.getPosition().y + title_text.getGlobalBounds().size.y + 140});
 }
 
 void DetailScreen::update(Vector2f mousePos, bool mousePressed, AppState& state) {
@@ -388,6 +419,11 @@ void DetailScreen::draw(RenderWindow& window) {
     window.draw(title_text);
     window.draw(info_text);
     window.draw(synopsis_text);
+    window.draw(genreIcon);
+    window.draw(durationIcon);
+    window.draw(countryIcon);
+    window.draw(languageIcon);
+    window.draw(ageRatingIcon);
     backBtn.draw(window);
     bookBtn.draw(window);
 }

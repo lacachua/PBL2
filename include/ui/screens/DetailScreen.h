@@ -89,6 +89,7 @@
 #pragma once
 #include "BaseScreen.h"
 #include "UI/components/Button.h"
+#include "UI/components/TextButton.h"
 #include "core/AppState.h"
 
 struct MovieDetail {
@@ -98,15 +99,21 @@ struct MovieDetail {
 
 class DetailScreen : public BaseScreen {
     private:
-        Font subTitle_font, detail_font;
+        const Font& button_font;    // Font cho nút quay lại (TextButton) - được truyền vào
+        const Font& title_font;     // Font cho tiêu đề phim và nút đặt vé - được truyền vào
+        const Font& detail_font;    // Font cho nội dung chi tiết - được truyền vào
+        
         Texture poster_tex;
         Sprite poster;
         Text title_text, info_text, synopsis_text;
         TextButton backBtn;
         Button bookBtn;
         MovieDetail movie;
+        Texture icon1, icon2, icon3, icon4, icon5;
+        Sprite genreIcon, durationIcon, countryIcon, languageIcon, ageRatingIcon;
     public:
-        DetailScreen(Font&, const MovieDetail&);
+        // Constructor nhận 4 tham số: headerFont, buttonFont, titleFont, detailFont
+        DetailScreen(Font& headerFont, Font& btnFont, Font& titleFnt, Font& detailFnt, const MovieDetail&);
         void update(Vector2f, bool, AppState&) override;
         void draw(RenderWindow&) override;
         

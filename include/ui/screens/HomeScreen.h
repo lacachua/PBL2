@@ -68,6 +68,7 @@ public:
     void update(Vector2f, bool, AppState&) override;
     void handleEvent(Vector2f, bool, AppState&, const Event* event = nullptr);  // ✅ Thêm Event parameter
     void draw(RenderWindow&) override;
+    void drawHeaderOnly(RenderWindow&);  // ✅ Vẽ chỉ header không có slider
 
     // ✅ setter để App.cpp báo user đã đăng nhập
     void setLoggedUser(const string& username);

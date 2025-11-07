@@ -256,6 +256,8 @@ using namespace sf;
 App::App()
     : window(VideoMode({1728, 972}), L"CiNeXíNè", Style::Titlebar | Style::Close),
       font("../assets/fonts/Montserrat_SemiBold.ttf"),
+      detail_font("../assets/fonts/quicksand_medium.ttf"),
+      title_font("../assets/fonts/BEBAS_NEUE_ZSMALL.ttf"),
       state(AppState::HOME),
       previousState(AppState::HOME)
 {
@@ -267,6 +269,7 @@ App::App()
     homeScreen     = std::make_unique<HomeScreen>(font, window);
     loginScreen    = std::make_unique<LoginScreen>(font, *authService);
     registerScreen = std::make_unique<RegisterScreen>(font, *authService);
+    accountScreen  = std::make_unique<AccountScreen>(font, *authService);
     // bookingScreen / detailScreen sẽ được khởi tạo khi vào state tương ứng
 }
 
@@ -280,7 +283,8 @@ void App::handleStateChange() {
                 int selectedIndex = homeScreen->getSelectedMovieIndex();
                 if (selectedIndex >= 0) {
                     MovieDetail detail = homeScreen->getRepository()->getMovieDetailbyIndex(selectedIndex);
-                    detailScreen = std::make_unique<DetailScreen>(font, detail);
+                    // Truyền 4 font: headerFont, buttonFont, titleFont, detailFont
+                    detailScreen = std::make_unique<DetailScreen>(font, font, title_font, detail_font, detail);
                 }
             }
             break;
@@ -307,12 +311,9 @@ void App::run() {
     while (window.isOpen()) {
         bool mousePressed = false;
         Vector2f mousePos = window.mapPixelToCoords(Mouse::getPosition(window));
-        const Event* currentEvent = nullptr;  // ✅ Lưu event hiện tại
 
         // --- Event loop DUY NHẤT ---
         while (auto event = window.pollEvent()) {
-            currentEvent = &(*event);  // ✅ Lưu reference
-            
             if (event->is<Event::Closed>()) window.close();
             if (event->is<Event::MouseButtonPressed>()) mousePressed = true;
 
@@ -332,9 +333,15 @@ void App::run() {
                     state = AppState::LOGIN;
                 }
             }
-            else if (state == AppState::HOME && currentEvent) {
+            else if (state == AppState::HOME) {
                 // ✅ Truyền event cho HomeScreen để xử lý SearchBox
-                homeScreen->handleEvent(mousePos, mousePressed, state, currentEvent);
+                homeScreen->handleEvent(mousePos, mousePressed, state, &(*event));
+            }
+            else if (state == AppState::ACCOUNT) {
+                // ✅ Truyền MỖI event cho AccountScreen để xử lý text input
+                if (accountScreen) {
+                    accountScreen->update(mousePos, mousePressed, &(*event), state);
+                }
             }
         }
 
@@ -357,6 +364,18 @@ void App::run() {
             case AppState::BOOKING:
                 if (bookingScreen)
                     bookingScreen->update(mousePos, mousePressed, state);
+                break;
+
+            case AppState::ACCOUNT:
+                // ✅ Update AccountScreen - gọi với nullptr để xử lý hover, cursor blinking
+                if (accountScreen) {
+                    // Set current user CHỈ KHI chuyển state lần đầu
+                    if (previousState != AppState::ACCOUNT && !BaseScreen::getLoggedInUserEmail().empty()) {
+                        accountScreen->setCurrentUser(BaseScreen::getLoggedInUserEmail());
+                    }
+                    // Gọi update với nullptr (không có event mới) để update hover, cursor, etc
+                    accountScreen->update(mousePos, mousePressed, nullptr, state);
+                }
                 break;
 
             case AppState::LOGIN:
@@ -384,6 +403,11 @@ void App::run() {
                 break;
             case AppState::BOOKING:
                 if (bookingScreen) bookingScreen->draw(window);
+                break;
+            case AppState::ACCOUNT:
+                // ✅ Vẽ chỉ header của HomeScreen, KHÔNG vẽ slider
+                homeScreen->drawHeaderOnly(window);
+                if (accountScreen) accountScreen->draw(window);
                 break;
             case AppState::LOGIN:
                 loginScreen->draw(window);

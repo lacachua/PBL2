@@ -18,13 +18,21 @@ class BaseScreen {
         // ✅ Static variables để lưu trạng thái đăng nhập chung cho tất cả screen
         static string loggedInUsername;  // Username để hiển thị (không có @gmail.com)
         static string loggedInUserEmail;  // Email đầy đủ để so sánh với database
+        
+        // Dropdown menu components
+        bool showDropdown = false;
+        RectangleShape dropdownBox;
+        TextButton accountButton;
+        TextButton logoutButton;
     public:
         BaseScreen(Font& f) 
             :   font(f),
                 background_tex("../assets/elements/background.png"), 
                 searchBar_tex("../assets/elements/search_bar.png"),
                 background_sprite(background_tex),
-                searchBar_sprite(searchBar_tex)
+                searchBar_sprite(searchBar_tex),
+                accountButton(f, L"Thông tin cá nhân", 18, {0.f, 0.f}),
+                logoutButton(f, L"Đăng xuất", 18, {0.f, 0.f})
         {
             buttons.push_back(TextButton(font, L"CiNeXíNè", 50, {90.f, 40.f}));
             buttons.push_back(TextButton(font, L"Đặt vé ngay", 23, {1150.f, 50.f}));
@@ -35,6 +43,16 @@ class BaseScreen {
             }
             searchBar_sprite.setScale({0.2f, 0.2f});
             searchBar_sprite.setPosition({700.f, 50.f});
+            
+            // Setup dropdown box
+            dropdownBox.setSize({250.f, 100.f});
+            dropdownBox.setFillColor(Color(40, 40, 40, 240));
+            dropdownBox.setOutlineColor(Color(100, 100, 100));
+            dropdownBox.setOutlineThickness(1.f);
+            
+            // Setup dropdown buttons (styled)
+            accountButton.setOutlineThickness(0.f);
+            logoutButton.setOutlineThickness(0.f);
         }
 
         virtual ~BaseScreen() = default;
@@ -47,6 +65,30 @@ class BaseScreen {
                 buttons[2].setString(L"Đăng nhập | Đăng ký");
             }
             
+            // ✅ Xử lý dropdown menu nếu user đã đăng nhập
+            if (isUserLoggedIn() && showDropdown) {
+                updateDropdownPosition();
+                accountButton.update(mousePos);
+                logoutButton.update(mousePos);
+                
+                if (mousePressed) {
+                    if (accountButton.isClicked(mousePos, mousePressed)) {
+                        state = AppState::ACCOUNT;
+                        showDropdown = false;
+                        return;
+                    }
+                    else if (logoutButton.isClicked(mousePos, mousePressed)) {
+                        handleLogout();
+                        return;
+                    }
+                    // Click bên ngoài dropdown -> đóng dropdown
+                    else if (!dropdownBox.getGlobalBounds().contains(mousePos) &&
+                             !buttons[2].getGlobalBounds().contains(mousePos)) {
+                        showDropdown = false;
+                    }
+                }
+            }
+            
             for (int i = 0; i < buttons.getSize(); i++) {
                 buttons[i].update(mousePos);
                 
@@ -57,13 +99,20 @@ class BaseScreen {
                             state = AppState::HOME;
                             break;
                         case 1:  // "Đặt vé ngay" - go to BOOKING
-                            // Only change state if not already in BOOKING
                             if (state != AppState::BOOKING) {
                                 state = AppState::BOOKING;
                             }
                             break;
                         case 2:  // "Đăng nhập | Đăng ký" hoặc "Xin chào, ..."
-                            state = AppState::LOGIN;  // ✅ Chuyển sang màn hình đăng nhập
+                            if (isUserLoggedIn()) {
+                                // Toggle dropdown menu
+                                showDropdown = !showDropdown;
+                                if (showDropdown) {
+                                    updateDropdownPosition();
+                                }
+                            } else {
+                                state = AppState::LOGIN;
+                            }
                             break;
                     }
                 }
@@ -75,6 +124,13 @@ class BaseScreen {
             window.draw(searchBar_sprite);
             for (int i = 0; i < buttons.getSize(); i++)
                 buttons[i].draw(window);
+            
+            // ✅ Draw dropdown menu nếu đang hiển thị
+            if (isUserLoggedIn() && showDropdown) {
+                window.draw(dropdownBox);
+                accountButton.draw(window);
+                logoutButton.draw(window);
+            }
         }
 
         void setAccountButtonText(const String& text) { buttons[2].setString(text); }
@@ -92,5 +148,23 @@ class BaseScreen {
         }
         static bool isUserLoggedIn() { 
             return !loggedInUsername.empty(); 
+        }
+        
+        // ✅ Method để logout user
+        static void handleLogout() {
+            loggedInUsername = "";
+            loggedInUserEmail = "";
+        }
+        
+    protected:
+        // ✅ Update vị trí dropdown ngay bên dưới nút "Xin chào"
+        void updateDropdownPosition() {
+            FloatRect loginButtonBounds = buttons[2].getGlobalBounds();
+            float dropdownX = loginButtonBounds.position.x + loginButtonBounds.size.x - dropdownBox.getSize().x;
+            float dropdownY = loginButtonBounds.position.y + loginButtonBounds.size.y + 10.f;
+            
+            dropdownBox.setPosition({dropdownX, dropdownY});
+            accountButton.setPosition({dropdownX + 15.f, dropdownY + 15.f});
+            logoutButton.setPosition({dropdownX + 15.f, dropdownY + 55.f});
         }
 };

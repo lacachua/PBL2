@@ -289,6 +289,16 @@ void HomeScreen::draw(RenderWindow& window) {
     }
 }
 
+void HomeScreen::drawHeaderOnly(RenderWindow& window) {
+    // ✅ Chỉ vẽ background và header, KHÔNG vẽ slider
+    BaseScreen::draw(window);
+    
+    // Vẽ search box nếu cần
+    if (searchBox) {
+        searchBox->draw(window);
+    }
+}
+
 void HomeScreen::setLoggedUser(const string& username) {
     currentUser = username;
     isLoggedIn = !username.empty();
