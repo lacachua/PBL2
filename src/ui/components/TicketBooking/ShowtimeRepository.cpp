@@ -30,6 +30,17 @@ DLL<Showtime> ShowtimeRepository::loadFromFile(const String& path) {
         getline(ss, token, '|');
         s.time = token;
 
+        // Price
+        if (getline(ss, token, '|')) {
+            try {
+                s.price = stoi(token);
+            } catch (...) {
+                s.price = 0;
+            }
+        } else {
+            s.price = 0;
+        }
+
         showtimes.push_back(s);
     }
 

@@ -72,4 +72,9 @@ public:
             return movies[index];
         return MovieDetail();
     }
+    
+    // ✅ Method mới để lấy tất cả movies cho SearchManager
+    const DLL<MovieDetail>& getAllMovies() const {
+        return movies;
+    }
 }; 

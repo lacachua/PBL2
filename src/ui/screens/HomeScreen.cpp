@@ -224,23 +224,69 @@ HomeScreen::HomeScreen(Font& font, RenderWindow& window)
         repo->setSelectedIndex(index);
         win.setFramerateLimit(60);
     });
+    
+    // ✅ Khởi tạo SearchBox - căn theo vị trí search_bar sprite
+    FloatRect searchBarBounds = searchBar_sprite.getGlobalBounds();
+    float searchBoxX = searchBarBounds.position.x + 40.f;  // Padding từ bên trái
+    float searchBoxY = searchBarBounds.position.y + 8.f;   // Center vertically
+    float searchBoxWidth = searchBarBounds.size.x - 50.f;  // Trừ padding 2 bên
+    
+    searchBox = make_unique<SearchBox>(font, Vector2f(searchBoxX, searchBoxY), Vector2f(searchBoxWidth, 40.f));
+    
+    // ✅ Khởi tạo SearchManager và load movies
+    searchManager = make_unique<MovieSearchManager>();
+    searchManager->loadMovies(repo->getAllMovies());
+    searchBox->setSearchManager(searchManager.get());
 }
 
 void HomeScreen::update(Vector2f mousePos, bool mousePressed, AppState& state) {
     BaseScreen::update(mousePos, mousePressed, state);
+    
+    // ✅ Update search box
+    if (searchBox) {
+        searchBox->update(mousePos, mousePressed);
+        
+        // ✅ Check nếu user chọn movie từ search
+        int movieIdx;
+        if (searchBox->hasSelectedMovie(movieIdx)) {
+            selectedMovieIndex = movieIdx;
+            repo->setSelectedIndex(movieIdx);
+            state = AppState::MOVIE_DETAILS;
+            return;
+        }
+    }
+    
+    // ✅ Không update slider nếu search box đang active
+    if (searchBox && searchBox->isInputActive()) {
+        return;
+    }
+    
     float dt = clock.restart().asSeconds();
     slider->update(dt, win);
 
     // Các xử lý click của header (logo, đặt vé) đã có sẵn trong BaseScreen
 }
 
-void HomeScreen::handleEvent(Vector2f mousePos, bool mousePressed, AppState& state) {
-    slider->handleEvent(mousePos, mousePressed, state);
+void HomeScreen::handleEvent(Vector2f mousePos, bool mousePressed, AppState& state, const Event* event) {
+    // ✅ Xử lý event cho search box trước
+    if (searchBox && event) {
+        searchBox->handleEvent(*event);
+    }
+    
+    // ✅ Chỉ xử lý slider event nếu search không active
+    if (!searchBox || !searchBox->isInputActive()) {
+        slider->handleEvent(mousePos, mousePressed, state);
+    }
 }
 
 void HomeScreen::draw(RenderWindow& window) {
     BaseScreen::draw(window);
     slider->draw(window);
+    
+    // ✅ Vẽ search box SAU slider để không bị che
+    if (searchBox) {
+        searchBox->draw(window);
+    }
 }
 
 void HomeScreen::setLoggedUser(const string& username) {

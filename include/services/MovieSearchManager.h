@@ -1,29 +1,30 @@
-// #pragma once
-// #include <string>
-// #include <vector>
-// #include <map>
-// #include "models/Movie.h"
-// #include "../include/data-structures/Trie.h"
+#pragma once
+#include <string>
+#include <vector>
+#include <map>
+#include "UI/screens/DetailScreen.h"
+#include "data-structures/DLL.h"
+#include "../include/data-structures/Trie.h"
 
-// using namespace std;
+using namespace std;
 
-// // Structure to hold search results with movie index
-// struct SearchResult {
-//     string title;
-//     int movieIndex;
-// };
+// Structure to hold search results with movie index
+struct SearchResult {
+    string title;
+    int movieIndex;
+};
 
-// class MovieSearchManager {
-// private:
-//     Trie trie;
-//     vector<Movie> movies;
-//     map<string, vector<int>> titleToIndexMap; // Normalized title to movie indices
+class MovieSearchManager {
+private:
+    Trie trie;
+    DLL<MovieDetail> movies;  // ✅ Đổi từ vector<MovieRepository> sang DLL<MovieDetail>
+    map<string, vector<int>> titleToIndexMap; // Normalized title to movie indices
     
-//     string normalizeString(const string& str);
+    string normalizeString(const string& str);
     
-// public:
-//     MovieSearchManager();
-//     void loadMovies(const vector<Movie>& movieList);
-//     vector<SearchResult> searchMovies(const string& query, int limit = 5);
-//     int getMovieCount() const { return movies.size(); }
-// };
+public:
+    MovieSearchManager();
+    void loadMovies(const DLL<MovieDetail>& movieList);  // ✅ Thay đổi parameter
+    vector<SearchResult> searchMovies(const string& query, int limit = 5);
+    int getMovieCount() const { return movies.getSize(); }  // ✅ Đổi từ size() sang getSize()
+};

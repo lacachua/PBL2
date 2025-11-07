@@ -46,6 +46,8 @@
 #include "models/MovieRepository.h"
 #include "core/AppState.h"
 #include "UI/components/PosterSlider/PosterSlider.h"
+#include "UI/components/SearchBox.h"
+#include "services/MovieSearchManager.h"
 #include <memory>
 
 class HomeScreen : public BaseScreen {
@@ -53,15 +55,18 @@ private:
     RenderWindow& win;
     unique_ptr<PosterSlider> slider;
     unique_ptr<MovieRepository> repo;
+    unique_ptr<SearchBox> searchBox;         // ✅ Thêm SearchBox
+    unique_ptr<MovieSearchManager> searchManager;  // ✅ Thêm SearchManager
     Clock clock;
 
     bool isLoggedIn = false;
     string currentUser;
+    int selectedMovieIndex = -1;  // ✅ Lưu movie index từ search
 
 public:
     HomeScreen(Font&, RenderWindow&);
     void update(Vector2f, bool, AppState&) override;
-    void handleEvent(Vector2f, bool, AppState&);
+    void handleEvent(Vector2f, bool, AppState&, const Event* event = nullptr);  // ✅ Thêm Event parameter
     void draw(RenderWindow&) override;
 
     // ✅ setter để App.cpp báo user đã đăng nhập
@@ -69,5 +74,6 @@ public:
     
     // ✅ Getters để App lấy thông tin phim đã chọn
     MovieRepository* getRepository() const { return repo.get(); }
-    int getSelectedMovieIndex() const { return repo ? repo->getSelectedIndex() : -1; }
+    int getSelectedMovieIndex() const { return selectedMovieIndex >= 0 ? selectedMovieIndex : (repo ? repo->getSelectedIndex() : -1); }
+    void clearSelectedMovieIndex() { selectedMovieIndex = -1; }  // ✅ Reset sau khi dùng
 };

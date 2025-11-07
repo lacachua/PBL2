@@ -307,9 +307,12 @@ void App::run() {
     while (window.isOpen()) {
         bool mousePressed = false;
         Vector2f mousePos = window.mapPixelToCoords(Mouse::getPosition(window));
+        const Event* currentEvent = nullptr;  // ✅ Lưu event hiện tại
 
         // --- Event loop DUY NHẤT ---
         while (auto event = window.pollEvent()) {
+            currentEvent = &(*event);  // ✅ Lưu reference
+            
             if (event->is<Event::Closed>()) window.close();
             if (event->is<Event::MouseButtonPressed>()) mousePressed = true;
 
@@ -329,6 +332,10 @@ void App::run() {
                     state = AppState::LOGIN;
                 }
             }
+            else if (state == AppState::HOME && currentEvent) {
+                // ✅ Truyền event cho HomeScreen để xử lý SearchBox
+                homeScreen->handleEvent(mousePos, mousePressed, state, currentEvent);
+            }
         }
 
         // --- Update theo state ---
@@ -339,7 +346,7 @@ void App::run() {
                     authService->isLoggedIn() ? authService->getCurrentUser()->username : ""
                 );
                 homeScreen->update(mousePos, mousePressed, state);
-                homeScreen->handleEvent(mousePos, mousePressed, state);  // ✅ Thêm để slider nhận sự kiện
+                // handleEvent đã được gọi trong event loop
                 break;
 
             case AppState::MOVIE_DETAILS:
