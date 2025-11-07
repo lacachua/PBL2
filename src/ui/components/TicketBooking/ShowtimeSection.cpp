@@ -307,6 +307,20 @@ String ShowtimeSection::getSelectedMovieId() const {
     return String();
 }
 
+String ShowtimeSection::getSelectedShowtimeId() const {
+    if (selectedShowtimeIndex >= 0 &&
+        selectedShowtimeIndex < filteredShowtimes.getSize())
+        return filteredShowtimes[selectedShowtimeIndex].showtime_id;
+    return String();
+}
+
+String ShowtimeSection::getSelectedRoomId() const {
+    if (selectedShowtimeIndex >= 0 &&
+        selectedShowtimeIndex < filteredShowtimes.getSize())
+        return filteredShowtimes[selectedShowtimeIndex].room_id;
+    return String();
+}
+
 String ShowtimeSection::getSelectedDate() const {
     if (selectedDateIndex >= 0 && selectedDateIndex < availableDates.getSize())
         return availableDates[selectedDateIndex];

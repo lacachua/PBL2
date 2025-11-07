@@ -16,4 +16,5 @@ public:
     void drawWithSeats(RenderWindow&, const String& movieName, const String& room,
                        const String& date, const String& time, 
                        const String& selectedSeats, int totalPrice);
+    void drawPayment(RenderWindow& window, const String& movieName, const String& room, const String& date, const String& time, int finalTotal);
 };

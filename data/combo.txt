@@ -3,4 +3,5 @@ CB01|2 CocaCola + 1 Bắp Caramel|110000
 CB02|1 CocaCola + 1 Bắp Caramel|85000
 CB03|2 CocaCola + 1 Bắp Phô Mai|120000
 CB04|1 CocaCola + 1 Bắp Phô Mai|95000
-CB05|2 CocaCola + 1 Bắp Caramel + 1 Bắp Phô Mai|170000
+CB05|2 CocaCola + 2 Bắp Caramel|165000
+CB05|2 CocaCola + 2 Bắp Phô Mai|185000

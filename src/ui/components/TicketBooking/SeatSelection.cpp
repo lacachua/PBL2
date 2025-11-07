@@ -10,7 +10,6 @@ SeatSelection::SeatSelection(Font& f)
 void SeatSelection::initializeSeats() {
     seatMatrix.clear();
     
-    // Tạo ma trận 9x9 ghế
     for (int row = 0; row < kRows; ++row) {
         DLL<Seat> rowSeats;
         for (int col = 0; col < kCols; ++col) {
@@ -28,7 +27,7 @@ void SeatSelection::initializeSeats() {
 }
 
 char SeatSelection::getRowLabel(int rowIndex) const {
-    return 'A' + rowIndex;  // 0→'A', 1→'B', ..., 8→'I'
+    return 'A' + rowIndex;
 }
 
 void SeatSelection::setTicketPrice(int price) {
@@ -53,6 +52,20 @@ void SeatSelection::setOccupiedSeats(const DLL<string>& occupiedIds) {
     updateSeatColors();
 }
 
+void SeatSelection::resetSeats() {
+    // Reset toàn bộ ghế về AVAILABLE
+    for (int row = 0; row < seatMatrix.getSize(); ++row) {
+        for (int col = 0; col < seatMatrix[row].getSize(); ++col) {
+            seatMatrix[row][col].status = SeatStatus::AVAILABLE;
+        }
+    }
+    
+    // Xóa danh sách ghế đã chọn
+    selectedSeatIds.clear();
+    
+    updateSeatColors();
+}
+
 void SeatSelection::updateSeatColors() {
     for (int row = 0; row < seatMatrix.getSize(); ++row) {
         for (int col = 0; col < seatMatrix[row].getSize(); ++col) {
@@ -60,7 +73,7 @@ void SeatSelection::updateSeatColors() {
             
             switch (seat.status) {
                 case SeatStatus::AVAILABLE:
-                    seat.shape.setFillColor(Color(60, 60, 70));  // Màu bình thường
+                    seat.shape.setFillColor(Color(108, 108, 108));  // Màu bình thường
                     break;
                 case SeatStatus::SELECTED:
                     seat.shape.setFillColor(Color(50, 200, 80));  // Xanh lá cây
@@ -71,7 +84,7 @@ void SeatSelection::updateSeatColors() {
             }
             
             seat.shape.setOutlineThickness(1.f);
-            seat.shape.setOutlineColor(Color(100, 100, 110));
+            seat.shape.setOutlineColor(Color::White);
         }
     }
 }
@@ -80,8 +93,8 @@ void SeatSelection::handleClick(Vector2f mousePos, bool mousePressed) {
     if (!mousePressed) return;
     
     // Vị trí bắt đầu của ghế (có khoảng cách cho label hàng)
-    float startX = kViewX + 50.f;  // Dành chỗ cho label A, B, C...
-    float startY = kViewY + 80.f;   // Dành chỗ cho tiêu đề
+    float startX = kViewX + 300.f;  // Dành chỗ cho label A, B, C...
+    float startY = kViewY + 120.f;   // Dành chỗ cho tiêu đề
     
     for (int row = 0; row < seatMatrix.getSize(); ++row) {
         for (int col = 0; col < seatMatrix[row].getSize(); ++col) {
@@ -127,33 +140,24 @@ void SeatSelection::handleClick(Vector2f mousePos, bool mousePressed) {
 }
 
 void SeatSelection::draw(RenderWindow& window) {
-    // Tiêu đề
-    Text title(font, L"CHỌN GHẾ NGỒI", 28);
-    title.setFillColor(Color::White);
-    title.setOutlineColor(Color(20, 118, 172));
-    title.setOutlineThickness(2.f);
-    title.setPosition({kViewX + 20.f, kViewY + 20.f});
-    window.draw(title);
+    float startX = kViewX + 300.f;
+    float startY = kViewY + 120.f;
+
+    RectangleShape screen({800.f, 50.f});
+    screen.setFillColor(Color(79, 79, 79));
+    screen.setPosition({kViewX + 70.f, kViewY + 30.f});
+    window.draw(screen);
+
+    Text text_screen(font, L"MÀN HÌNH", 26);
+    text_screen.setFillColor(Color::White);
+    text_screen.setPosition({screen.getPosition().x + screen.getSize().x / 2 - text_screen.getGlobalBounds().size.x / 2, screen.getPosition().y + 10.f});
+    window.draw(text_screen);
     
-    // Vẽ label cột (1, 2, 3, ..., 9)
-    float startX = kViewX + 50.f;
-    float startY = kViewY + 80.f;
-    
-    for (int col = 0; col < kCols; ++col) {
-        Text colLabel(font, to_string(col + 1), 16);
-        colLabel.setFillColor(Color(180, 180, 180));
-        float labelX = startX + col * (kSeatSize + kSeatSpacing) + kSeatSize/2.f - 5.f;
-        colLabel.setPosition({labelX, startY - 25.f});
-        window.draw(colLabel);
-    }
-    
-    // Vẽ ghế và label hàng (A, B, C, ...)
     for (int row = 0; row < seatMatrix.getSize(); ++row) {
-        // Label hàng
         char rowLabel = getRowLabel(row);
         Text rowText(font, string(1, rowLabel), 18);
         rowText.setFillColor(Color(180, 180, 180));
-        rowText.setPosition({kViewX + 20.f, startY + row * (kSeatSize + kSeatSpacing) + 8.f});
+        rowText.setPosition({kViewX + 20.f, startY + row * (kSeatSize + kSeatSpacing) + 3.f});
         window.draw(rowText);
         
         // Vẽ ghế
@@ -172,38 +176,38 @@ void SeatSelection::draw(RenderWindow& window) {
     
     // Ghế có thể chọn
     RectangleShape availableBox({25.f, 25.f});
-    availableBox.setPosition({kViewX + 20.f, legendY});
-    availableBox.setFillColor(Color(60, 60, 70));
+    availableBox.setPosition({kViewX + 270.f, legendY});
+    availableBox.setFillColor(Color(108, 108, 108));
     availableBox.setOutlineThickness(1.f);
-    availableBox.setOutlineColor(Color(100, 100, 110));
+    availableBox.setOutlineColor(Color::White);
     window.draw(availableBox);
     Text availableText(font, L"Ghế trống", 16);
     availableText.setFillColor(Color::White);
-    availableText.setPosition({kViewX + 55.f, legendY + 3.f});
+    availableText.setPosition({kViewX + 305.f, legendY + 3.f});
     window.draw(availableText);
     
     // Ghế đang chọn
     RectangleShape selectedBox({25.f, 25.f});
-    selectedBox.setPosition({kViewX + 170.f, legendY});
+    selectedBox.setPosition({kViewX + 420.f, legendY});
     selectedBox.setFillColor(Color(50, 200, 80));
     selectedBox.setOutlineThickness(1.f);
-    selectedBox.setOutlineColor(Color(100, 100, 110));
+    selectedBox.setOutlineColor(Color::White);
     window.draw(selectedBox);
     Text selectedText(font, L"Đang chọn", 16);
     selectedText.setFillColor(Color::White);
-    selectedText.setPosition({kViewX + 205.f, legendY + 3.f});
+    selectedText.setPosition({kViewX + 455.f, legendY + 3.f});
     window.draw(selectedText);
     
     // Ghế đã đặt
     RectangleShape occupiedBox({25.f, 25.f});
-    occupiedBox.setPosition({kViewX + 330.f, legendY});
+    occupiedBox.setPosition({kViewX + 580.f, legendY});
     occupiedBox.setFillColor(Color(40, 40, 45));
     occupiedBox.setOutlineThickness(1.f);
-    occupiedBox.setOutlineColor(Color(100, 100, 110));
+    occupiedBox.setOutlineColor(Color::White);
     window.draw(occupiedBox);
     Text occupiedText(font, L"Đã đặt", 16);
     occupiedText.setFillColor(Color::White);
-    occupiedText.setPosition({kViewX + 365.f, legendY + 3.f});
+    occupiedText.setPosition({kViewX + 615.f, legendY + 3.f});
     window.draw(occupiedText);
 }
 
@@ -220,7 +224,7 @@ string SeatSelection::getSelectedSeatsDisplay() const {
     
     // Nếu có hơn 3 ghế, thêm "..."
     if (selectedSeatIds.getSize() > 3) {
-        ss << ", ...";
+        ss << ",...";
     }
     
     return ss.str();
@@ -244,4 +248,11 @@ string SeatSelection::getFormattedPrice() const {
     
     ss << " VND";
     return ss.str();
+}
+
+int SeatSelection::getSelectedCount() const {
+    return selectedSeatIds.getSize();
+}
+int SeatSelection::getUnitPrice() const {
+    return ticketPrice;
 }

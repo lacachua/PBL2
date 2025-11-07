@@ -181,10 +181,40 @@
 //     }
 // }
 
+// #include "UI/screens/HomeScreen.h"
+
+// HomeScreen::HomeScreen(Font& font, RenderWindow& window) 
+//     :   BaseScreen(font), win(window)
+// {
+//     repo = make_unique<MovieRepository>("../data/movies.txt");
+//     slider = make_unique<PosterSlider>(font, win);
+//     slider->loadPosters(*repo, font);
+
+//     slider->setOnDetailRequested([&](int index) {
+//         repo->setSelectedIndex(index);
+//         win.setFramerateLimit(60);
+//     });
+// }
+
+// void HomeScreen::update(Vector2f mousePos, bool mousePressed, AppState& state) {
+//     BaseScreen::update(mousePos, mousePressed, state);
+//     float dt = clock.restart().asSeconds();
+//     slider->update(dt, win);
+// }
+
+// void HomeScreen::handleEvent(Vector2f mousePos, bool mousePressed, AppState& state) {
+//     slider->handleEvent(mousePos, mousePressed, state);
+// }
+
+// void HomeScreen::draw(RenderWindow& window) {
+//     BaseScreen::draw(window);
+//     slider->draw(window);
+// }
+
 #include "UI/screens/HomeScreen.h"
 
-HomeScreen::HomeScreen(Font& font, RenderWindow& window) 
-    :   BaseScreen(font), win(window)
+HomeScreen::HomeScreen(Font& font, RenderWindow& window)
+    : BaseScreen(font), win(window)
 {
     repo = make_unique<MovieRepository>("../data/movies.txt");
     slider = make_unique<PosterSlider>(font, win);
@@ -200,6 +230,8 @@ void HomeScreen::update(Vector2f mousePos, bool mousePressed, AppState& state) {
     BaseScreen::update(mousePos, mousePressed, state);
     float dt = clock.restart().asSeconds();
     slider->update(dt, win);
+
+    // Các xử lý click của header (logo, đặt vé) đã có sẵn trong BaseScreen
 }
 
 void HomeScreen::handleEvent(Vector2f mousePos, bool mousePressed, AppState& state) {
@@ -209,4 +241,15 @@ void HomeScreen::handleEvent(Vector2f mousePos, bool mousePressed, AppState& sta
 void HomeScreen::draw(RenderWindow& window) {
     BaseScreen::draw(window);
     slider->draw(window);
+}
+
+void HomeScreen::setLoggedUser(const string& username) {
+    currentUser = username;
+    isLoggedIn = !username.empty();
+
+    if (isLoggedIn) {
+        setAccountButtonText(L"Xin chào, " + sf::String::fromUtf8(username.begin(), username.end()) + L"!");
+    } else {
+        setAccountButtonText(L"Đăng nhập | Đăng ký");
+    }
 }

@@ -143,3 +143,79 @@ void SummaryPanel::drawWithSeats(RenderWindow& window, const String& movieName, 
     price.setPosition({boxX + 20.f, yPos});
     window.draw(price);
 }
+
+void SummaryPanel::drawPayment(RenderWindow& window,
+                               const String& movieName,
+                               const String& room,
+                               const String& date,
+                               const String& time,
+                               int finalTotal) {
+    float boxX = 1154.f;
+    float boxY = 220.f;
+    float yPos = boxY + 20.f;
+
+    // Tên phim
+    Text title(font, movieName, 22);
+    title.setFillColor(Color::White);
+    title.setPosition({boxX + 20.f, yPos});
+    window.draw(title);
+
+    // Tên rạp
+    yPos += 40.f;
+    Text cinema(font, L"Rạp CiNeXíNè - Đà Nẵng", 20);
+    cinema.setFillColor(Color::White);
+    cinema.setPosition({boxX + 20.f, yPos});
+    window.draw(cinema);
+
+    // Ngày chiếu
+    string dateStr = date.toAnsiString();
+    int year = 0, month = 0, day = 0;
+    char formattedDate[20] = "";
+    if (sscanf(dateStr.c_str(), "%d-%d-%d", &year, &month, &day) == 3)
+        snprintf(formattedDate, sizeof(formattedDate), "%02d/%02d/%04d", day, month, year);
+    else
+        snprintf(formattedDate, sizeof(formattedDate), "%s", dateStr.c_str());
+
+    yPos += 40.f;
+    Text info(font, L"Suất " + time + L" - " + String(formattedDate), 20);
+    info.setFillColor(Color::White);
+    info.setPosition({boxX + 20.f, yPos});
+    window.draw(info);
+
+    // Tên phòng
+    yPos += 30.f;
+    Text roomText(font, room, 20);
+    roomText.setFillColor(Color::White);
+    roomText.setPosition({boxX + 20.f, yPos});
+    window.draw(roomText);
+
+    // Gạch chia
+    yPos += 50.f;
+    RectangleShape divider({360.f, 2.f});
+    divider.setPosition({boxX + 20.f, yPos});
+    divider.setFillColor(Color(80, 80, 90));
+    window.draw(divider);
+
+    // Tổng tiền
+    yPos += 20.f;
+    Text totalTitle(font, L"TỔNG CỘNG", 22);
+    totalTitle.setFillColor(Color(180, 180, 180));
+    totalTitle.setPosition({boxX + 20.f, yPos});
+    window.draw(totalTitle);
+
+    // Format tiền
+    string numStr = to_string(finalTotal);
+    string formatted;
+    for (int i = 0; i < (int)numStr.size(); i++) {
+        formatted += numStr[i];
+        if ((int)numStr.size() - i - 1 > 0 && ((int)numStr.size() - i - 1) % 3 == 0)
+            formatted += ".";
+    }
+    formatted += " VND";
+
+    yPos += 35.f;
+    Text price(font, String(formatted), 30);
+    price.setFillColor(Color::White);
+    price.setPosition({boxX + 20.f, yPos});
+    window.draw(price);
+}

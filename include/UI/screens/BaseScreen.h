@@ -14,6 +14,10 @@ class BaseScreen {
         Texture searchBar_tex;
         Sprite searchBar_sprite;
         DLL<TextButton> buttons;
+        
+        // ✅ Static variables để lưu trạng thái đăng nhập chung cho tất cả screen
+        static string loggedInUsername;  // Username để hiển thị (không có @gmail.com)
+        static string loggedInUserEmail;  // Email đầy đủ để so sánh với database
     public:
         BaseScreen(Font& f) 
             :   font(f),
@@ -36,6 +40,13 @@ class BaseScreen {
         virtual ~BaseScreen() = default;
 
         virtual void update(Vector2f mousePos, bool mousePressed, AppState& state) {
+            // ✅ Tự động cập nhật text nút đăng nhập dựa vào trạng thái
+            if (isUserLoggedIn()) {
+                buttons[2].setString(L"Xin chào, " + String::fromUtf8(loggedInUsername.begin(), loggedInUsername.end()) + L"!");
+            } else {
+                buttons[2].setString(L"Đăng nhập | Đăng ký");
+            }
+            
             for (int i = 0; i < buttons.getSize(); i++) {
                 buttons[i].update(mousePos);
                 
@@ -51,8 +62,8 @@ class BaseScreen {
                                 state = AppState::BOOKING;
                             }
                             break;
-                        case 2:  // "Đăng nhập | Đăng ký"
-                            // TODO: Handle login/register
+                        case 2:  // "Đăng nhập | Đăng ký" hoặc "Xin chào, ..."
+                            state = AppState::LOGIN;  // ✅ Chuyển sang màn hình đăng nhập
                             break;
                     }
                 }
@@ -64,5 +75,22 @@ class BaseScreen {
             window.draw(searchBar_sprite);
             for (int i = 0; i < buttons.getSize(); i++)
                 buttons[i].draw(window);
+        }
+
+        void setAccountButtonText(const String& text) { buttons[2].setString(text); }
+        
+        // ✅ Static methods để set/get username và email cho tất cả screens
+        static void setLoggedInUser(const string& username, const string& email) { 
+            loggedInUsername = username;
+            loggedInUserEmail = email;
+        }
+        static string getLoggedInUser() { 
+            return loggedInUsername;  // Trả về username (hiển thị)
+        }
+        static string getLoggedInUserEmail() { 
+            return loggedInUserEmail;  // Trả về email đầy đủ (so sánh database)
+        }
+        static bool isUserLoggedIn() { 
+            return !loggedInUsername.empty(); 
         }
 };

@@ -51,6 +51,9 @@
 #include "UI/screens/HomeScreen.h"
 #include "UI/screens/DetailScreen.h"
 #include "UI/screens/BookingScreen.h"
+#include "UI/screens/LoginScreen.h"
+#include "UI/screens/RegisterScreen.h"
+#include "services/AuthService.h"
 #include "core/AppState.h"
 using namespace std;
 using namespace sf;
@@ -62,6 +65,11 @@ class App {
         unique_ptr<HomeScreen> homeScreen;
         unique_ptr<DetailScreen> detailScreen;
         unique_ptr<BookingScreen> bookingScreen;
+        unique_ptr<LoginScreen> loginScreen;
+        unique_ptr<RegisterScreen> registerScreen;
+        unique_ptr<AuthService> authService;
+        string currentUser;      // username hiển thị
+        string currentUserEmail; // email đăng nhập
         AppState state;
         AppState previousState;
 

@@ -137,27 +137,87 @@
 //         void setMovieFilter(const String& movieId);
 // };  
 
+// #pragma once
+// #include "UI/screens/BaseScreen.h"
+// #include "UI/components/TicketBooking/HeaderBar.h"
+// #include "UI/components/TicketBooking/ShowtimeSection.h"
+// #include "UI/components/TicketBooking/SeatSelection.h"
+// #include "UI/components/TicketBooking/SummaryPanel.h"
+// #include "UI/components/TicketBooking/ShowtimeRepository.h"
+// #include "UI/components/TicketBooking/ShowtimeSeatRepository.h"
+// #include "UI/components/TicketBooking/BookingState.h"
+// #include "core/AppState.h"
+
+// class BookingScreen : public BaseScreen {
+// private:
+//     Font& font;
+//     HeaderBar header;
+//     ShowtimeSection showtimeSection;
+//     SeatSelection seatSelection;
+//     SummaryPanel summary;
+//     ShowtimeSeatRepository seatRepo;  // Repository quản lý ghế đã đặt
+//     BookingState currentState;
+
+// public:
+//     BookingScreen(Font&, const String&);
+//     void update(Vector2f, bool, AppState&) override;
+//     void draw(RenderWindow&) override;
+// };
+
 #pragma once
-#include "UI/screens/BaseScreen.h"
+#include <SFML/Graphics.hpp>
+#include <memory>
+#include "BaseScreen.h"
 #include "UI/components/TicketBooking/HeaderBar.h"
 #include "UI/components/TicketBooking/ShowtimeSection.h"
 #include "UI/components/TicketBooking/SeatSelection.h"
 #include "UI/components/TicketBooking/SummaryPanel.h"
-#include "UI/components/TicketBooking/ShowtimeRepository.h"
-#include "UI/components/TicketBooking/BookingState.h"
+#include "UI/components/TicketBooking/ShowtimeSeatRepository.h"
+#include "UI/components/TicketBooking/ComboRepository.h"
+#include "UI/components/TicketBooking/ComboSelection.h"
+#include "UI/components/TicketBooking/OrderSummary.h"
+#include "UI/components/TicketBooking/LoginRequiredPopup.h"
+#include "UI/components/TicketBooking/ConfirmationView.h"
+#include "UI/components/TicketBooking/TicketRepository.h"
 #include "core/AppState.h"
+
+using namespace sf;
+using namespace std;
 
 class BookingScreen : public BaseScreen {
 private:
     Font& font;
     HeaderBar header;
-    ShowtimeSection showtimeSection;
-    SeatSelection seatSelection;
     SummaryPanel summary;
+
     BookingState currentState;
+    ShowtimeSection showtimeSection;
+
+    // 🔥 chuyển sang smart pointer
+    unique_ptr<SeatSelection> seatSelection;
+
+    unique_ptr<ComboSelection> comboSelection;
+    ComboRepository comboRepo;
+
+    unique_ptr<OrderSummary> orderSummary;
+
+    ShowtimeSeatRepository seatRepo;
+    
+    // ✅ Popup yêu cầu đăng nhập (unique_ptr để quản lý lifecycle)
+    unique_ptr<LoginRequiredPopup> loginPopup;
+    
+    // ✅ Confirmation view cho state xacnhan
+    unique_ptr<ConfirmationView> confirmationView;
+    
+    // ✅ Repository để tạo và lưu vé
+    TicketRepository ticketRepo;
+    
+    // Helper để lấy thông tin user từ TXT
+    void getUserInfo(const string& email, string& fullName, string& phone);
 
 public:
-    BookingScreen(Font&, const String&);
-    void update(Vector2f, bool, AppState&) override;
-    void draw(RenderWindow&) override;
+    BookingScreen(Font& f, const String& movieId);
+
+    void update(Vector2f mousePos, bool mousePressed, AppState& state) override;
+    void draw(RenderWindow& window) override;
 };

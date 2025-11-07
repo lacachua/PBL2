@@ -27,6 +27,8 @@ public:
 
     String getSelectedMovieName() const;
     String getSelectedMovieId() const;  // Thêm method để lấy movie_id
+    String getSelectedShowtimeId() const;  // Lấy showtime_id
+    String getSelectedRoomId() const;      // Lấy room_id (không format)
     String getSelectedDate() const;
     String getSelectedTime() const;
     String getSelectedRoomName() const;

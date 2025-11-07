@@ -49,17 +49,25 @@
 #include <memory>
 
 class HomeScreen : public BaseScreen {
-    private:
-        RenderWindow& win;
-        unique_ptr<PosterSlider> slider;
-        unique_ptr<MovieRepository> repo;
-        Clock clock;
-    public:
-        HomeScreen(Font&, RenderWindow&);
-        void update(Vector2f, bool, AppState&) override;
-        void handleEvent(Vector2f, bool, AppState&);
-        void draw(RenderWindow&) override;
+private:
+    RenderWindow& win;
+    unique_ptr<PosterSlider> slider;
+    unique_ptr<MovieRepository> repo;
+    Clock clock;
 
-        int getSelectedIndex() const { return repo ? repo->getSelectedIndex() : -1; }
-        MovieDetail getMovieDetailbyIndex(int idx) const { return repo->getMovieDetailbyIndex(idx); }
+    bool isLoggedIn = false;
+    string currentUser;
+
+public:
+    HomeScreen(Font&, RenderWindow&);
+    void update(Vector2f, bool, AppState&) override;
+    void handleEvent(Vector2f, bool, AppState&);
+    void draw(RenderWindow&) override;
+
+    // ✅ setter để App.cpp báo user đã đăng nhập
+    void setLoggedUser(const string& username);
+    
+    // ✅ Getters để App lấy thông tin phim đã chọn
+    MovieRepository* getRepository() const { return repo.get(); }
+    int getSelectedMovieIndex() const { return repo ? repo->getSelectedIndex() : -1; }
 };

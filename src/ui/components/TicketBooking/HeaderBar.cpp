@@ -197,24 +197,24 @@ void HeaderBar::update(Vector2f mousePos, bool mousePressed, BookingState& curre
 }
 
 bool HeaderBar::isBackButtonClicked(Vector2f mousePos, bool mousePressed) {
-    if (!mousePressed) return false;
-    
-    FloatRect backBounds = back_button.getGlobalBounds();
-    backBounds.position = {1154.f, 540.f};
-    return backBounds.contains(mousePos);
+    static bool wasPressed = false;
+    bool justClicked = mousePressed && !wasPressed;
+    wasPressed = mousePressed;
+
+    if (!justClicked) return false;
+    return back_button.getGlobalBounds().contains(mousePos);
 }
 
 bool HeaderBar::isContinueButtonClicked(Vector2f mousePos, bool mousePressed) {
-    if (!mousePressed) return false;
-    
-    FloatRect continueBounds = continue_button.getGlobalBounds();
-    continueBounds.position = {1274.f, 540.f};
-    return continueBounds.contains(mousePos);
+    static bool wasPressed2 = false;
+    bool justClicked = mousePressed && !wasPressed2;
+    wasPressed2 = mousePressed;
+
+    if (!justClicked) return false;
+    return continue_button.getGlobalBounds().contains(mousePos);
 }
 
 void HeaderBar::handleNavigation(Vector2f mousePos, bool mousePressed, BookingState& currentState, bool canProceed) {
-    if (!mousePressed) return;
-    
     if (isBackButtonClicked(mousePos, mousePressed)) {
         int current = static_cast<int>(currentState);
         if (current > 0)
