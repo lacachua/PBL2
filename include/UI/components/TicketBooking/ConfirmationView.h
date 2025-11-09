@@ -1,6 +1,4 @@
-#ifndef CONFIRMATION_VIEW_H
-#define CONFIRMATION_VIEW_H
-
+#pragma once
 #include <SFML/Graphics.hpp>
 #include "TicketRepository.h"
 #include "../Button.h"
@@ -19,13 +17,11 @@ private:
     
     // Display texts - Title
     Text titleText;
-    Text sectionTitle;
     
     // Labels (Cột Mô tả)
     Text labelTicketId;
     Text labelCustomer;
     Text labelEmail;
-    Text labelPhone;
     Text labelMovie;
     Text labelRoom;
     Text labelDateTime;
@@ -37,15 +33,12 @@ private:
     Text valueTicketId;
     Text valueCustomer;
     Text valueEmail;
-    Text valuePhone;
     Text valueMovie;
     Text valueRoom;
     Text valueDateTime;
     Text valueSeats;
     Text valueCombo;
     Text valueTotal;
-    
-    Text thankYouText;
     
     void initializeUI();
     
@@ -66,5 +59,3 @@ public:
     bool handleHomeButtonClick(Vector2f mousePos, bool mousePressed, AppState& state);
     void draw(RenderWindow& window);
 };
-
-#endif

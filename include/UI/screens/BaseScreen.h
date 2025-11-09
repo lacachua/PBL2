@@ -16,8 +16,8 @@ class BaseScreen {
         DLL<TextButton> buttons;
         
         // ✅ Static variables để lưu trạng thái đăng nhập chung cho tất cả screen
-        static string loggedInUsername;  // Username để hiển thị (không có @gmail.com)
-        static string loggedInUserEmail;  // Email đầy đủ để so sánh với database
+        static string loggedInUsername;
+        static string loggedInUserEmail;
         
         // Dropdown menu components
         bool showDropdown = false;
@@ -59,11 +59,10 @@ class BaseScreen {
 
         virtual void update(Vector2f mousePos, bool mousePressed, AppState& state) {
             // ✅ Tự động cập nhật text nút đăng nhập dựa vào trạng thái
-            if (isUserLoggedIn()) {
+            if (isUserLoggedIn())
                 buttons[2].setString(L"Xin chào, " + String::fromUtf8(loggedInUsername.begin(), loggedInUsername.end()) + L"!");
-            } else {
+            else
                 buttons[2].setString(L"Đăng nhập | Đăng ký");
-            }
             
             // ✅ Xử lý dropdown menu nếu user đã đăng nhập
             if (isUserLoggedIn() && showDropdown) {
@@ -82,8 +81,7 @@ class BaseScreen {
                         return;
                     }
                     // Click bên ngoài dropdown -> đóng dropdown
-                    else if (!dropdownBox.getGlobalBounds().contains(mousePos) &&
-                             !buttons[2].getGlobalBounds().contains(mousePos)) {
+                    else if (!dropdownBox.getGlobalBounds().contains(mousePos) && !buttons[2].getGlobalBounds().contains(mousePos)) {
                         showDropdown = false;
                     }
                 }

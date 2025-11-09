@@ -70,8 +70,8 @@ class App {
         unique_ptr<RegisterScreen> registerScreen;
         unique_ptr<AccountScreen> accountScreen;
         unique_ptr<AuthService> authService;
-        string currentUser;      // username hiển thị
-        string currentUserEmail; // email đăng nhập
+        string currentUser;
+        string currentUserEmail;
         AppState state;
         AppState previousState;
 

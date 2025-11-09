@@ -1,4 +1,22 @@
 #include "UI/screens/RegisterScreen.h"
+#ifdef _WIN32
+#include <windows.h>
+#endif
+
+// Helper function: Convert wstring to UTF-8 string
+static std::string wstring_to_utf8(const std::wstring& wstr) {
+    if (wstr.empty()) return "";
+    
+#ifdef _WIN32
+    int size_needed = WideCharToMultiByte(CP_UTF8, 0, wstr.c_str(), (int)wstr.length(), NULL, 0, NULL, NULL);
+    std::string strTo(size_needed, 0);
+    WideCharToMultiByte(CP_UTF8, 0, wstr.c_str(), (int)wstr.length(), &strTo[0], size_needed, NULL, NULL);
+    return strTo;
+#else
+    std::wstring_convert<std::codecvt_utf8<wchar_t>> converter;
+    return converter.to_bytes(wstr);
+#endif
+}
 
 RegisterScreen::RegisterScreen(const Font& font, AuthService& authRef)
     : auth(authRef),
@@ -173,11 +191,12 @@ bool RegisterScreen::update(Vector2f mouse, bool mousePressed, const Event& even
 
         if (registerBtn.getGlobalBounds().contains(mouse)) {
             if (validateInputs()) {
-                string fullName(inputs[0].begin(), inputs[0].end());
-                string birthDate(inputs[1].begin(), inputs[1].end());
-                string email(inputs[2].begin(), inputs[2].end());
-                string phone(inputs[3].begin(), inputs[3].end());
-                string password(inputs[4].begin(), inputs[4].end());
+                // ✅ Chuyển đổi đúng cách với UTF-8
+                string fullName = wstring_to_utf8(inputs[0]);
+                string birthDate = wstring_to_utf8(inputs[1]);
+                string email = wstring_to_utf8(inputs[2]);
+                string phone = wstring_to_utf8(inputs[3]);
+                string password = wstring_to_utf8(inputs[4]);
 
                 if (auth.registerUser(email, password, fullName, birthDate, phone)) {
                     msg.setFillColor(Color(60, 160, 90));
@@ -211,11 +230,12 @@ bool RegisterScreen::update(Vector2f mouse, bool mousePressed, const Event& even
             }
         } else if (code == Keyboard::Key::Enter) {
             if (validateInputs()) {
-                string fullName(inputs[0].begin(), inputs[0].end());
-                string birthDate(inputs[1].begin(), inputs[1].end());
-                string email(inputs[2].begin(), inputs[2].end());
-                string phone(inputs[3].begin(), inputs[3].end());
-                string password(inputs[4].begin(), inputs[4].end());
+                // ✅ Chuyển đổi đúng cách với UTF-8
+                string fullName = wstring_to_utf8(inputs[0]);
+                string birthDate = wstring_to_utf8(inputs[1]);
+                string email = wstring_to_utf8(inputs[2]);
+                string phone = wstring_to_utf8(inputs[3]);
+                string password = wstring_to_utf8(inputs[4]);
 
                 if (auth.registerUser(email, password, fullName, birthDate, phone)) {
                     msg.setFillColor(Color(60, 160, 90));

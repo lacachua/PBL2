@@ -2,22 +2,50 @@
 #include <sstream>
 #include <iomanip>
 
+// Helper function: Convert date format (YYYY-MM-DD or any format) to DD/MM/YYYY
+static std::string formatDateToDDMMYYYY(const std::string& dateStr) {
+    // Nếu đã đúng format DD/MM/YYYY (có chứa '/'), giữ nguyên
+    if (dateStr.find('/') != std::string::npos) {
+        return dateStr;
+    }
+    
+    // Nếu format YYYY-MM-DD hoặc YYYYMMDD, chuyển đổi
+    if (dateStr.length() >= 8) {
+        std::string year, month, day;
+        
+        if (dateStr.find('-') != std::string::npos) {
+            // Format: YYYY-MM-DD
+            std::stringstream ss(dateStr);
+            std::getline(ss, year, '-');
+            std::getline(ss, month, '-');
+            std::getline(ss, day, '-');
+        } else {
+            // Format: YYYYMMDD
+            year = dateStr.substr(0, 4);
+            month = dateStr.substr(4, 2);
+            day = dateStr.substr(6, 2);
+        }
+        
+        return day + "/" + month + "/" + year;
+    }
+    
+    return dateStr; // Giữ nguyên nếu không nhận dạng được
+}
+
 ConfirmationView::ConfirmationView(Font& f) 
     : font(f),
       homeButton(f, L"Quay lại trang chủ", 300.f, 60.f, 20),
-      titleText(f),
-      sectionTitle(f),
-      labelTicketId(f), valueTicketId(f),
-      labelCustomer(f), valueCustomer(f),
-      labelEmail(f), valueEmail(f),
-      labelPhone(f), valuePhone(f),
-      labelMovie(f), valueMovie(f),
-      labelRoom(f), valueRoom(f),
-      labelDateTime(f), valueDateTime(f),
-      labelSeats(f), valueSeats(f),
-      labelCombo(f), valueCombo(f),
-      labelTotal(f), valueTotal(f),
-      thankYouText(f) {
+      titleText(f, L"ĐẶT VÉ THÀNH CÔNG", 32),
+      labelTicketId(f, L"Mã vé", 20), valueTicketId(f),
+      labelCustomer(f, L"Khách hàng", 20), valueCustomer(f),
+      labelEmail(f, L"Email", 20), valueEmail(f),
+      labelMovie(f, L"Phim", 20), valueMovie(f),
+      labelRoom(f, L"Phòng", 20), valueRoom(f),
+      labelDateTime(f, "Ngày & Giờ", 20), valueDateTime(f),
+      labelSeats(f, L"Ghế", 20), valueSeats(f),
+      labelCombo(f, L"Combo", 20), valueCombo(f),
+      labelTotal(f, L"Tổng cộng", 24), valueTotal(f)
+{
     initializeUI();
 }
 
@@ -29,132 +57,79 @@ void ConfirmationView::initializeUI() {
     float lineHeight = 35.f;
     
     // Title - Đặt vé thành công
-    titleText.setCharacterSize(32);
     titleText.setFillColor(Color(46, 204, 113));
-    string titleStr = "ĐẶT VÉ THÀNH CÔNG";
-    titleText.setString(String::fromUtf8(titleStr.begin(), titleStr.end()));
     FloatRect titleBounds = titleText.getLocalBounds();
     titleText.setOrigin({titleBounds.size.x / 2.f, titleBounds.size.y / 2.f});
-    titleText.setPosition({640.f, startY + 60.f});
-    
-    // Section title
-    startY += 60.f;
-    sectionTitle.setCharacterSize(24);
-    sectionTitle.setFillColor(Color::White);
-    string sectionStr = "Tóm tắt đơn hàng";
-    sectionTitle.setString(String::fromUtf8(sectionStr.begin(), sectionStr.end()));
-    sectionTitle.setPosition({leftCol, startY});
-    
-    // Initialize all labels (Cột Mô tả)
-    startY += 50.f;
-    
+    titleText.setPosition({640.f, startY + 40.f});
+
     // Mã vé
-    labelTicketId.setFont(font);
-    labelTicketId.setCharacterSize(20);
+    startY += 70.f;
     labelTicketId.setFillColor(Color(180, 180, 180));
-    string maVe = "Mã vé";
-    labelTicketId.setString(String::fromUtf8(maVe.begin(), maVe.end()));
     labelTicketId.setPosition({leftCol, startY});
     
-    valueTicketId.setFont(font);
     valueTicketId.setCharacterSize(20);
     valueTicketId.setFillColor(Color::White);
     valueTicketId.setPosition({rightCol, startY});
     
     // Khách hàng
     startY += lineHeight;
-    labelCustomer.setFont(font);
-    labelCustomer.setCharacterSize(20);
     labelCustomer.setFillColor(Color(180, 180, 180));
-    string khachHang = "Khách hàng";
-    labelCustomer.setString(String::fromUtf8(khachHang.begin(), khachHang.end()));
     labelCustomer.setPosition({leftCol, startY});
     
-    valueCustomer.setFont(font);
     valueCustomer.setCharacterSize(20);
     valueCustomer.setFillColor(Color::White);
     valueCustomer.setPosition({rightCol, startY});
     
     // Email
     startY += lineHeight;
-    labelEmail.setFont(font);
-    labelEmail.setCharacterSize(20);
     labelEmail.setFillColor(Color(180, 180, 180));
-    string emailStr = "Email";
-    labelEmail.setString(String::fromUtf8(emailStr.begin(), emailStr.end()));
     labelEmail.setPosition({leftCol, startY});
     
-    valueEmail.setFont(font);
     valueEmail.setCharacterSize(20);
     valueEmail.setFillColor(Color::White);
     valueEmail.setPosition({rightCol, startY});
     
     // Phim
     startY += lineHeight + 10.f;
-    labelMovie.setFont(font);
-    labelMovie.setCharacterSize(20);
     labelMovie.setFillColor(Color(180, 180, 180));
-    string movieStr = "Phim";
-    labelMovie.setString(String::fromUtf8(movieStr.begin(), movieStr.end()));
     labelMovie.setPosition({leftCol, startY});
     
-    valueMovie.setFont(font);
     valueMovie.setCharacterSize(20);
     valueMovie.setFillColor(Color::White);
     valueMovie.setPosition({rightCol, startY});
     
     // Phòng
     startY += lineHeight;
-    labelRoom.setFont(font);
-    labelRoom.setCharacterSize(20);
     labelRoom.setFillColor(Color(180, 180, 180));
-    string roomStr = "Phòng";
-    labelRoom.setString(String::fromUtf8(roomStr.begin(), roomStr.end()));
     labelRoom.setPosition({leftCol, startY});
     
-    valueRoom.setFont(font);
     valueRoom.setCharacterSize(20);
     valueRoom.setFillColor(Color::White);
     valueRoom.setPosition({rightCol, startY});
     
     // Ngày giờ
     startY += lineHeight;
-    labelDateTime.setFont(font);
-    labelDateTime.setCharacterSize(20);
     labelDateTime.setFillColor(Color(180, 180, 180));
-    string dateTimeStr = "Ngày & Giờ";
-    labelDateTime.setString(String::fromUtf8(dateTimeStr.begin(), dateTimeStr.end()));
     labelDateTime.setPosition({leftCol, startY});
     
-    valueDateTime.setFont(font);
     valueDateTime.setCharacterSize(20);
     valueDateTime.setFillColor(Color::White);
     valueDateTime.setPosition({rightCol, startY});
     
     // Ghế
     startY += lineHeight + 10.f;
-    labelSeats.setFont(font);
-    labelSeats.setCharacterSize(20);
     labelSeats.setFillColor(Color(180, 180, 180));
-    string seatsStr = "Ghế đơn";
-    labelSeats.setString(String::fromUtf8(seatsStr.begin(), seatsStr.end()));
     labelSeats.setPosition({leftCol, startY});
     
-    valueSeats.setFont(font);
     valueSeats.setCharacterSize(20);
     valueSeats.setFillColor(Color::White);
     valueSeats.setPosition({rightCol, startY});
     
     // Combo
     startY += lineHeight;
-    labelCombo.setFont(font);
-    labelCombo.setCharacterSize(20);
     labelCombo.setFillColor(Color(180, 180, 180));
-    string comboStr = "Combo";
-    labelCombo.setString(String::fromUtf8(comboStr.begin(), comboStr.end()));
     labelCombo.setPosition({leftCol, startY});
     
-    valueCombo.setFont(font);
     valueCombo.setCharacterSize(20);
     valueCombo.setFillColor(Color::White);
     valueCombo.setPosition({rightCol, startY});
@@ -163,20 +138,15 @@ void ConfirmationView::initializeUI() {
     startY += lineHeight + 20.f;
     
     // Tổng cộng
-    labelTotal.setFont(font);
-    labelTotal.setCharacterSize(24);
     labelTotal.setFillColor(Color::White);
-    string totalStr = "Tổng cộng";
-    labelTotal.setString(String::fromUtf8(totalStr.begin(), totalStr.end()));
     labelTotal.setPosition({leftCol, startY});
     
-    valueTotal.setFont(font);
     valueTotal.setCharacterSize(24);
-    valueTotal.setFillColor(Color(255, 215, 0)); // Gold
+    valueTotal.setFillColor(Color(255, 215, 0));
     valueTotal.setPosition({rightCol, startY});
     
     // Home button
-    homeButton.setPosition({490.f, 700.f});
+    homeButton.setPosition({490.f, 720.f});
     homeButton.setFillColor(Color(20, 118, 172));
 }
 
@@ -191,37 +161,32 @@ void ConfirmationView::setTicketData(
 ) {
     this->currentTicket = ticket;
     this->userName = userName;
-    this->userPhone = userPhone;
     
-    // Mã vé
+    // Mã vé - String::fromUtf8
     valueTicketId.setString(String::fromUtf8(ticket.ticketId.begin(), ticket.ticketId.end()));
     
-    // Khách hàng
+    // Khách hàng - String::fromUtf8
     valueCustomer.setString(String::fromUtf8(ticket.fullName.begin(), ticket.fullName.end()));
     
-    // Email
+    // Email - String::fromUtf8
     valueEmail.setString(String::fromUtf8(ticket.email.begin(), ticket.email.end()));
     
-    // Số điện thoại
-    valuePhone.setString(String::fromUtf8(userPhone.begin(), userPhone.end()));
-    
-    // Phim
+    // Phim - String::fromUtf8
     valueMovie.setString(String::fromUtf8(movieName.begin(), movieName.end()));
     
-    // Phòng
+    // Phòng - String::fromUtf8
     valueRoom.setString(String::fromUtf8(roomName.begin(), roomName.end()));
     
-    // Ngày & Giờ
-    string dateTime = date + " - " + time;
+    // Ngày & Giờ - Format ngày sang DD/MM/YYYY, String::fromUtf8
+    string formattedDate = formatDateToDDMMYYYY(date);
+    string dateTime = formattedDate + " - " + time;
     valueDateTime.setString(String::fromUtf8(dateTime.begin(), dateTime.end()));
     
-    // Ghế
+    // Ghế - String::fromUtf8
     valueSeats.setString(String::fromUtf8(ticket.booked.begin(), ticket.booked.end()));
     
-    // Combo
-    string comboDisplay = (ticket.comboName.empty() || ticket.comboName == "Không có") 
-                          ? "Không có" 
-                          : ticket.comboName;
+    // Combo - String::fromUtf8
+    string comboDisplay = (ticket.comboName.empty() || ticket.comboName == "Không có") ? "Không có" : ticket.comboName;
     valueCombo.setString(String::fromUtf8(comboDisplay.begin(), comboDisplay.end()));
     
     // Tổng tiền - Format with thousand separators

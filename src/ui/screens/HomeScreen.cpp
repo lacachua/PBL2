@@ -280,22 +280,45 @@ void HomeScreen::handleEvent(Vector2f mousePos, bool mousePressed, AppState& sta
 }
 
 void HomeScreen::draw(RenderWindow& window) {
-    BaseScreen::draw(window);
+    // Vẽ background và header (KHÔNG bao gồm dropdown)
+    window.draw(background_sprite);
+    window.draw(searchBar_sprite);
+    for (int i = 0; i < buttons.getSize(); i++)
+        buttons[i].draw(window);
+    
+    // Vẽ slider
     slider->draw(window);
     
     // ✅ Vẽ search box SAU slider để không bị che
     if (searchBox) {
         searchBox->draw(window);
     }
+    
+    // ✅ Vẽ dropdown CUỐI CÙNG để đè lên tất cả
+    if (isUserLoggedIn() && showDropdown) {
+        window.draw(dropdownBox);
+        accountButton.draw(window);
+        logoutButton.draw(window);
+    }
 }
 
 void HomeScreen::drawHeaderOnly(RenderWindow& window) {
     // ✅ Chỉ vẽ background và header, KHÔNG vẽ slider
-    BaseScreen::draw(window);
+    window.draw(background_sprite);
+    window.draw(searchBar_sprite);
+    for (int i = 0; i < buttons.getSize(); i++)
+        buttons[i].draw(window);
     
     // Vẽ search box nếu cần
     if (searchBox) {
         searchBox->draw(window);
+    }
+    
+    // ✅ Vẽ dropdown CUỐI CÙNG nếu đang hiển thị
+    if (isUserLoggedIn() && showDropdown) {
+        window.draw(dropdownBox);
+        accountButton.draw(window);
+        logoutButton.draw(window);
     }
 }
 

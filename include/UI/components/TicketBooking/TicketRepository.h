@@ -1,6 +1,4 @@
-#ifndef TICKET_REPOSITORY_H
-#define TICKET_REPOSITORY_H
-
+#pragma once
 #include <string>
 #include <fstream>
 #include <sstream>
@@ -110,8 +108,19 @@ public:
     }
 
     void saveTicket(const Ticket& ticket) {
-        ofstream file(filename, ios::app);
-        if (!file.is_open()) return;
+        // Mở file với binary mode để đảm bảo UTF-8 được lưu đúng
+        ofstream file(filename, ios::app | ios::binary);
+        if (!file.is_open()) return;    
+        
+        // Nếu file trống, ghi header với UTF-8 BOM
+        file.seekp(0, ios::end);
+        if (file.tellp() == 0) {
+            // Write UTF-8 BOM
+            const char bom[] = { (char)0xEF, (char)0xBB, (char)0xBF };
+            file.write(bom, 3);
+            file << "ticketId|showtimeId|title|date|time|roomName|booked|comboName|price|email|fullName|bookedDate|bookedTime\n";
+        }
+        
         file << ticket.ticketId << "|"
              << ticket.showtimeId << "|"
              << ticket.title << "|"
@@ -139,5 +148,3 @@ public:
     static String getTimeUtf8(const Ticket& t) { return String::fromUtf8(t.time.begin(), t.time.end()); }
     static String getBookedUtf8(const Ticket& t) { return String::fromUtf8(t.booked.begin(), t.booked.end()); }
 };
-
-#endif
