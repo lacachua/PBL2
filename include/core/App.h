@@ -55,6 +55,7 @@
 #include "UI/screens/RegisterScreen.h"
 #include "UI/screens/AccountScreen.h"
 #include "services/AuthService.h"
+#include "services/ShowtimeCleanupService.h"
 #include "core/AppState.h"
 using namespace std;
 using namespace sf;

@@ -3,16 +3,14 @@
 #include <string>
 #include "core/AppState.h"
 #include "services/AuthService.h"
+#include "UI/screens/BaseScreen.h"
 #include "UI/components/Button.h"
 using namespace sf;
 using namespace std;
 
-class AccountScreen {
+class AccountScreen : public BaseScreen {
 private:
-    // Font reference
-    const Font& font;
-    
-    // Current active tab
+    // Current active tab (font inherited from BaseScreen)
     AccountTab currentTab = AccountTab::CUSTOMER_INFO;
     
     // Sidebar menu items
@@ -65,12 +63,19 @@ private:
     Clock cursorClock;
     bool showCursor = true;
     
+    // Track if user data has been loaded
+    bool userDataLoaded = false;
+    
+    // Debounce for button clicks
+    bool wasMousePressed = false;
+    
 public:
-    AccountScreen(const Font&, AuthService&);
+    AccountScreen(Font& f, AuthService& auth);
     
     void setCurrentUser(const string& email);
+    // Note: Not overriding BaseScreen::update() - has different signature with Event parameter
     void update(Vector2f mousePos, bool mousePressed, const Event* event, AppState& state);
-    void draw(RenderWindow&);
+    void draw(RenderWindow& window) override;
     
 private:
     void updatePositions(Vector2u windowSize);

@@ -5,5 +5,5 @@ using namespace std;
 
 class PosterLoader {
 public:
-    Texture loadTexture(const String& path);
+    Texture loadTexture(const String&);
 };

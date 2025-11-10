@@ -263,6 +263,9 @@ App::App()
 {
     window.setFramerateLimit(60);
 
+    // ✅ Maintain showtimes: Remove expired ones and add new ones for next 7 days
+    ShowtimeCleanupService::maintainShowtimes("../data/showtimes.txt", 7);
+
     authService    = std::make_unique<AuthService>("../data/users.txt");
     authService->ensureSampleUser();
 
@@ -367,11 +370,12 @@ void App::run() {
                 break;
 
             case AppState::ACCOUNT:
-                // ✅ Update AccountScreen - gọi với nullptr để xử lý hover, cursor blinking
+                // ✅ Update AccountScreen
                 if (accountScreen) {
-                    // Set current user CHỈ KHI chuyển state lần đầu
-                    if (previousState != AppState::ACCOUNT && !BaseScreen::getLoggedInUserEmail().empty()) {
-                        accountScreen->setCurrentUser(BaseScreen::getLoggedInUserEmail());
+                    // ✅ ALWAYS set current user when in ACCOUNT state to ensure data is loaded
+                    string email = BaseScreen::getLoggedInUserEmail();
+                    if (!email.empty()) {
+                        accountScreen->setCurrentUser(email);
                     }
                     // Gọi update với nullptr (không có event mới) để update hover, cursor, etc
                     accountScreen->update(mousePos, mousePressed, nullptr, state);
@@ -405,8 +409,7 @@ void App::run() {
                 if (bookingScreen) bookingScreen->draw(window);
                 break;
             case AppState::ACCOUNT:
-                // ✅ Vẽ chỉ header của HomeScreen, KHÔNG vẽ slider
-                homeScreen->drawHeaderOnly(window);
+                // ✅ AccountScreen giờ kế thừa BaseScreen nên tự vẽ header
                 if (accountScreen) accountScreen->draw(window);
                 break;
             case AppState::LOGIN:

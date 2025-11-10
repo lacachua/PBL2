@@ -17,8 +17,8 @@ struct SearchResult {
 class MovieSearchManager {
 private:
     Trie trie;
-    DLL<MovieDetail> movies;  // ✅ Đổi từ vector<MovieRepository> sang DLL<MovieDetail>
-    map<string, vector<int>> titleToIndexMap; // Normalized title to movie indices
+    DLL<MovieDetail> movies;
+    map<string, vector<int>> titleToIndexMap;
     
     string normalizeString(const string& str);
     

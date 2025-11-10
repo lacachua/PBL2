@@ -1,5 +1,6 @@
 #include "UI/screens/AccountScreen.h"
 #include "utils/PasswordHasher.h"
+#include "utils/Validator.h"
 #include <iostream>
 #ifdef _WIN32
 #include <windows.h>
@@ -37,8 +38,8 @@ static std::string wstring_to_utf8(const std::wstring& wstr) {
 #endif
 }
 
-AccountScreen::AccountScreen(const Font& f, AuthService& auth) 
-    : font(f),
+AccountScreen::AccountScreen(Font& f, AuthService& auth) 
+    : BaseScreen(f),
       authService(&auth),
       titleText(f, L"THÔNG TIN KHÁCH HÀNG", 28),
       menuItem1(f, L"THÔNG TIN KHÁCH HÀNG", 300.f, 60.f, 18),
@@ -179,17 +180,15 @@ AccountScreen::AccountScreen(const Font& f, AuthService& auth)
 }
 
 void AccountScreen::setCurrentUser(const std::string& email) {
+    // ✅ Skip if already loaded this user
+    if (userDataLoaded && currentUserEmail == email) {
+        return;
+    }
+    
     currentUserEmail = email;
     currentUser = authService->getUser(email);
 
     if (currentUser) {
-        // Debug: In ra console để kiểm tra
-        cout << "[AccountScreen] Loading user: " << email << endl;
-        cout << "  FullName: " << currentUser->fullName << endl;
-        cout << "  BirthDate: " << currentUser->birthDate << endl;
-        cout << "  Phone: " << currentUser->phone << endl;
-        cout << "  Email: " << currentUser->email << endl;
-        
         // Load data vào input buffers (wstring) để có thể chỉnh sửa
         fullNameInput  = utf8_to_wstring(currentUser->fullName);
         birthDateInput = utf8_to_wstring(currentUser->birthDate);
@@ -201,11 +200,13 @@ void AccountScreen::setCurrentUser(const std::string& email) {
         phoneText.setString(phoneInput);
         emailText.setString(sf::String::fromUtf8(
             currentUser->email.begin(), currentUser->email.end()));
-            
-        cout << "[AccountScreen] User data loaded successfully!" << endl;
-    } else {
-        cout << "[AccountScreen] ERROR: User not found for email: " << email << endl;
-        // Set empty strings if user not found
+        
+        userDataLoaded = true; // ✅ Mark as loaded
+        
+        cout << "[AccountScreen] Loaded user data: " << currentUser->fullName 
+             << " (" << currentUser->email << ")" << endl;
+    } 
+    else {
         fullNameText.setString("");
         birthDateText.setString("");
         phoneText.setString("");
@@ -213,9 +214,11 @@ void AccountScreen::setCurrentUser(const std::string& email) {
         fullNameInput.clear();
         birthDateInput.clear();
         phoneInput.clear();
+        userDataLoaded = false;
+        
+        cout << "[AccountScreen] User not found: " << email << endl;
     }
 }
-
 
 void AccountScreen::updatePositions(Vector2u windowSize) {
     float windowW = static_cast<float>(windowSize.x);
@@ -330,6 +333,9 @@ void AccountScreen::handlePasswordInput(const Event* event) {
     if (!event) return;
     
     if (auto* textEvent = event->getIf<Event::TextEntered>()) {
+        // ✅ Clear message when user starts typing
+        showPasswordMessage = false;
+        
         char c = static_cast<char>(textEvent->unicode);
         
         if (c == '\b') { // Backspace
@@ -363,6 +369,9 @@ void AccountScreen::handleInfoInput(const Event* event) {
     if (!event) return;
     
     if (auto* textEvent = event->getIf<Event::TextEntered>()) {
+        // ✅ Clear message when user starts typing
+        showInfoMessage = false;
+        
         wchar_t c = static_cast<wchar_t>(textEvent->unicode);
         
         if (c == '\b') { // Backspace
@@ -398,7 +407,7 @@ void AccountScreen::handleInfoInput(const Event* event) {
 void AccountScreen::savePasswordChange() {
     if (!currentUser) return;
     
-    // Validate inputs
+    // Validate inputs - check empty
     if (oldPasswordInput.empty() || newPasswordInput.empty() || confirmPasswordInput.empty()) {
         passwordMessage.setFillColor(Color(200, 60, 60)); // Red for error
         passwordMessage.setString(L"Vui lòng điền đầy đủ thông tin!");
@@ -416,6 +425,15 @@ void AccountScreen::savePasswordChange() {
         return;
     }
     
+    // ✅ Validate password strength (min 8 chars, 1 upper, 1 lower, 1 digit)
+    if (!Validator::isStrongPassword(newPasswordInput)) {
+        passwordMessage.setFillColor(Color(200, 60, 60));
+        passwordMessage.setString(L"Mật khẩu mới phải có ít nhất 8 ký tự, 1 chữ hoa, 1 chữ thường, 1 số!");
+        showPasswordMessage = true;
+        messageTimerPassword.restart();
+        return;
+    }
+    
     // Check if new passwords match
     if (newPasswordInput != confirmPasswordInput) {
         passwordMessage.setFillColor(Color(200, 60, 60));
@@ -425,11 +443,17 @@ void AccountScreen::savePasswordChange() {
         return;
     }
     
-    // Update password
+    // ✅ All validations passed - Update password
     currentUser->passwordHash = PasswordHasher::hashPassword(newPasswordInput);
     authService->saveUsers();
     
-    // Clear inputs
+    // ✅ Show success message BEFORE clearing inputs
+    passwordMessage.setFillColor(Color(60, 160, 90)); // Green
+    passwordMessage.setString(L"Đổi mật khẩu thành công!");
+    showPasswordMessage = true;
+    messageTimerPassword.restart();
+    
+    // ✅ Clear inputs AFTER showing success message
     oldPasswordInput.clear();
     newPasswordInput.clear();
     confirmPasswordInput.clear();
@@ -437,12 +461,6 @@ void AccountScreen::savePasswordChange() {
     newPasswordText.setString("");
     confirmPasswordText.setString("");
     activeField = -1;
-    
-    // Show success message
-    passwordMessage.setFillColor(Color(60, 160, 90)); // Green
-    passwordMessage.setString(L"Đổi mật khẩu thành công!");
-    showPasswordMessage = true;
-    messageTimerPassword.restart();
 }
 
 void AccountScreen::saveInfoChange() {
@@ -509,8 +527,12 @@ void AccountScreen::saveInfoChange() {
     currentUser->birthDate = newBirthDate;
     currentUser->phone = newPhone;
     
-    // Save to CSV
+    // Save to file
     authService->saveUsers();
+    
+    // ✅ Reload to refresh display
+    userDataLoaded = false;
+    setCurrentUser(currentUserEmail);
     
     // Show success message
     infoMessage.setFillColor(Color(60, 160, 90)); // Green
@@ -520,6 +542,9 @@ void AccountScreen::saveInfoChange() {
 }
 
 void AccountScreen::update(Vector2f mousePos, bool mousePressed, const Event* event, AppState& state) {
+    // ✅ Call BaseScreen::update to handle header navigation
+    BaseScreen::update(mousePos, mousePressed, state);
+    
     // Update menu buttons hover state - Button.update() cần 4 tham số
     Color hoverColor(50, 70, 100, 230);
     Color normalColor1 = Color(65, 135, 220, 255); // Active color for item 1
@@ -622,18 +647,21 @@ void AccountScreen::update(Vector2f mousePos, bool mousePressed, const Event* ev
             activeField = -1;
             showCursor = true;
             cursorClock.restart();
+            showInfoMessage = false; // ✅ Clear message when user starts editing
         }
         else if (birthDateBox.getGlobalBounds().contains(mousePos)) {
             activeInfoField = 1;
             activeField = -1;
             showCursor = true;
             cursorClock.restart();
+            showInfoMessage = false; // ✅ Clear message when user starts editing
         }
         else if (phoneBox.getGlobalBounds().contains(mousePos)) {
             activeInfoField = 2;
             activeField = -1;
             showCursor = true;
             cursorClock.restart();
+            showInfoMessage = false; // ✅ Clear message when user starts editing
         }
         // Email box is read-only, no click handling
         else if (oldPasswordBox.getGlobalBounds().contains(mousePos)) {
@@ -641,18 +669,21 @@ void AccountScreen::update(Vector2f mousePos, bool mousePressed, const Event* ev
             activeField = 0;
             showCursor = true;
             cursorClock.restart();
+            showPasswordMessage = false; // ✅ Clear message when user starts editing
         }
         else if (newPasswordBox.getGlobalBounds().contains(mousePos)) {
             activeInfoField = -1;
             activeField = 1;
             showCursor = true;
             cursorClock.restart();
+            showPasswordMessage = false; // ✅ Clear message when user starts editing
         }
         else if (confirmPasswordBox.getGlobalBounds().contains(mousePos)) {
             activeInfoField = -1;
             activeField = 2;
             showCursor = true;
             cursorClock.restart();
+            showPasswordMessage = false; // ✅ Clear message when user starts editing
         }
         else if (!saveInfoBtn.getGlobalBounds().contains(mousePos) && 
                  !changePasswordBtn.getGlobalBounds().contains(mousePos)) {
@@ -688,18 +719,25 @@ void AccountScreen::update(Vector2f mousePos, bool mousePressed, const Event* ev
     saveInfoBtn.update(mousePos, mousePressed, btnHover, btnNormal);
     changePasswordBtn.update(mousePos, mousePressed, btnHover, btnNormal);
     
-    // Handle button clicks
-    if (mousePressed) {
-        if (changePasswordBtn.isClicked(mousePos, mousePressed)) {
+    // ✅ Handle button clicks - ONLY on mouse button DOWN (not held)
+    // Debounce: Only trigger when mouse goes from NOT pressed to pressed
+    bool mouseJustPressed = mousePressed && !wasMousePressed;
+    wasMousePressed = mousePressed;
+    
+    if (mouseJustPressed) {
+        if (changePasswordBtn.isClicked(mousePos, true)) {
             savePasswordChange();
         }
-        else if (saveInfoBtn.isClicked(mousePos, mousePressed)) {
+        else if (saveInfoBtn.isClicked(mousePos, true)) {
             saveInfoChange();
         }
     }
 }
 
 void AccountScreen::draw(RenderWindow& window) {
+    // ✅ Call BaseScreen::draw to render header with navigation buttons
+    BaseScreen::draw(window);
+    
     // Update positions
     updatePositions(window.getSize());
     

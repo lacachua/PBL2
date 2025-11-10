@@ -225,15 +225,13 @@ HomeScreen::HomeScreen(Font& font, RenderWindow& window)
         win.setFramerateLimit(60);
     });
     
-    // ✅ Khởi tạo SearchBox - căn theo vị trí search_bar sprite
     FloatRect searchBarBounds = searchBar_sprite.getGlobalBounds();
-    float searchBoxX = searchBarBounds.position.x + 40.f;  // Padding từ bên trái
-    float searchBoxY = searchBarBounds.position.y + 8.f;   // Center vertically
-    float searchBoxWidth = searchBarBounds.size.x - 50.f;  // Trừ padding 2 bên
+    float searchBoxX = searchBarBounds.position.x + 40.f;
+    float searchBoxY = searchBarBounds.position.y + 8.f;
+    float searchBoxWidth = searchBarBounds.size.x - 50.f;
     
     searchBox = make_unique<SearchBox>(font, Vector2f(searchBoxX, searchBoxY), Vector2f(searchBoxWidth, 40.f));
     
-    // ✅ Khởi tạo SearchManager và load movies
     searchManager = make_unique<MovieSearchManager>();
     searchManager->loadMovies(repo->getAllMovies());
     searchBox->setSearchManager(searchManager.get());
@@ -241,12 +239,8 @@ HomeScreen::HomeScreen(Font& font, RenderWindow& window)
 
 void HomeScreen::update(Vector2f mousePos, bool mousePressed, AppState& state) {
     BaseScreen::update(mousePos, mousePressed, state);
-    
-    // ✅ Update search box
     if (searchBox) {
         searchBox->update(mousePos, mousePressed);
-        
-        // ✅ Check nếu user chọn movie từ search
         int movieIdx;
         if (searchBox->hasSelectedMovie(movieIdx)) {
             selectedMovieIndex = movieIdx;
@@ -255,46 +249,27 @@ void HomeScreen::update(Vector2f mousePos, bool mousePressed, AppState& state) {
             return;
         }
     }
-    
-    // ✅ Không update slider nếu search box đang active
-    if (searchBox && searchBox->isInputActive()) {
-        return;
-    }
-    
+    if (searchBox && searchBox->isInputActive()) return;
+
     float dt = clock.restart().asSeconds();
     slider->update(dt, win);
-
-    // Các xử lý click của header (logo, đặt vé) đã có sẵn trong BaseScreen
 }
 
 void HomeScreen::handleEvent(Vector2f mousePos, bool mousePressed, AppState& state, const Event* event) {
-    // ✅ Xử lý event cho search box trước
-    if (searchBox && event) {
-        searchBox->handleEvent(*event);
-    }
-    
-    // ✅ Chỉ xử lý slider event nếu search không active
-    if (!searchBox || !searchBox->isInputActive()) {
-        slider->handleEvent(mousePos, mousePressed, state);
-    }
+    if (searchBox && event)  searchBox->handleEvent(*event);
+    if (!searchBox || !searchBox->isInputActive()) slider->handleEvent(mousePos, mousePressed, state);
 }
 
 void HomeScreen::draw(RenderWindow& window) {
-    // Vẽ background và header (KHÔNG bao gồm dropdown)
     window.draw(background_sprite);
     window.draw(searchBar_sprite);
     for (int i = 0; i < buttons.getSize(); i++)
         buttons[i].draw(window);
     
-    // Vẽ slider
     slider->draw(window);
     
-    // ✅ Vẽ search box SAU slider để không bị che
-    if (searchBox) {
-        searchBox->draw(window);
-    }
+    if (searchBox) searchBox->draw(window);
     
-    // ✅ Vẽ dropdown CUỐI CÙNG để đè lên tất cả
     if (isUserLoggedIn() && showDropdown) {
         window.draw(dropdownBox);
         accountButton.draw(window);
@@ -303,18 +278,13 @@ void HomeScreen::draw(RenderWindow& window) {
 }
 
 void HomeScreen::drawHeaderOnly(RenderWindow& window) {
-    // ✅ Chỉ vẽ background và header, KHÔNG vẽ slider
     window.draw(background_sprite);
     window.draw(searchBar_sprite);
     for (int i = 0; i < buttons.getSize(); i++)
         buttons[i].draw(window);
     
-    // Vẽ search box nếu cần
-    if (searchBox) {
-        searchBox->draw(window);
-    }
+    if (searchBox) searchBox->draw(window);
     
-    // ✅ Vẽ dropdown CUỐI CÙNG nếu đang hiển thị
     if (isUserLoggedIn() && showDropdown) {
         window.draw(dropdownBox);
         accountButton.draw(window);
@@ -326,9 +296,6 @@ void HomeScreen::setLoggedUser(const string& username) {
     currentUser = username;
     isLoggedIn = !username.empty();
 
-    if (isLoggedIn) {
-        setAccountButtonText(L"Xin chào, " + sf::String::fromUtf8(username.begin(), username.end()) + L"!");
-    } else {
-        setAccountButtonText(L"Đăng nhập | Đăng ký");
-    }
+    if (isLoggedIn) setAccountButtonText(L"Xin chào, " + sf::String::fromUtf8(username.begin(), username.end()) + L"!");
+    else setAccountButtonText(L"Đăng nhập | Đăng ký");
 }
