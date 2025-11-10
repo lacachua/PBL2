@@ -46,11 +46,11 @@ void Button::update(Vector2f mousePos, bool mousePressed, Color hover, Color nor
 
     if (hovered) {
         box.setFillColor(hover);
-        text.setFillColor(Color::White);
+        // Keep existing text color, don't override it
     }
     else {
         box.setFillColor(normal);
-        text.setFillColor(Color::Black);
+        // Keep existing text color, don't override it
     }
 }
 
