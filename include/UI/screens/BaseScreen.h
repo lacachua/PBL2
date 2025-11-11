@@ -28,6 +28,7 @@ class BaseScreen {
         // ✅ Static variables để lưu trạng thái đăng nhập chung cho tất cả screen
         static string loggedInUsername;
         static string loggedInUserEmail;
+        static bool logoutRequested;  // ✅ Flag để báo cho App biết cần reset
         
         // Dropdown menu components
         bool showDropdown = false;
@@ -166,19 +167,19 @@ class BaseScreen {
             for (int i = 0; i < buttons.getSize(); i++)
                 buttons[i].draw(window);
             
-            // NOTE: GlobalSearchBar will be drawn separately in drawOverlay() to ensure it's on top
-            
-            // ✅ Draw dropdown menu nếu đang hiển thị
+            // NOTE: GlobalSearchBar and dropdown will be drawn in drawOverlay() to ensure they're on top
+        }
+        
+        // ✅ Draw UI overlay elements that should be on top of everything
+        virtual void drawOverlay(RenderWindow& window) {
+            // Draw dropdown menu first (below search bar)
             if (isUserLoggedIn() && showDropdown) {
                 window.draw(dropdownBox);
                 accountButton.draw(window);
                 logoutButton.draw(window);
             }
-        }
-        
-        // ✅ Draw UI overlay elements that should be on top of everything
-        virtual void drawOverlay(RenderWindow& window) {
-            // Draw global search bar and suggestions on top of all other content
+            
+            // Draw global search bar and suggestions on top of all content
             if (globalSearchBar) {
                 globalSearchBar->draw(window);
             }
@@ -226,6 +227,22 @@ class BaseScreen {
         static void handleLogout() {
             loggedInUsername = "";
             loggedInUserEmail = "";
+            logoutRequested = true;  // ✅ Set flag để App reset screens
+        }
+        
+        // ✅ Close dropdown menu (should be called before state changes)
+        void closeDropdown() {
+            showDropdown = false;
+        }
+        
+        // ✅ Check if logout was requested
+        static bool isLogoutRequested() {
+            return logoutRequested;
+        }
+        
+        // ✅ Clear logout flag after handling
+        static void clearLogoutFlag() {
+            logoutRequested = false;
         }
         
     protected:

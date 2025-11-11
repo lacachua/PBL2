@@ -323,6 +323,36 @@ void App::handleStateChange() {
     previousState = state;
 }
 
+void App::resetAfterLogout() {
+    // ✅ Reset AuthService to clear session
+    authService->logout();
+    
+    // ✅ Reset all screens to nullptr (unique_ptr automatically deletes)
+    detailScreen.reset();
+    bookingScreen.reset();
+    accountScreen.reset();
+    
+    // ✅ Recreate login and register screens to clear input fields
+    loginScreen = std::make_unique<LoginScreen>(font, *authService);
+    registerScreen = std::make_unique<RegisterScreen>(font, *authService);
+    accountScreen = std::make_unique<AccountScreen>(font, *authService);
+    
+    // ✅ Reset homeScreen to initial state (this will recreate it)
+    homeScreen.reset();
+    homeScreen = std::make_unique<HomeScreen>(font, window);
+    
+    // ✅ Clear current user info
+    currentUser = "";
+    currentUserEmail = "";
+    
+    // ✅ Reset state to HOME
+    state = AppState::HOME;
+    previousState = AppState::HOME;
+    
+    // ✅ Clear the logout flag
+    BaseScreen::clearLogoutFlag();
+}
+
 void App::run() {
     while (window.isOpen()) {
         bool mousePressed = false;
@@ -476,6 +506,13 @@ void App::run() {
         }
 
         handleStateChange();
+        
+        // ✅ Check if logout was requested and reset everything
+        if (BaseScreen::isLogoutRequested()) {
+            resetAfterLogout();
+            // After reset, skip this frame to avoid drawing deleted screens
+            continue;
+        }
 
         // --- Draw ---
         window.clear(Color::White);

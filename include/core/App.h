@@ -77,6 +77,7 @@ class App {
         AppState previousState;
 
         void handleStateChange();
+        void resetAfterLogout();  // ✅ Reset all screens and state after logout
     public:
         App();
         void run();
