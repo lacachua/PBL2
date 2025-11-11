@@ -225,39 +225,35 @@ HomeScreen::HomeScreen(Font& font, RenderWindow& window)
         win.setFramerateLimit(60);
     });
     
-    FloatRect searchBarBounds = searchBar_sprite.getGlobalBounds();
-    float searchBoxX = searchBarBounds.position.x + 40.f;
-    float searchBoxY = searchBarBounds.position.y + 8.f;
-    float searchBoxWidth = searchBarBounds.size.x - 50.f;
-    
-    searchBox = make_unique<SearchBox>(font, Vector2f(searchBoxX, searchBoxY), Vector2f(searchBoxWidth, 40.f));
-    
-    searchManager = make_unique<MovieSearchManager>();
-    searchManager->loadMovies(repo->getAllMovies());
-    searchBox->setSearchManager(searchManager.get());
+    // ✅ Initialize global search bar with movie data
+    initializeGlobalSearch(repo->getAllMovies());
 }
 
 void HomeScreen::update(Vector2f mousePos, bool mousePressed, AppState& state) {
     BaseScreen::update(mousePos, mousePressed, state);
-    if (searchBox) {
-        searchBox->update(mousePos, mousePressed);
-        int movieIdx;
-        if (searchBox->hasSelectedMovie(movieIdx)) {
-            selectedMovieIndex = movieIdx;
-            repo->setSelectedIndex(movieIdx);
-            state = AppState::MOVIE_DETAILS;
-            return;
-        }
+    
+    // If movie was selected from global search, set it in repository
+    int searchIdx = getSelectedMovieIndexFromSearch();
+    if (searchIdx >= 0) {
+        repo->setSelectedIndex(searchIdx);
+        return; // State already changed to MOVIE_DETAILS in BaseScreen
     }
-    if (searchBox && searchBox->isInputActive()) return;
+    
+    // Don't update slider if search is active
+    if (globalSearchBar && globalSearchBar->isInputActive()) return;
 
     float dt = clock.restart().asSeconds();
     slider->update(dt, win);
 }
 
 void HomeScreen::handleEvent(Vector2f mousePos, bool mousePressed, AppState& state, const Event* event) {
-    if (searchBox && event)  searchBox->handleEvent(*event);
-    if (!searchBox || !searchBox->isInputActive()) slider->handleEvent(mousePos, mousePressed, state);
+    // Handle global search bar events from BaseScreen
+    if (event) BaseScreen::handleEvent(*event);
+    
+    // Only handle slider events if search is not active
+    if (!globalSearchBar || !globalSearchBar->isInputActive()) {
+        slider->handleEvent(mousePos, mousePressed, state);
+    }
 }
 
 void HomeScreen::draw(RenderWindow& window) {
@@ -268,7 +264,7 @@ void HomeScreen::draw(RenderWindow& window) {
     
     slider->draw(window);
     
-    if (searchBox) searchBox->draw(window);
+    // NOTE: GlobalSearchBar is drawn in drawOverlay() to ensure it's on top
     
     if (isUserLoggedIn() && showDropdown) {
         window.draw(dropdownBox);
@@ -283,7 +279,7 @@ void HomeScreen::drawHeaderOnly(RenderWindow& window) {
     for (int i = 0; i < buttons.getSize(); i++)
         buttons[i].draw(window);
     
-    if (searchBox) searchBox->draw(window);
+    // NOTE: GlobalSearchBar is drawn in drawOverlay() to ensure it's on top
     
     if (isUserLoggedIn() && showDropdown) {
         window.draw(dropdownBox);

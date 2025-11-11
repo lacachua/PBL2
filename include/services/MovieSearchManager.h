@@ -2,11 +2,18 @@
 #include <string>
 #include <vector>
 #include <map>
-#include "UI/screens/DetailScreen.h"
+#include <SFML/Graphics.hpp>
 #include "data-structures/DLL.h"
 #include "../include/data-structures/Trie.h"
 
 using namespace std;
+using namespace sf;
+
+// Forward declaration to avoid circular dependency
+struct MovieDetail {
+    String movie_id;
+    wstring title, age_rating, country, language, genres, duration_min, release_date, director, cast, synopsis, posterPath, status;
+};
 
 // Structure to hold search results with movie index
 struct SearchResult {

@@ -91,11 +91,9 @@
 #include "UI/components/Button.h"
 #include "UI/components/TextButton.h"
 #include "core/AppState.h"
+#include "services/MovieSearchManager.h"
 
-struct MovieDetail {
-    String movie_id;
-    wstring title, age_rating, country, language, genres, duration_min, release_date, director, cast, synopsis, posterPath, status;
-};
+// MovieDetail is now defined in MovieSearchManager.h
 
 class DetailScreen : public BaseScreen {
     private:

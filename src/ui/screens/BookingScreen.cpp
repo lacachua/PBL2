@@ -1065,6 +1065,7 @@
 // }
 
 #include "UI/screens/BookingScreen.h"
+#include "models/MovieRepository.h"
 #include <fstream>
 #include <sstream>
 using namespace std;
@@ -1083,6 +1084,10 @@ BookingScreen::BookingScreen(Font& f, const String& movieId)
     // Khởi tạo seatSelection lần đầu
     seatSelection = make_unique<SeatSelection>(font);
     // loginPopup sẽ được tạo khi cần (nullptr ban đầu)
+    
+    // ✅ Initialize global search bar with movie data
+    MovieRepository repo("../data/movies.txt");
+    initializeGlobalSearch(repo.getAllMovies());
 }
 
 void BookingScreen::getUserInfo(const string& email, string& fullName, string& phone) {
@@ -1125,6 +1130,9 @@ void BookingScreen::getUserInfo(const string& email, string& fullName, string& p
 
 void BookingScreen::update(Vector2f mousePos, bool mousePressed, AppState& state) {
     BaseScreen::update(mousePos, mousePressed, state);
+    
+    // Don't process booking logic if search is active
+    if (globalSearchBar && globalSearchBar->isInputActive()) return;
 
     BookingState prevState = currentState;
     header.update(mousePos, mousePressed, currentState);

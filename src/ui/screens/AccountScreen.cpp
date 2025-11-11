@@ -1,4 +1,5 @@
 ﻿#include "UI/screens/AccountScreen.h"
+#include "models/MovieRepository.h"
 #include <iostream>
 
 using namespace std;
@@ -12,6 +13,10 @@ AccountScreen::AccountScreen(Font& f, AuthService& auth)
 {
     personalInfoView = make_unique<PersonalInfoView>(f, auth);
     purchaseHistoryView = make_unique<PurchaseHistoryView>(f);
+    
+    // ✅ Initialize global search bar with movie data
+    MovieRepository repo("../data/movies.txt");
+    initializeGlobalSearch(repo.getAllMovies());
     
     mainCardBg.setFillColor(Color(0, 24, 48, 235));
     mainCardBg.setOutlineThickness(1.f);
@@ -78,6 +83,14 @@ void AccountScreen::updatePositions(Vector2u windowSize) {
 
 void AccountScreen::update(Vector2f mousePos, bool mousePressed, const Event* event, AppState& state) {
     BaseScreen::update(mousePos, mousePressed, state);
+    
+    // Handle events for global search bar
+    if (event) {
+        BaseScreen::handleEvent(*event);
+    }
+    
+    // Don't process account screen logic if search is active
+    if (globalSearchBar && globalSearchBar->isInputActive()) return;
     
     Color hoverColor(50, 70, 100, 230);
     Color activeColor = Color(65, 135, 220, 255);

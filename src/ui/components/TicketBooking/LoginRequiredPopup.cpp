@@ -31,7 +31,7 @@ LoginRequiredPopup::LoginRequiredPopup(Font& f)
         popup.getPosition().y + 200.f
     });
     backButton.setFillColor(Color(150, 50, 50));
-    backButton.setTextColor(Color::White);
+    backButton.setTextColor(Color::Black);
     backButton.setOutlineThickness(2.f);
     backButton.setOutlineColor(Color::White);
     
@@ -41,7 +41,7 @@ LoginRequiredPopup::LoginRequiredPopup(Font& f)
         popup.getPosition().y + 200.f
     });
     loginButton.setFillColor(Color(20, 118, 172));
-    loginButton.setTextColor(Color::White);
+    loginButton.setTextColor(Color::Black);
     loginButton.setOutlineThickness(2.f);
     loginButton.setOutlineColor(Color::White);
 }

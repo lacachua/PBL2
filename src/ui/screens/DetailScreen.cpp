@@ -313,6 +313,7 @@
 // }
 
 #include "UI/screens/DetailScreen.h"
+#include "models/MovieRepository.h"
 #include <sstream>
 
 using namespace sf;
@@ -342,6 +343,9 @@ DetailScreen::DetailScreen(Font& headerFont, Font& btnFont, Font& titleFnt, Font
         icon5("../assets/elements/ageRating.png"),
         ageRatingIcon(icon5)
 {
+    // ✅ Initialize global search bar with movie data
+    MovieRepository repo("../data/movies.txt");
+    initializeGlobalSearch(repo.getAllMovies());
     poster.setScale({0.32f, 0.32f});
     poster.setPosition({150.f, 160.f});
 
@@ -397,8 +401,11 @@ DetailScreen::DetailScreen(Font& headerFont, Font& btnFont, Font& titleFnt, Font
 }
 
 void DetailScreen::update(Vector2f mousePos, bool mousePressed, AppState& state) {
-    // Update BaseScreen buttons (header buttons)
+    // Update BaseScreen buttons (header buttons and global search)
     BaseScreen::update(mousePos, mousePressed, state);
+    
+    // Don't process detail screen buttons if search is active
+    if (globalSearchBar && globalSearchBar->isInputActive()) return;
     
     // Update detail screen specific buttons
     backBtn.update(mousePos);

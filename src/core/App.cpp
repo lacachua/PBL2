@@ -277,19 +277,32 @@ App::App()
 }
 
 void App::handleStateChange() {
+    // ✅ Xử lý state MOVIE_DETAILS đặc biệt: cần check ngay cả khi state không đổi
+    if (state == AppState::MOVIE_DETAILS) {
+        // Chỉ tạo DetailScreen từ HomeScreen nếu chưa có DetailScreen từ search
+        // Điều này tránh ghi đè lên DetailScreen vừa được tạo từ search trong update loop
+        if (homeScreen && homeScreen->getRepository()) {
+            int selectedIndex = homeScreen->getSelectedMovieIndex();
+            if (selectedIndex >= 0) {
+                // Có movie mới được chọn từ poster/home → tạo DetailScreen mới
+                MovieDetail detail = homeScreen->getRepository()->getMovieDetailbyIndex(selectedIndex);
+                detailScreen = std::make_unique<DetailScreen>(font, font, title_font, detail_font, detail);
+                // Clear selected index sau khi dùng
+                homeScreen->clearSelectedMovieIndex();
+            }
+        }
+        
+        // ✅ CRITICAL FIX: Nếu không có selectedIndex từ HomeScreen và không có DetailScreen
+        // (tức là search từ screen khác nhưng update loop chưa tạo DetailScreen)
+        // thì KHÔNG làm gì, tránh giữ DetailScreen cũ hoặc tạo màn hình trắng
+    }
+    
+    // Xử lý các state transition khác
     if (state == previousState) return;
 
     switch (state) {
         case AppState::MOVIE_DETAILS:
-            // Khởi tạo DetailScreen từ dữ liệu trong MovieRepository
-            if (homeScreen && homeScreen->getRepository()) {
-                int selectedIndex = homeScreen->getSelectedMovieIndex();
-                if (selectedIndex >= 0) {
-                    MovieDetail detail = homeScreen->getRepository()->getMovieDetailbyIndex(selectedIndex);
-                    // Truyền 4 font: headerFont, buttonFont, titleFont, detailFont
-                    detailScreen = std::make_unique<DetailScreen>(font, font, title_font, detail_font, detail);
-                }
-            }
+            // Đã xử lý ở trên
             break;
 
         case AppState::BOOKING:
@@ -340,6 +353,18 @@ void App::run() {
                 // ✅ Truyền event cho HomeScreen để xử lý SearchBox
                 homeScreen->handleEvent(mousePos, mousePressed, state, &(*event));
             }
+            else if (state == AppState::MOVIE_DETAILS) {
+                // ✅ Truyền event cho DetailScreen để xử lý GlobalSearchBar
+                if (detailScreen) {
+                    detailScreen->handleEvent(*event);
+                }
+            }
+            else if (state == AppState::BOOKING) {
+                // ✅ Truyền event cho BookingScreen để xử lý GlobalSearchBar
+                if (bookingScreen) {
+                    bookingScreen->handleEvent(*event);
+                }
+            }
             else if (state == AppState::ACCOUNT) {
                 // ✅ Truyền MỖI event cho AccountScreen để xử lý text input
                 if (accountScreen) {
@@ -348,6 +373,57 @@ void App::run() {
             }
         }
 
+        // --- ✅ CRITICAL FIX: Save state BEFORE checking search results ---
+        // State might change during event processing, so we need to check all screens
+        AppState stateBeforeEventProcessing = state;
+        
+        // --- ✅ Check search results from ALL screens (state might have changed) ---
+        bool movieSelectedFromSearch = false;
+        int globalSearchIdx = -1;
+        
+        // Check ALL screens, not just current one (because state might have changed)
+        if (homeScreen) {
+            globalSearchIdx = homeScreen->getSelectedMovieIndexFromSearch();
+            if (globalSearchIdx >= 0) {
+                homeScreen->clearSelectedMovieIndexFromSearch();
+                movieSelectedFromSearch = true;
+            }
+        }
+        
+        if (!movieSelectedFromSearch && detailScreen) {
+            globalSearchIdx = detailScreen->getSelectedMovieIndexFromSearch();
+            if (globalSearchIdx >= 0) {
+                detailScreen->clearSelectedMovieIndexFromSearch();
+                movieSelectedFromSearch = true;
+            }
+        }
+        
+        if (!movieSelectedFromSearch && bookingScreen) {
+            globalSearchIdx = bookingScreen->getSelectedMovieIndexFromSearch();
+            if (globalSearchIdx >= 0) {
+                bookingScreen->clearSelectedMovieIndexFromSearch();
+                movieSelectedFromSearch = true;
+            }
+        }
+        
+        if (!movieSelectedFromSearch && accountScreen) {
+            globalSearchIdx = accountScreen->getSelectedMovieIndexFromSearch();
+            if (globalSearchIdx >= 0) {
+                accountScreen->clearSelectedMovieIndexFromSearch();
+                movieSelectedFromSearch = true;
+            }
+        }
+        
+        // If movie was selected from search, create DetailScreen immediately
+        if (movieSelectedFromSearch && homeScreen && homeScreen->getRepository()) {
+            MovieDetail detail = homeScreen->getRepository()->getMovieDetailbyIndex(globalSearchIdx);
+            detailScreen = std::make_unique<DetailScreen>(font, font, title_font, detail_font, detail);
+            // If coming from BookingScreen, reset it
+            if (state == AppState::BOOKING || previousState == AppState::BOOKING) {
+                bookingScreen.reset();
+            }
+        }
+        
         // --- Update theo state ---
         switch (state) {
             case AppState::HOME:
@@ -359,14 +435,18 @@ void App::run() {
                 // handleEvent đã được gọi trong event loop
                 break;
 
-            case AppState::MOVIE_DETAILS:
-                if (detailScreen)
-                    detailScreen->update(mousePos, mousePressed, state);
-                break;
-
+        case AppState::MOVIE_DETAILS:
+            if (detailScreen) {
+                detailScreen->update(mousePos, mousePressed, state);
+                // Search handling moved to before switch statement
+            }
+            break;
+            
             case AppState::BOOKING:
-                if (bookingScreen)
+                if (bookingScreen) {
                     bookingScreen->update(mousePos, mousePressed, state);
+                    // Search handling moved to before switch statement
+                }
                 break;
 
             case AppState::ACCOUNT:
@@ -379,6 +459,7 @@ void App::run() {
                     }
                     // Gọi update với nullptr (không có event mới) để update hover, cursor, etc
                     accountScreen->update(mousePos, mousePressed, nullptr, state);
+                    // Search handling moved to before switch statement
                 }
                 break;
 
@@ -401,16 +482,30 @@ void App::run() {
         switch (state) {
             case AppState::HOME:
                 homeScreen->draw(window);
+                // ✅ Draw search bar overlay on top of everything
+                homeScreen->drawOverlay(window);
                 break;
             case AppState::MOVIE_DETAILS:
-                if (detailScreen) detailScreen->draw(window);
+                if (detailScreen) {
+                    detailScreen->draw(window);
+                    // ✅ Draw search bar overlay on top of everything
+                    detailScreen->drawOverlay(window);
+                }
                 break;
             case AppState::BOOKING:
-                if (bookingScreen) bookingScreen->draw(window);
+                if (bookingScreen) {
+                    bookingScreen->draw(window);
+                    // ✅ Draw search bar overlay on top of everything
+                    bookingScreen->drawOverlay(window);
+                }
                 break;
             case AppState::ACCOUNT:
                 // ✅ AccountScreen giờ kế thừa BaseScreen nên tự vẽ header
-                if (accountScreen) accountScreen->draw(window);
+                if (accountScreen) {
+                    accountScreen->draw(window);
+                    // ✅ Draw search bar overlay on top of everything
+                    accountScreen->drawOverlay(window);
+                }
                 break;
             case AppState::LOGIN:
                 loginScreen->draw(window);
