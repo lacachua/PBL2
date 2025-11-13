@@ -2,8 +2,14 @@
 #include "models/MovieRepository.h"
 #include <fstream>
 #include <sstream>
+#include <vector>
 using namespace std;
 using namespace sf;
+
+static string toUtf8String(const String& str) {
+    auto buffer = str.toUtf8();
+    return string(buffer.begin(), buffer.end());
+}
 
 BookingScreen::BookingScreen(Font& f, const String& movieId)
     : BaseScreen(f),
@@ -181,13 +187,13 @@ void BookingScreen::update(Vector2f mousePos, bool mousePressed, AppState& state
                 bookingData.customerPhone = userPhone;
                 
                 // (2) Thông tin suất chiếu
-                bookingData.showtimeId = showtimeSection.getSelectedShowtimeId().toAnsiString();
-                bookingData.movieId = showtimeSection.getSelectedMovieId().toAnsiString();
-                bookingData.movieName = showtimeSection.getSelectedMovieName().toAnsiString();
-                bookingData.roomId = showtimeSection.getSelectedRoomId().toAnsiString();
-                bookingData.roomName = showtimeSection.getSelectedRoomName().toAnsiString();
-                bookingData.date = showtimeSection.getSelectedDate().toAnsiString();
-                bookingData.time = showtimeSection.getSelectedTime().toAnsiString();
+                bookingData.showtimeId = toUtf8String(showtimeSection.getSelectedShowtimeId());
+                bookingData.movieId = toUtf8String(showtimeSection.getSelectedMovieId());
+                bookingData.movieName = toUtf8String(showtimeSection.getSelectedMovieName());
+                bookingData.roomId = toUtf8String(showtimeSection.getSelectedRoomId());
+                bookingData.roomName = toUtf8String(showtimeSection.getSelectedRoomName());
+                bookingData.date = toUtf8String(showtimeSection.getSelectedDate());
+                bookingData.time = toUtf8String(showtimeSection.getSelectedTime());
                 bookingData.ticketPrice = showtimeSection.getSelectedPrice();
                 
                 // (3) Thông tin ghế
@@ -208,7 +214,7 @@ void BookingScreen::update(Vector2f mousePos, bool mousePressed, AppState& state
                     for (int i = 0; i < selectedCombosDLL.getSize(); i++) {
                         auto combo = selectedCombosDLL[i];
                         BookingData::ComboItem item;
-                        item.comboName = combo.name.toAnsiString();
+                        item.comboName = toUtf8String(combo.name);
                         item.price = combo.price;
                         item.quantity = combo.quantity;
                         

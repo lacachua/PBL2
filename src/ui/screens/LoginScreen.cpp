@@ -56,18 +56,30 @@ LoginScreen::LoginScreen(const Font& font, AuthService& authRef)
     msg.setFillColor(Color(200,60,60)); // mặc định đỏ
 
     // caret setup: thin vertical bar similar to a native text cursor
-    caret.setSize({2.f, 20.f});
+    caret.setSize({2.f, 24.f});
     caret.setFillColor(Color::Black);
 }
 
-std::wstring LoginScreen::bullets(std::size_t n) { return std::wstring(n, L'\u2022'); }
+wstring LoginScreen::bullets(size_t n) { 
+    return wstring(n, L'\u2022'); 
+}
 
 bool LoginScreen::update(Vector2f mouse, bool mousePressed, const Event& event, string& currentUser, string& currentUserEmail, AppState& state) {
-    // click ra ngoài card -> đóng
-    if (mousePressed && !card.getGlobalBounds().contains(mouse)) return true;
+    const Vector2f center(864.f, 486.f);
+    card.setPosition(center);
+    closeX.setPosition({card.getPosition().x + card.getSize().x / 2.f - 28.f,
+                        card.getPosition().y - card.getSize().y / 2.f + 8.f});
 
-    // click X -> đóng
-    if (mousePressed && closeX.getGlobalBounds().contains(mouse)) return true;
+    if (mousePressed && closeX.getGlobalBounds().contains(mouse)) {
+        state = AppState::HOME;
+        emailInput.clear();
+        passInput.clear();
+        emailActive = false;
+        passActive = false;
+        msg.setString(L"");
+        loginSuccess = false;
+        return false;
+    }
 
     // chọn ô active
     if (mousePressed) {
@@ -77,8 +89,8 @@ bool LoginScreen::update(Vector2f mouse, bool mousePressed, const Event& event, 
         // click Continue
         if (btn.getGlobalBounds().contains(mouse)) {
             // ✅ verify and login
-            std::string u(emailInput.begin(), emailInput.end());
-            std::string p(passInput.begin(), passInput.end());
+            string u(emailInput.begin(), emailInput.end());
+            string p(passInput.begin(), passInput.end());
             if (auth.login(u, p)) {  // ✅ Gọi login() thay vì verify()
                 msg.setFillColor(Color(60, 160, 90));
                 msg.setString(L"Đăng nhập thành công.");
@@ -101,7 +113,16 @@ bool LoginScreen::update(Vector2f mouse, bool mousePressed, const Event& event, 
     // phím
     if (event.is<Event::KeyPressed>()) {
         auto code = event.getIf<Event::KeyPressed>()->code;
-        if (code == Keyboard::Key::Escape) return true;              // đóng
+        if (code == Keyboard::Key::Escape) {
+            state = AppState::HOME;
+            emailInput.clear();
+            passInput.clear();
+            emailActive = false;
+            passActive = false;
+            msg.setString(L"");
+            loginSuccess = false;
+            return false;
+        }
         if (code == Keyboard::Key::Tab) {                            // chuyển ô
             bool e = emailActive, p = passActive;
             emailActive = !e && !p ? true : !e;
@@ -110,8 +131,8 @@ bool LoginScreen::update(Vector2f mouse, bool mousePressed, const Event& event, 
             if (emailActive && !emailInput.empty()) emailInput.pop_back();
             else if (passActive && !passInput.empty()) passInput.pop_back();
         } else if (code == Keyboard::Key::Enter) {                   // xác nhận
-            std::string email(emailInput.begin(), emailInput.end());
-            std::string password(passInput.begin(), passInput.end());
+            string email(emailInput.begin(), emailInput.end());
+            string password(passInput.begin(), passInput.end());
             
             // Validate email format first
             if (!Validator::isValidEmail(email)) {
@@ -234,14 +255,16 @@ void LoginScreen::draw(RenderWindow& window) {
         if (emailActive) {
             Vector2f textPos = emailDisplay.getPosition();
             FloatRect bounds = emailDisplay.getLocalBounds();
-            caret.setSize({2.f, static_cast<float>(emailDisplay.getCharacterSize()) + 4.f});
-            caret.setPosition({textPos.x + bounds.size.x + 2.f, textPos.y - 2.f});
+            caret.setSize({2.f, emailBox.getSize().y - 8.f});
+            float caretY = emailBox.getPosition().y + (emailBox.getSize().y - caret.getSize().y) / 2.f;
+            caret.setPosition({textPos.x + bounds.size.x + 2.f, caretY});
             window.draw(caret);
         } else if (passActive) {
             Vector2f textPos = passDisplay.getPosition();
             FloatRect bounds = passDisplay.getLocalBounds();
-            caret.setSize({2.f, static_cast<float>(passDisplay.getCharacterSize()) + 4.f});
-            caret.setPosition({textPos.x + bounds.size.x + 2.f, textPos.y - 2.f});
+            caret.setSize({2.f, passBox.getSize().y - 8.f});
+            float caretY = passBox.getPosition().y + (passBox.getSize().y - caret.getSize().y) / 2.f;
+            caret.setPosition({textPos.x + bounds.size.x + 2.f, caretY});
             window.draw(caret);
         }
     }

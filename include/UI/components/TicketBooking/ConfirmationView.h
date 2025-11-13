@@ -40,8 +40,6 @@ private:
     
 public:
     ConfirmationView(Font& f);
-    
-    // ✅ NEW: Set data directly from BookingData
     void setBookingData(const BookingData& data);
     
     void update(Vector2f mousePos, bool mousePressed);

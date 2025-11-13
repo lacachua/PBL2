@@ -292,6 +292,9 @@ void HomeScreen::setLoggedUser(const string& username) {
     currentUser = username;
     isLoggedIn = !username.empty();
 
-    if (isLoggedIn) setAccountButtonText(L"Xin chào, " + sf::String::fromUtf8(username.begin(), username.end()) + L"!");
+    if (isLoggedIn) {
+        string firstName = getFirstName(username);
+        setAccountButtonText(L"Xin chào, " + sf::String::fromUtf8(firstName.begin(), firstName.end()) + L"!");
+    } 
     else setAccountButtonText(L"Đăng nhập | Đăng ký");
 }

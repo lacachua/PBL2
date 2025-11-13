@@ -21,7 +21,7 @@ static std::string wstring_to_utf8(const std::wstring& wstr) {
 RegisterScreen::RegisterScreen(const Font& font, AuthService& authRef)
     : auth(authRef),
       overlay({0.f, 0.f}),
-      card({500.f, 650.f}),
+    card({620.f, 650.f}),
       title(font, L"Đăng ký tài khoản", 30),
       registerBtn({252.f, 44.f}),
       backBtn({141.f, 44.f}),
@@ -29,7 +29,7 @@ RegisterScreen::RegisterScreen(const Font& font, AuthService& authRef)
       backBtnText(font, L"Quay lại", 20),
       closeX(font, L"X", 24),
       msg(font, L"", 16),
-      cursor({2.f, 20.f})
+    cursor({2.f, 36.f})
 {
     overlay.setFillColor(Color(0, 0, 0, 170));
     card.setFillColor(Color(255, 255, 255, 240));
@@ -60,7 +60,7 @@ RegisterScreen::RegisterScreen(const Font& font, AuthService& authRef)
     };
 
     for (int i = 0; i < 6; i++) {
-        inputBoxes.emplace_back(Vector2f{400.f, 40.f});
+    inputBoxes.emplace_back(Vector2f{480.f, 40.f});
         inputBoxes.back().setFillColor(Color(238, 238, 238));
         inputBoxes.back().setOutlineThickness(2.f);
         inputBoxes.back().setOutlineColor(Color(200, 200, 200));
@@ -163,7 +163,25 @@ bool RegisterScreen::validateInputs() {
     return true;
 }
 
-bool RegisterScreen::update(Vector2f mouse, bool mousePressed, const Event& event) {
+bool RegisterScreen::update(Vector2f mouse, bool mousePressed, const Event& event, AppState& state) {
+    const Vector2f center(864.f, 486.f);
+    card.setPosition(center);
+    closeX.setPosition({card.getPosition().x + card.getSize().x / 2.f - 30.f,
+                        card.getPosition().y - card.getSize().y / 2.f + 10.f});
+
+        float fieldWidth = inputBoxes.empty() ? 0.f : inputBoxes[0].getSize().x;
+        float inputLeft = center.x - fieldWidth / 2.f;
+        float inputRight = inputLeft + fieldWidth;
+
+        for (int i = 0; i < 6; i++) {
+            float y = center.y - 215.f + i * 80.f;
+            inputBoxes[i].setPosition({inputLeft, y});
+        }
+
+        float buttonY = center.y + 240.f;
+        registerBtn.setPosition({inputLeft, buttonY});
+        backBtn.setPosition({inputRight - backBtn.getSize().x, buttonY});
+
     if (cursorClock.getElapsedTime().asMilliseconds() > 530) {
         showCursor = !showCursor;
         cursorClock.restart();
@@ -172,11 +190,16 @@ bool RegisterScreen::update(Vector2f mouse, bool mousePressed, const Event& even
     if (showSuccessMessage && messageTimer.getElapsedTime().asSeconds() > 1.0f) {
         showSuccessMessage = false;
         reset();
-        return true;
+        state = AppState::LOGIN;
+        return false;
     }
 
-    if (mousePressed && !card.getGlobalBounds().contains(mouse)) return true;
-    if (mousePressed && closeX.getGlobalBounds().contains(mouse)) return true;
+    if (mousePressed && closeX.getGlobalBounds().contains(mouse)) {
+        state = AppState::HOME;
+        reset();
+        showSuccessMessage = false;
+        return false;
+    }
 
     if (mousePressed) {
         activeField = -1;
@@ -203,13 +226,17 @@ bool RegisterScreen::update(Vector2f mouse, bool mousePressed, const Event& even
                     msg.setString(L"Đăng ký thành công! Đang chuyển sang đăng nhập...");
                     showSuccessMessage = true;
                     messageTimer.restart();
+                    return false;
                 } else {
                     msg.setFillColor(Color(200, 60, 60));
                     msg.setString(L"Đăng ký thất bại. Vui lòng thử lại.");
                 }
             }
         } else if (backBtn.getGlobalBounds().contains(mouse)) {
-            return true;
+            state = AppState::LOGIN;
+            reset();
+            showSuccessMessage = false;
+            return false;
         }
     }
 
@@ -217,7 +244,12 @@ bool RegisterScreen::update(Vector2f mouse, bool mousePressed, const Event& even
         auto keyEvent = event.getIf<Event::KeyPressed>();
         auto code = keyEvent->code;
 
-        if (code == Keyboard::Key::Escape) return true;
+        if (code == Keyboard::Key::Escape) {
+            state = AppState::HOME;
+            reset();
+            showSuccessMessage = false;
+            return false;
+        }
         if (code == Keyboard::Key::Tab) {
             activeField = (activeField + 1) % 6;
             showCursor = true;
@@ -242,6 +274,7 @@ bool RegisterScreen::update(Vector2f mouse, bool mousePressed, const Event& even
                     msg.setString(L"Đăng ký thành công! Đang chuyển sang đăng nhập...");
                     showSuccessMessage = true;
                     messageTimer.restart();
+                    return false;
                 }
             }
         }
@@ -266,24 +299,38 @@ void RegisterScreen::draw(RenderWindow& window) {
     Vector2f center({size.x * 0.5f, size.y * 0.5f});
 
     card.setPosition(center);
-    title.setPosition({center.x - 120.f, center.y - 292.f});
     closeX.setPosition({card.getPosition().x + card.getSize().x/2.f - 30.f, card.getPosition().y - card.getSize().y/2.f + 10.f});
 
+    float fieldWidth = inputBoxes.empty() ? 0.f : inputBoxes[0].getSize().x;
+    float inputLeft = center.x - fieldWidth / 2.f;
+    float inputRight = inputLeft + fieldWidth;
+
+    FloatRect titleBounds = title.getLocalBounds();
+    title.setPosition({
+        center.x - titleBounds.size.x / 2.f - titleBounds.position.x,
+        center.y - card.getSize().y / 2.f + 40.f
+    });
+
     for (int i = 0; i < 6; i++) {
-        // Giãn spacing
         float y = center.y - 215.f + i * 80.f; // ↑ tăng spacing từ 60 → 70
-
-        // Căn label cao hơn và gần box hơn
-        labels[i].setPosition({center.x - 200.f, y - 24.f});
-
-        // Input box
-        inputBoxes[i].setPosition({center.x - 200.f, y});
-
-        // Text bên trong box
-        Vector2f textPos = {center.x - 190.f, y + 10.f};
+        labels[i].setPosition({inputLeft, y - 24.f});
+        inputBoxes[i].setPosition({inputLeft, y});
+        Vector2f textPos = {inputLeft + 10.f, y + 10.f};
         placeholders[i].setPosition(textPos);
         displays[i].setPosition(textPos);
     }
+
+    float buttonY = center.y + 240.f;
+    registerBtn.setPosition({inputLeft, buttonY});
+    registerBtnText.setPosition({
+        registerBtn.getPosition().x + registerBtn.getSize().x / 2.f,
+        registerBtn.getPosition().y + registerBtn.getSize().y / 2.f - 3
+    });
+    backBtn.setPosition({inputRight - backBtn.getSize().x, buttonY});
+    backBtnText.setPosition({
+        backBtn.getPosition().x + backBtn.getSize().x / 2.f,
+        backBtn.getPosition().y + backBtn.getSize().y / 2.f - 3
+    });
     // Nút bấm
     registerBtn.setPosition({center.x - 201.f, center.y + 240.f});
     registerBtnText.setPosition({
@@ -298,7 +345,7 @@ void RegisterScreen::draw(RenderWindow& window) {
     });
 
     // Thông báo lỗi / thành công
-    msg.setPosition({center.x - 200.f, center.y + 285.f});
+    msg.setPosition({inputLeft, center.y + 285.f});
 
     window.draw(overlay);
     window.draw(card);
@@ -320,9 +367,15 @@ void RegisterScreen::draw(RenderWindow& window) {
         }
 
         if (activeField == i && showCursor) {
+            Vector2f boxPos = inputBoxes[i].getPosition();
+            Vector2f boxSize = inputBoxes[i].getSize();
             Vector2f textPos = displays[i].getPosition();
             FloatRect bounds = displays[i].getLocalBounds();
-            cursor.setPosition({textPos.x + bounds.size.x + 2.f, textPos.y - 2.f});
+
+            cursor.setSize({2.f, boxSize.y - 8.f});
+            float caretX = textPos.x + bounds.size.x + 2.f;
+            float caretY = boxPos.y + (boxSize.y - cursor.getSize().y) / 2.f;
+            cursor.setPosition({caretX, caretY});
             window.draw(cursor);
         }
     }

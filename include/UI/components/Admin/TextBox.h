@@ -21,6 +21,7 @@ private:
     RectangleShape border;
     unique_ptr<Text> displayText;
     unique_ptr<Text> labelText;
+    RectangleShape cursor;
     
     string value;
     string placeholder;
@@ -34,6 +35,7 @@ private:
     Color focusColor = Color(20, 118, 172);    // #1476AC
     Color textColor = Color(34, 34, 34);
     Color placeholderColor = Color(160, 160, 160);
+    float horizontalPadding = 10.f;
     
 public:
     TextBox(Font& font, const string& label, float x, float y, float width, float height);

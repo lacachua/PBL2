@@ -1,6 +1,15 @@
 #include "UI/components/Admin/MovieRepository.h"
+#include <algorithm>
+#include <cctype>
 #include <iostream>
 #include <iomanip>
+
+namespace {
+bool isValidMovieId(const string& id) {
+    return id.size() >= 2 && id[0] == 'F' &&
+           all_of(id.begin() + 1, id.end(), [](unsigned char ch){ return std::isdigit(ch); });
+}
+}
 
 AdminMovieRepository::AdminMovieRepository(const string& path) : filePath(path) {
     loadFromFile();
@@ -19,18 +28,17 @@ vector<string> AdminMovieRepository::splitString(const string& str, char delimit
 }
 
 string AdminMovieRepository::generateNewId() {
-    if (data.empty()) {
-        return "F0001";
+    for (auto it = data.rbegin(); it != data.rend(); ++it) {
+        if (it->empty()) continue;
+        const string& candidate = (*it)[0];
+        if (isValidMovieId(candidate)) {
+            int num = stoi(candidate.substr(1)) + 1;
+            stringstream ss;
+            ss << "F" << setfill('0') << setw(4) << num;
+            return ss.str();
+        }
     }
-    
-    string lastId = data.back()[0];
-    if (lastId.length() >= 2 && lastId[0] == 'F') {
-        int num = stoi(lastId.substr(1)) + 1;
-        stringstream ss;
-        ss << "F" << setfill('0') << setw(4) << num;
-        return ss.str();
-    }
-    
+
     return "F0001";
 }
 
@@ -90,14 +98,21 @@ void AdminMovieRepository::saveToFile() {
 void AdminMovieRepository::addRecord(const vector<string>& record) {
     vector<string> fullRecord = record;
     
-    // If record doesn't have ID, generate it
-    if (fullRecord.empty() || fullRecord[0].empty()) {
+    // Ensure ID is present (UI passes empty slot at index 0)
+    if (fullRecord.empty()) {
+        fullRecord.push_back(generateNewId());
+    } else if (fullRecord[0].empty()) {
+        fullRecord[0] = generateNewId();
+    } else if (!isValidMovieId(fullRecord[0])) {
         fullRecord.insert(fullRecord.begin(), generateNewId());
     }
     
     // Ensure we have all required fields
     while (fullRecord.size() < 13) {
         fullRecord.push_back("");
+    }
+    if (fullRecord.size() > 13) {
+        fullRecord.resize(13);
     }
     
     data.push_back(fullRecord);
@@ -108,6 +123,9 @@ void AdminMovieRepository::updateRecord(int index, const vector<string>& record)
     
     // Keep the ID from original record
     vector<string> updatedRecord = record;
+    if (updatedRecord.size() < 13) {
+        updatedRecord.resize(13);
+    }
     if (!data[index].empty()) {
         updatedRecord[0] = data[index][0];
     }

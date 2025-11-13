@@ -101,9 +101,19 @@ class DetailScreen : public BaseScreen {
         const Font& title_font;     // Font cho tiêu đề phim và nút đặt vé - được truyền vào
         const Font& detail_font;    // Font cho nội dung chi tiết - được truyền vào
         
-        Texture poster_tex;
-        Sprite poster;
-        Text title_text, info_text, synopsis_text;
+    Texture poster_tex;
+    Sprite poster;
+    Text title_text;
+    Text genre_text;
+    Text duration_text;
+    Text country_text;
+    Text language_text;
+    Text rating_text;
+    Text description_header;
+    Text director_text;
+    Text cast_text;
+    Text synopsis_header;
+    Text synopsis_text;
         TextButton backBtn;
         Button bookBtn;
         MovieDetail movie;

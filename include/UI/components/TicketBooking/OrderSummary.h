@@ -6,7 +6,6 @@
 using namespace sf;
 using namespace std;
 
-// Mỗi dòng trong bảng đơn hàng
 struct OrderItem {
     String description;
     int quantity;
@@ -17,22 +16,12 @@ class OrderSummary {
 private:
     Font& font;
     DLL<OrderItem> items;
-
-    String fmtMoney(int v) const;
-
+    String fmtMoney(int) const;
 public:
-    OrderSummary(Font& f);
-
-    // clear & add items
+    OrderSummary(Font&);
     void reset();
-    void addItem(const String& desc, int qty, int pricePerUnit);
-
-    // sinh dữ liệu từ ghế + combo
-    void generateFromSelections(const SeatSelection* seatSel, const ComboSelection* comboSel);
-
-    // tính tổng
+    void addItem(const String&, int, int);
+    void generateFromSelections(const SeatSelection*, const ComboSelection*);
     int getTotal() const;
-
-    // render UI
-    void draw(RenderWindow& window);
+    void draw(RenderWindow&);
 };

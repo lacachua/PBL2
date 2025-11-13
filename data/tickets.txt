@@ -1,1 +1,5 @@
 ticket_id|showtime_id|title|date|time|room_name|booked|combo_name|price|email|fullName|booked_date|booked_time
+T0001|SUATCHIEU_20251114_0002|TỬ CHIẾN TRÊN KHÔNG|2025-11-14|14:30|Phòng Chiếu 1|I6, I5|2 CocaCola + 2 Bắp Caramel x1, 2 CocaCola + 2 Bắp Phô Mai x1|500000|vanvu41ht1@gmail.com|Nguyễn Văn Vũ|13/11/2025|21:25:57
+T0002|SUATCHIEU_20251114_0012|LẬT MẶT: 48H|2025-11-14|19:00|Phòng Chiếu 4|I6, I5|2 CocaCola + 1 Bắp Caramel x1, 1 CocaCola + 1 Bắp Caramel x1, 2 CocaCola + 1 Bắp Phô Mai x1, 1 CocaCola + 1 Bắp Phô Mai x1, 2 CocaCola + 2 Bắp Caramel x1, 2 CocaCola + 2 Bắp Phô Mai x1|920000|vanvu41ht1@gmail.com|Nguyễn Văn Vũ|13/11/2025|22:06:51
+T0003|SUATCHIEU_20251114_0002|TỬ CHIẾN TRÊN KHÔNG|2025-11-14|14:30|Phòng Chiếu 1|H7, H6|2 CocaCola + 2 Bắp Phô Mai x1|335000|vanvu41ht5@gmail.com|Khách hàng|13/11/2025|22:40:50
+T0004|SUATCHIEU_20251114_0008|ĐÀO, PHỞ VÀ PIANO|2025-11-14|18:30|Phòng Chiếu 3|I5, I6|2 CocaCola + 1 Bắp Caramel x1, 1 CocaCola + 1 Bắp Caramel x1, 2 CocaCola + 1 Bắp Phô Mai x1, 1 CocaCola + 1 Bắp Phô Mai x1, 2 CocaCola + 2 Bắp Caramel x1, 2 CocaCola + 2 Bắp Phô Mai x1|920000|vanvu41ht1@gmail.com|Nguyễn Văn Vũ|13/11/2025|23:37:25

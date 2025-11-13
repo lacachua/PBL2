@@ -1,12 +1,14 @@
 email|passwordHash|fullName|birthDate|phone|registeredAt|role|status
 vanvu41ht3@gmail.com|25fe1f608c4300be|Nguyễn Vi|07/06/2006|0335912027|1761573201|customer|active
 vanvu41ht4@gmail.com|24f1eba07df13783|Trần Văn A Bê Cê|01/01/2025|0335912028|1762688524|customer|active
+vanvu41ht5@gmail.com|24f1eba07df13783|Nguyễn Vũ|07/06/2006|0335912027|1763048429|customer|active
 vuvannguyen@gmail.com|24f1eba07df13783|Nguyễn Văn Vũ|07/06/2006|0335912027|1762695388|customer|active
+vuxiedaking1@gmail.com|24f1eba07df13783|Nguyễn Văn Nguyễn Vũ|07/06/2006|0335912027|1762671101|customer|active
 admin@cinexine.vn|875ac6e8ba98644b|Nguyễn Văn Quản Trị|01/01/1990|0900000000|1760000000|admin|active
 ntctuyen@gmail.com|17120e13a8b2a45|Nguyễn Thị Cẩm Tuyền|09/07/2006|0898234406|1761397390|customer|active
-vuxiedaking1@gmail.com|24f1eba07df13783|Nguyễn Văn Nguyễn Vũ|07/06/2006|0335912027|1762671101|customer|active
+vuvannguyen1@gmail.net|24f1eba07df13783|Nguyễn Vũ Đẹp Trai|01/01/2025|0335912027|1763046932|customer|active
 test@gmail.com|85c23cd3e08d3d74|Test User|01/01/2000|0901234567|1761396484|customer|active
 vanvu1@gmail.com|24f1eba07df13783|Nguyễn Văn Vũ Đây|07/06/2006|0335912027|1762671535|customer|active
-vanvu41ht1@gmail.com|24f1eba07df13783|Nguyễn Văn Vũ|07/06/2006|0335912029|1761982643|customer|active
+vanvu41ht1@gmail.com|24f1eba07df13783|Nguyễn Văn Vũ|07/06/2006|0335912027|1761982643|customer|active
 vanvu41ht2@gmail.com|24f1eba07df13783|Nguyễn Văn A|07/06/2006|0335912027|1762482328|customer|locked
 staff01@cinexine.vn|e2ab2cb39b56a19b|Nguyễn Văn Nhân Viên|01/01/1995|0901111111|1760000001|staff|active

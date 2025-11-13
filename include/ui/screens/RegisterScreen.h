@@ -2,6 +2,7 @@
 #include <SFML/Graphics.hpp>
 #include <string>
 #include "services/AuthService.h"
+#include "core/AppState.h"
 
 using namespace sf;
 using namespace std;
@@ -38,7 +39,7 @@ private:
 public:
     RegisterScreen(const Font& font, AuthService& authRef);
 
-    bool update(Vector2f mouse, bool mousePressed, const Event& event);
+    bool update(Vector2f mouse, bool mousePressed, const Event& event, AppState& state);
     void draw(RenderWindow& window);
     void reset();
 

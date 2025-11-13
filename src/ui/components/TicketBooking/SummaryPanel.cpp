@@ -1,5 +1,4 @@
 #include "UI/components/TicketBooking/SummaryPanel.h"
-#include <cstdio>
 using namespace std;
 
 SummaryPanel::SummaryPanel(Font& f) : font(f) {}
@@ -144,30 +143,22 @@ void SummaryPanel::drawWithSeats(RenderWindow& window, const String& movieName, 
     window.draw(price);
 }
 
-void SummaryPanel::drawPayment(RenderWindow& window,
-                               const String& movieName,
-                               const String& room,
-                               const String& date,
-                               const String& time,
-                               int finalTotal) {
+void SummaryPanel::drawPayment(RenderWindow& window, const String& movieName, const String& room, const String& date, const String& time, int finalTotal) {
     float boxX = 1154.f;
     float boxY = 220.f;
     float yPos = boxY + 20.f;
 
-    // Tên phim
     Text title(font, movieName, 22);
     title.setFillColor(Color::White);
     title.setPosition({boxX + 20.f, yPos});
     window.draw(title);
 
-    // Tên rạp
     yPos += 40.f;
     Text cinema(font, L"Rạp CiNeXíNè - Đà Nẵng", 20);
     cinema.setFillColor(Color::White);
     cinema.setPosition({boxX + 20.f, yPos});
     window.draw(cinema);
 
-    // Ngày chiếu
     string dateStr = date.toAnsiString();
     int year = 0, month = 0, day = 0;
     char formattedDate[20] = "";

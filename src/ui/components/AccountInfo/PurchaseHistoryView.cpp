@@ -3,17 +3,71 @@
 #include <sstream>
 #include <algorithm>
 #include <iostream>
+#include <cstring>
 
 #ifdef _WIN32
 #include <windows.h>
 #endif
 
+using std::min;
+using std::string;
+using std::stringstream;
+using std::vector;
+
+static String utf8(const char* text) {
+    size_t len = std::strlen(text);
+    return String::fromUtf8(text, text + len);
+}
+
+static String utf8(const string& text) {
+    return String::fromUtf8(text.begin(), text.end());
+}
+
+static string formatDateToDDMMYYYY(const string& dateStr) {
+    if (dateStr.find('/') != string::npos) return dateStr;
+
+    if (dateStr.length() >= 8) {
+        string year, month, day;
+
+        if (dateStr.find('-') != string::npos) {
+            stringstream ss(dateStr);
+            getline(ss, year, '-');
+            getline(ss, month, '-');
+            getline(ss, day, '-');
+        } else {
+            year = dateStr.substr(0, 4);
+            month = dateStr.substr(4, 2);
+            day = dateStr.substr(6, 2);
+        }
+
+        return day + "/" + month + "/" + year;
+    }
+
+    return dateStr;
+}
+
+static String formatPriceToString(int price) {
+    string digits = to_string(price);
+    string formatted;
+    int count = 0;
+    for (int i = static_cast<int>(digits.size()) - 1; i >= 0; --i) {
+        formatted.insert(formatted.begin(), digits[static_cast<size_t>(i)]);
+        count++;
+        if (count == 3 && i > 0) {
+            formatted.insert(formatted.begin(), '.');
+            count = 0;
+        }
+    }
+    formatted += " VNĐ";
+    return String::fromUtf8(formatted.begin(), formatted.end());
+}
+
 PurchaseHistoryView::PurchaseHistoryView(const Font& f)
-    : font(f),
-      titleText(f, L"LỊCH SỬ ĐẶT VÉ", 22),
-      prevButtonText(f, L"← Trước", 16),
-      nextButtonText(f, L"Tiếp →", 16),
-      pageInfoText(f, L"", 16)
+        : font(f),
+            titleText(f, utf8("LỊCH SỬ ĐẶT VÉ"), 22),
+            prevButtonText(f, utf8("← Trước"), 16),
+            nextButtonText(f, utf8("Tiếp →"), 16),
+            pageInfoText(f, utf8(""), 16)
 {
     titleText.setFillColor(Color(238, 238, 238));
     titleText.setStyle(Text::Bold);
@@ -131,8 +185,8 @@ void PurchaseHistoryView::update(Vector2f mousePos, bool mousePressed, Vector2f 
     
     // Page info
     int totalPages = getTotalPages();
-    wstring pageInfo = L"Trang " + to_wstring(currentPage + 1) + L" / " + to_wstring(totalPages);
-    pageInfoText.setString(pageInfo);
+    string pageInfo = "Trang " + to_string(currentPage + 1) + " / " + to_string(totalPages);
+    pageInfoText.setString(utf8(pageInfo));
     FloatRect textBounds = pageInfoText.getLocalBounds();
     pageInfoText.setPosition({cardPos.x + 505.f - textBounds.size.x / 2.f, buttonY + 10.f});
     
@@ -141,14 +195,8 @@ void PurchaseHistoryView::update(Vector2f mousePos, bool mousePressed, Vector2f 
         bool clickedPrev = prevButton.getGlobalBounds().contains(mousePos) && currentPage > 0;
         bool clickedNext = nextButton.getGlobalBounds().contains(mousePos) && currentPage < totalPages - 1;
         
-        if (clickedPrev) {
-            currentPage--;
-            cout << "[PurchaseHistory] Prev clicked: page " << currentPage + 1 << " / " << totalPages << endl;
-        }
-        else if (clickedNext) {
-            currentPage++;
-            cout << "[PurchaseHistory] Next clicked: page " << currentPage + 1 << " / " << totalPages << endl;
-        }
+        if (clickedPrev) currentPage--;
+        else if (clickedNext) currentPage++;
     }
     
     // Button hover effects
@@ -180,7 +228,7 @@ void PurchaseHistoryView::draw(RenderWindow& window, Vector2f cardPos) {
     
     if (pageTickets.empty()) {
         // No tickets message
-        Text noTicketsText(font, L"Chưa có lịch sử đặt vé", 18);
+    Text noTicketsText(font, utf8("Chưa có lịch sử đặt vé"), 18);
         noTicketsText.setFillColor(Color(150, 150, 150));
         FloatRect bounds = noTicketsText.getLocalBounds();
         noTicketsText.setPosition({
@@ -205,8 +253,9 @@ void PurchaseHistoryView::draw(RenderWindow& window, Vector2f cardPos) {
             ticketCard.setOutlineThickness(1.f);
             window.draw(ticketCard);
             
-            // Movie title
-            Text titleText(font, TicketRepository::getTitleUtf8(ticket), 18);
+            // Movie title with ticket code
+            String titleDisplay = utf8(ticket.ticketId + ": ") + TicketRepository::getTitleUtf8(ticket);
+            Text titleText(font, titleDisplay, 18);
             titleText.setPosition({cardPos.x + 60.f, itemY + 10.f});
             titleText.setFillColor(Color(100, 200, 255));
             titleText.setStyle(Text::Bold);
@@ -215,23 +264,25 @@ void PurchaseHistoryView::draw(RenderWindow& window, Vector2f cardPos) {
             // Show date, time, room
             Text detailText(font, "", 14);
             detailText.setFillColor(Color(200, 200, 200));
-            
-            String detailStr = L"📅 " + TicketRepository::getDateUtf8(ticket) + 
-                             L"  🕐 " + TicketRepository::getTimeUtf8(ticket) +
-                             L"  🎬 " + TicketRepository::getRoomUtf8(ticket);
+            string formattedDateStr = formatDateToDDMMYYYY(ticket.date);
+            String formattedDate = utf8(formattedDateStr);
+            String detailStr = formattedDate +
+                               utf8(" - ") + TicketRepository::getTimeUtf8(ticket) +
+                               utf8(" - ") + TicketRepository::getRoomUtf8(ticket);
             detailText.setString(detailStr);
             detailText.setPosition({cardPos.x + 60.f, itemY + 38.f});
             window.draw(detailText);
             
             // Seats + Combo
-            Text seatText(font, L"Ghế: " + TicketRepository::getBookedUtf8(ticket), 14);
+            String seatLabel = utf8("Ghế: ") + TicketRepository::getBookedUtf8(ticket);
+            Text seatText(font, seatLabel, 14);
             seatText.setFillColor(Color(180, 220, 255));
             seatText.setPosition({cardPos.x + 60.f, itemY + 60.f});
             window.draw(seatText);
             
             if (!ticket.comboName.empty() && ticket.comboName != "Không có") {
-                // ✅ Use formatted combo with "..." for > 2 combos
-                Text comboText(font, L"  |  Combo: " + TicketRepository::getComboForHistoryUtf8(ticket), 14);
+                String comboTextStr = utf8("  |  Combo: ") + TicketRepository::getComboForHistoryUtf8(ticket);
+                Text comboText(font, comboTextStr, 14);
                 comboText.setFillColor(Color(255, 200, 100));
                 FloatRect seatBounds = seatText.getLocalBounds();
                 comboText.setPosition({cardPos.x + 60.f + seatBounds.size.x, itemY + 60.f});
@@ -239,7 +290,7 @@ void PurchaseHistoryView::draw(RenderWindow& window, Vector2f cardPos) {
             }
             
             // Price (right align)
-            Text priceText(font, to_wstring(ticket.price) + L" VNĐ", 16);
+            Text priceText(font, formatPriceToString(ticket.price), 16);
             priceText.setFillColor(Color(100, 255, 100));
             priceText.setStyle(Text::Bold);
             FloatRect priceBounds = priceText.getLocalBounds();
@@ -247,8 +298,10 @@ void PurchaseHistoryView::draw(RenderWindow& window, Vector2f cardPos) {
             window.draw(priceText);
             
             // Booked date/time (small, bottom right)
-            String bookedInfo = L"Đặt: " + String::fromUtf8(ticket.bookedDate.begin(), ticket.bookedDate.end()) +
-                              L" " + String::fromUtf8(ticket.bookedTime.begin(), ticket.bookedTime.end());
+            string formattedBookedDate = formatDateToDDMMYYYY(ticket.bookedDate);
+            String bookedInfo = utf8("Đặt: ") +
+                                utf8(formattedBookedDate) +
+                                utf8(" ") + utf8(ticket.bookedTime);
             Text bookedText(font, bookedInfo, 12);
             bookedText.setFillColor(Color(120, 120, 120));
             FloatRect bookedBounds = bookedText.getLocalBounds();

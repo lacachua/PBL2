@@ -1,9 +1,13 @@
 #include "UI/components/Admin/MoviePanel.h"
+#include <algorithm>
 #include <iostream>
 
 MoviePanel::MoviePanel(Font& font, float width, float height)
-    : font(font), width(width), height(height), currentPopup(NONE), selectedRow(-1), 
-      scrollOffset(0), hoveredRow(-1) {
+    :   font(font), width(width), height(height), currentPopup(NONE), 
+        selectedRow(-1), scrollOffset(0), hoveredRow(-1),
+        reloadTexture("../assets/elements/reload.png"),
+        reloadSprite(reloadTexture)
+       {
     
     // Initialize repository
     repository = make_unique<AdminMovieRepository>("../data/movies.txt");
@@ -58,28 +62,24 @@ void MoviePanel::setupUI() {
     tableHeaderBg.setSize(Vector2f(TABLE_WIDTH, HEADER_HEIGHT));
     tableHeaderBg.setFillColor(headerColor);
     
-    // CRUD Buttons (adjusted for panel width ~1428px)
-    const float btnY = 820.f;        // Reduced from 880 to fit better
-    const float btnW = 160.f;        // Slightly smaller from 180
+    // CRUD Buttons (aligned top-left, evenly spaced)
+    const float btnW = 150.f;
     const float btnH = 44.f;
-    const float spacing = 40.f;      // Reduced spacing from 50
-    const float startX = 300.f;      // Centered better (was 630)
+    const float spacing = 18.f;
 
-    // Add buttonx
+    // Add button
     btnAddBg.setSize(Vector2f(btnW, btnH));
-    btnAddBg.setPosition(Vector2f(startX, btnY));
     btnAddBg.setFillColor(Color(20,118,172)); // #1476AC
     btnAddBg.setOutlineThickness(0.f);
-    
+
     string btnAddStr = "Thêm phim";
     btnAddText = make_unique<Text>(font);
     btnAddText->setString(String::fromUtf8(btnAddStr.begin(), btnAddStr.end()));
-    btnAddText->setCharacterSize(16);        // Reduced from 18
+    btnAddText->setCharacterSize(16);
     btnAddText->setFillColor(Color::White);
 
     // Edit button
     btnEditBg.setSize(Vector2f(btnW, btnH));
-    btnEditBg.setPosition(Vector2f(startX + (btnW + spacing) * 1, btnY));
     btnEditBg.setFillColor(Color(233,164,0)); // #E9A400
     btnEditBg.setOutlineThickness(0.f);
 
@@ -91,7 +91,6 @@ void MoviePanel::setupUI() {
 
     // Delete button
     btnDeleteBg.setSize(Vector2f(btnW, btnH));
-    btnDeleteBg.setPosition(Vector2f(startX + (btnW + spacing) * 2, btnY));
     btnDeleteBg.setFillColor(Color(211,47,47)); // #D32F2F
     btnDeleteBg.setOutlineThickness(0.f);
 
@@ -101,17 +100,12 @@ void MoviePanel::setupUI() {
     btnDeleteText->setCharacterSize(16);
     btnDeleteText->setFillColor(Color::White);
 
-    // Reload button (top-right corner of table, adjusted position)
-    btnReloadBg.setSize(Vector2f(100.f, 36.f)); // Smaller width from 120
-    btnReloadBg.setPosition(Vector2f(1000.f, 130.f)); // Adjusted from (1260, 180)
-    btnReloadBg.setFillColor(Color(20,118,172)); // #1476AC
-    btnReloadBg.setOutlineThickness(0.f);
-    
-    string btnReloadStr = "Tải lại";
-    btnReloadText = make_unique<Text>(font);
-    btnReloadText->setString(String::fromUtf8(btnReloadStr.begin(), btnReloadStr.end()));
-    btnReloadText->setCharacterSize(16);       // Reduced from 18
-    btnReloadText->setFillColor(Color::White);
+    reloadTexture.setSmooth(true);
+    float maxDim = static_cast<float>(std::max(reloadTexture.getSize().x, reloadTexture.getSize().y));
+    float targetSize = btnH * 0.9f;
+    float scale = targetSize / maxDim;
+    reloadSprite.setScale({scale, scale});
+    reloadSprite.setColor(Color::White);
     
     // Notification setup
     notificationBg.setSize(Vector2f(400, 60));
@@ -131,6 +125,24 @@ void MoviePanel::setPosition(Vector2f pos) {
     }
     
     tableHeaderBg.setPosition(Vector2f(pos.x + TABLE_X, pos.y + TABLE_Y));
+
+    // Align CRUD buttons in a single row above the table
+    const float buttonRowY = TABLE_Y - 64.f;
+    const float spacing = 18.f;
+    const float btnHeight = btnAddBg.getSize().y;
+
+    btnAddBg.setPosition(Vector2f(pos.x + TABLE_X, pos.y + buttonRowY));
+    btnEditBg.setPosition(Vector2f(btnAddBg.getPosition().x + btnAddBg.getSize().x + spacing, pos.y + buttonRowY));
+    btnDeleteBg.setPosition(Vector2f(btnEditBg.getPosition().x + btnEditBg.getSize().x + spacing, pos.y + buttonRowY));
+    float reloadX = btnDeleteBg.getPosition().x + btnDeleteBg.getSize().x + spacing;
+    float reloadY = pos.y + buttonRowY;
+
+    FloatRect bounds = reloadSprite.getGlobalBounds();
+    reloadSprite.setPosition({
+        reloadX + (100.f - bounds.size.x) / 2.f,
+        reloadY + (btnHeight - bounds.size.y) / 2.f
+    });
+
 }
 
 void MoviePanel::openAddPopup() {
@@ -143,7 +155,7 @@ void MoviePanel::openAddPopup() {
     
     // Popup background - WIDER for 2 columns, shorter height
     const float popupW = 940.f;  // Wide enough for 2 columns
-    const float popupH = 600.f;  // Shorter with 2-column layout
+    const float popupH = 720.f;  // Taller to avoid overlapping controls
     const float popupX = (1728.f - popupW) / 2.f;
     const float popupY = (972.f - popupH) / 2.f;
     
@@ -165,8 +177,8 @@ void MoviePanel::openAddPopup() {
     const float rightColX = popupX + popupW / 2 + 20;
     const float inputW = 420.f;  // Increased from 400 to 420 for better fit
     const float inputH = 40.f;
-    const float inputStartY = popupY + 80;
-    const float inputSpacing = 72.f;
+    const float inputStartY = popupY + 100;
+    const float inputSpacing = 76.f;
     
     // Fields definition (11 TextBox fields + 1 Dropdown)
     vector<pair<string, string>> fields = {
@@ -205,9 +217,9 @@ void MoviePanel::openAddPopup() {
     
     // Popup buttons (RegisterScreen style: blue "Lưu", gray "Quay lại")
     const float btnW = 190.f;
-    const float btnH = 44.f;
-    const float btnY = popupY + popupH - btnH - 20;
-    const float btnSpacing = 20.f;
+    const float btnH = 48.f;
+    const float btnY = popupY + popupH - btnH - 32.f;
+    const float btnSpacing = 24.f;
     const float btnTotalW = btnW * 2 + btnSpacing;
     const float btnStartX = popupX + (popupW - btnTotalW) / 2.f;
     
@@ -235,7 +247,7 @@ void MoviePanel::openEditPopup() {
     popupOverlay.setFillColor(Color(0, 0, 0, 170));
     
     const float popupW = 940.f;
-    const float popupH = 600.f;
+    const float popupH = 720.f;
     const float popupX = (1728.f - popupW) / 2.f;
     const float popupY = (972.f - popupH) / 2.f;
     
@@ -256,10 +268,10 @@ void MoviePanel::openEditPopup() {
     const float colSpacing = 40.f;
     const float leftColX = popupX + 40;
     const float rightColX = popupX + popupW / 2 + 20;
-    const float inputW = 400.f;
+    const float inputW = 420.f;
     const float inputH = 40.f;
-    const float inputStartY = popupY + 80;
-    const float inputSpacing = 72.f;
+    const float inputStartY = popupY + 100;
+    const float inputSpacing = 76.f;
     
     vector<pair<string, string>> fields = {
         {"Tên phim*", "Nhập tên phim"},
@@ -309,9 +321,9 @@ void MoviePanel::openEditPopup() {
     
     // Buttons (same as Add popup)
     const float btnW = 190.f;
-    const float btnH = 44.f;
-    const float btnY = popupY + popupH - btnH - 20;
-    const float btnSpacing = 20.f;
+    const float btnH = 48.f;
+    const float btnY = popupY + popupH - btnH - 32.f;
+    const float btnSpacing = 24.f;
     const float btnTotalW = btnW * 2 + btnSpacing;
     const float btnStartX = popupX + (popupW - btnTotalW) / 2.f;
     
@@ -581,12 +593,10 @@ void MoviePanel::update(Vector2f mousePos, bool mousePressed) {
         FloatRect addBounds = btnAddBg.getGlobalBounds();
         FloatRect editBounds = btnEditBg.getGlobalBounds();
         FloatRect delBounds = btnDeleteBg.getGlobalBounds();
-        FloatRect reloadBounds = btnReloadBg.getGlobalBounds();
 
         btnAddHover = addBounds.contains(mousePos);
         btnEditHover = editBounds.contains(mousePos);
         btnDeleteHover = delBounds.contains(mousePos);
-        btnReloadHover = reloadBounds.contains(mousePos);
 
         // Hover color tweak (10% brighter)
         auto brighten = [](const Color& c, float pct) {
@@ -594,13 +604,6 @@ void MoviePanel::update(Vector2f mousePos, bool mousePressed) {
             int r = clamp((int)(c.r + (255 - c.r) * pct));
             int g = clamp((int)(c.g + (255 - c.g) * pct));
             int b = clamp((int)(c.b + (255 - c.b) * pct));
-            return Color(r,g,b);
-        };
-        auto darken = [](const Color& c, float pct) {
-            auto clamp = [](int v){ return (v<0?0:(v>255?255:v)); };
-            int r = clamp((int)(c.r * (1.f - pct)));
-            int g = clamp((int)(c.g * (1.f - pct)));
-            int b = clamp((int)(c.b * (1.f - pct)));
             return Color(r,g,b);
         };
 
@@ -614,7 +617,7 @@ void MoviePanel::update(Vector2f mousePos, bool mousePressed) {
         if (btnAddHover) btnAddBg.setFillColor(brighten(addBase, 0.10f)); else btnAddBg.setFillColor(addBase);
         if (btnEditHover) btnEditBg.setFillColor(brighten(editBase, 0.10f)); else btnEditBg.setFillColor(editBase);
         if (btnDeleteHover) btnDeleteBg.setFillColor(brighten(delBase, 0.10f)); else btnDeleteBg.setFillColor(delBase);
-        if (btnReloadHover) btnReloadBg.setFillColor(brighten(reloadBase, 0.10f)); else btnReloadBg.setFillColor(reloadBase);
+        reloadSprite.setColor(btnReloadHover ? Color(180, 220, 255) : Color::White);
 
         if (mousePressed) {
             if (btnAddHover) {
@@ -839,17 +842,8 @@ void MoviePanel::render(RenderWindow& window) {
         window.draw(*btnDeleteText);
     }
 
-    // Reload button (custom, top-right corner with rounded corners)
-    drawRoundedRect(window, btnReloadBg.getPosition(), btnReloadBg.getSize(), 6.f, btnReloadBg.getFillColor());
-    if (btnReloadText) {
-        FloatRect tb = btnReloadText->getLocalBounds();
-        Vector2f pos = btnReloadBg.getPosition();
-        btnReloadText->setPosition(Vector2f(
-            pos.x + (btnReloadBg.getSize().x - tb.size.x) / 2.f,
-            pos.y + (btnReloadBg.getSize().y - tb.size.y) / 2.f
-        ));
-        window.draw(*btnReloadText);
-    }
+    // Reload button uses icon (fallbacks to text when texture missing)
+    window.draw(reloadSprite);
     
     // Draw popup if active
     renderPopup(window);

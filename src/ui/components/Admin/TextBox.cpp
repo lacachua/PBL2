@@ -5,13 +5,13 @@ TextBox::TextBox(Font& font, const string& label, float x, float y, float width,
     : font(font), x(x), y(y), width(width), height(height), isFocused(false), isActive(true) {
     
     // Background
-    background.setSize(Vector2f(width, height));
-    background.setPosition(Vector2f(x, y));
+    background.setSize({width, height});
+    background.setPosition({x, y});
     background.setFillColor(bgColor);
     
     // Border
-    border.setSize(Vector2f(width, height));
-    border.setPosition(Vector2f(x, y));
+    border.setSize({width, height});
+    border.setPosition({x, y});
     border.setFillColor(Color::Transparent);
     border.setOutlineThickness(1.f);
     border.setOutlineColor(borderColor);
@@ -21,13 +21,18 @@ TextBox::TextBox(Font& font, const string& label, float x, float y, float width,
     labelText->setString(String::fromUtf8(label.begin(), label.end()));
     labelText->setCharacterSize(14);
     labelText->setFillColor(Color(80, 80, 80));
-    labelText->setPosition(Vector2f(x, y - 22));
+    labelText->setPosition({x, y - 22});
     
     // Display text
     displayText = make_unique<Text>(font);
     displayText->setCharacterSize(15);
     displayText->setFillColor(textColor);
-    displayText->setPosition(Vector2f(x + 10, y + (height - 20) / 2));
+    displayText->setPosition({x + horizontalPadding, y});
+
+    // Cursor setup (drawn manually to avoid placeholder flicker)
+    cursor.setSize({1.6f, height - 16.f});
+    cursor.setFillColor(focusColor);
+    cursor.setPosition({x + horizontalPadding, y + (height - cursor.getSize().y) / 2});
 }
 
 void TextBox::setPlaceholder(const string& text) {
@@ -43,9 +48,11 @@ void TextBox::setFocus(bool focus) {
     if (isFocused) {
         border.setOutlineColor(focusColor);
         border.setOutlineThickness(2.f);
+        cursorClock.restart();
     } else {
         border.setOutlineColor(borderColor);
         border.setOutlineThickness(1.f);
+        cursorClock.restart();
     }
 }
 
@@ -63,6 +70,7 @@ void TextBox::handleEvent(const Event& event) {
                 if (len > 0) len--;
                 value = value.substr(0, len);
             }
+            cursorClock.restart();
         } else if (textEvent->unicode == 13) { // Enter
             // Do nothing, handled by parent
         } else if (textEvent->unicode == 27) { // Escape
@@ -85,6 +93,7 @@ void TextBox::handleEvent(const Event& event) {
                 value += static_cast<char>(0x80 | ((unicode >> 6) & 0x3F));
                 value += static_cast<char>(0x80 | (unicode & 0x3F));
             }
+            cursorClock.restart();
         }
     }
 }
@@ -106,22 +115,38 @@ void TextBox::render(RenderWindow& window) {
     if (labelText) window.draw(*labelText);
     
     // Display text or placeholder
-    string displayStr = value.empty() ? placeholder : value;
-    Color displayColor = value.empty() ? placeholderColor : textColor;
-    
-    // Add cursor if focused
-    if (isFocused && cursorClock.getElapsedTime().asSeconds() < 0.5f) {
-        displayStr = value + "|";
-        if (cursorClock.getElapsedTime().asSeconds() >= 1.0f) {
-            cursorClock.restart();
-        }
-    } else if (cursorClock.getElapsedTime().asSeconds() >= 1.0f) {
-        cursorClock.restart();
-    }
-    
+    bool showPlaceholder = !isFocused && value.empty();
+    string displayStr = showPlaceholder ? placeholder : value;
+    Color displayColor = showPlaceholder ? placeholderColor : textColor;
+
     if (displayText) {
-        displayText->setString(String::fromUtf8(displayStr.begin(), displayStr.end()));
         displayText->setFillColor(displayColor);
+        displayText->setString(String::fromUtf8(displayStr.begin(), displayStr.end()));
+
+        // Re-center vertically inside the textbox each frame
+        auto bounds = displayText->getLocalBounds();
+        float baselineOffset = background.getPosition().y + (height - bounds.size.y) / 2.f - bounds.position.y;
+        displayText->setPosition({background.getPosition().x + horizontalPadding, baselineOffset});
+
         window.draw(*displayText);
+    }
+
+    // Blink cursor without altering text or placeholder
+    if (isFocused && displayText) {
+        float elapsed = cursorClock.getElapsedTime().asSeconds();
+        if (elapsed >= 1.f) {
+            cursorClock.restart();
+            elapsed = cursorClock.getElapsedTime().asSeconds();
+        }
+
+        if (elapsed < 0.5f) {
+            auto bounds = displayText->getLocalBounds();
+            float cursorX = displayText->getPosition().x + bounds.position.x + bounds.size.x;
+            float cursorY = background.getPosition().y + (height - cursor.getSize().y) / 2.f;
+            cursor.setSize({cursor.getSize().x, height - 16.f});
+            cursor.setPosition({cursorX + 2.f, cursorY});
+            cursor.setFillColor(focusColor);
+            window.draw(cursor);
+        }
     }
 }

@@ -49,9 +49,9 @@ private:
     bool btnEditPressed = false;
     bool btnDeletePressed = false;
     
-    // Reload button (custom, top-right corner)
-    RectangleShape btnReloadBg;   // x=1260, y=180, 120x36
-    unique_ptr<Text> btnReloadText;
+    // Reload icon button
+    Texture reloadTexture;
+    Sprite reloadSprite;
     bool btnReloadHover = false;
     bool btnReloadPressed = false;
     
