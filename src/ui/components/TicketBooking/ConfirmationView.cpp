@@ -2,23 +2,95 @@
 #include <sstream>
 #include <iomanip>
 
+#ifdef _WIN32
+#include <windows.h>
+#endif
+
+// Helper function: Convert UTF-8 string to wstring
+static wstring utf8_to_wstring(const string& str) {
+    if (str.empty()) return wstring();
+#ifdef _WIN32
+    int size_needed = MultiByteToWideChar(CP_UTF8, 0, str.c_str(), (int)str.size(), NULL, 0);
+    wstring wstrTo(size_needed, 0);
+    MultiByteToWideChar(CP_UTF8, 0, str.c_str(), (int)str.size(), &wstrTo[0], size_needed);
+    return wstrTo;
+#else
+    wstring_convert<codecvt_utf8<wchar_t>> converter;
+    return converter.from_bytes(str);
+#endif
+}
+
+// Helper function: Format combo string với line break sau mỗi 2 combo
+static wstring formatComboDisplay(const string& comboStr) {
+    if (comboStr.empty() || comboStr == "Không có") {
+        return L"Không có";
+    }
+    
+    wstring wCombo = utf8_to_wstring(comboStr);
+    wstringstream result;
+    wstring current;
+    int count = 0;
+    
+    // Split by comma
+    size_t pos = 0;
+    size_t found;
+    wstring temp = wCombo;
+    
+    while ((found = temp.find(L',', pos)) != wstring::npos) {
+        wstring item = temp.substr(pos, found - pos);
+        // Trim whitespace
+        size_t start = item.find_first_not_of(L" \t");
+        size_t end = item.find_last_not_of(L" \t");
+        if (start != wstring::npos) {
+            item = item.substr(start, end - start + 1);
+        }
+        
+        if (count > 0 && count % 2 == 0) {
+            result << L"\n" << item;
+        } else {
+            if (count > 0) result << L", ";
+            result << item;
+        }
+        count++;
+        pos = found + 1;
+    }
+    
+    // Last item
+    if (pos < temp.length()) {
+        wstring item = temp.substr(pos);
+        size_t start = item.find_first_not_of(L" \t");
+        size_t end = item.find_last_not_of(L" \t");
+        if (start != wstring::npos) {
+            item = item.substr(start, end - start + 1);
+            if (count > 0 && count % 2 == 0) {
+                result << L"\n" << item;
+            } else {
+                if (count > 0) result << L", ";
+                result << item;
+            }
+        }
+    }
+    
+    return result.str();
+}
+
 // Helper function: Convert date format (YYYY-MM-DD or any format) to DD/MM/YYYY
-static std::string formatDateToDDMMYYYY(const std::string& dateStr) {
+static string formatDateToDDMMYYYY(const string& dateStr) {
     // Nếu đã đúng format DD/MM/YYYY (có chứa '/'), giữ nguyên
-    if (dateStr.find('/') != std::string::npos) {
+    if (dateStr.find('/') != string::npos) {
         return dateStr;
     }
     
     // Nếu format YYYY-MM-DD hoặc YYYYMMDD, chuyển đổi
     if (dateStr.length() >= 8) {
-        std::string year, month, day;
+        string year, month, day;
         
-        if (dateStr.find('-') != std::string::npos) {
+        if (dateStr.find('-') != string::npos) {
             // Format: YYYY-MM-DD
-            std::stringstream ss(dateStr);
-            std::getline(ss, year, '-');
-            std::getline(ss, month, '-');
-            std::getline(ss, day, '-');
+            stringstream ss(dateStr);
+            getline(ss, year, '-');
+            getline(ss, month, '-');
+            getline(ss, day, '-');
         } else {
             // Format: YYYYMMDD
             year = dateStr.substr(0, 4);
@@ -36,15 +108,15 @@ ConfirmationView::ConfirmationView(Font& f)
     : font(f),
       homeButton(f, L"Quay lại trang chủ", 300.f, 60.f, 20),
       titleText(f, L"ĐẶT VÉ THÀNH CÔNG", 32),
-      labelTicketId(f, L"Mã vé", 20), valueTicketId(f),
-      labelCustomer(f, L"Khách hàng", 20), valueCustomer(f),
-      labelEmail(f, L"Email", 20), valueEmail(f),
-      labelMovie(f, L"Phim", 20), valueMovie(f),
-      labelRoom(f, L"Phòng", 20), valueRoom(f),
-      labelDateTime(f, "Ngày & Giờ", 20), valueDateTime(f),
-      labelSeats(f, L"Ghế", 20), valueSeats(f),
-      labelCombo(f, L"Combo", 20), valueCombo(f),
-      labelTotal(f, L"Tổng cộng", 24), valueTotal(f)
+      labelTicketId(f, L"Mã vé", 20), valueTicketId(f, L"", 20),
+      labelCustomer(f, L"Khách hàng", 20), valueCustomer(f, L"", 20),
+      labelEmail(f, L"Email", 20), valueEmail(f, L"", 20),
+      labelMovie(f, L"Phim", 20), valueMovie(f, L"", 20),
+      labelRoom(f, L"Phòng", 20), valueRoom(f, L"", 20),
+      labelDateTime(f, L"Ngày & Giờ", 20), valueDateTime(f, L"", 20),
+      labelSeats(f, L"Ghế", 20), valueSeats(f, L"", 20),
+      labelCombo(f, L"Combo", 20), valueCombo(f, L"", 20),
+      labelTotal(f, L"Tổng cộng", 24), valueTotal(f, L"", 24)
 {
     initializeUI();
 }
@@ -67,7 +139,6 @@ void ConfirmationView::initializeUI() {
     labelTicketId.setFillColor(Color(180, 180, 180));
     labelTicketId.setPosition({leftCol, startY});
     
-    valueTicketId.setCharacterSize(20);
     valueTicketId.setFillColor(Color::White);
     valueTicketId.setPosition({rightCol, startY});
     
@@ -76,7 +147,6 @@ void ConfirmationView::initializeUI() {
     labelCustomer.setFillColor(Color(180, 180, 180));
     labelCustomer.setPosition({leftCol, startY});
     
-    valueCustomer.setCharacterSize(20);
     valueCustomer.setFillColor(Color::White);
     valueCustomer.setPosition({rightCol, startY});
     
@@ -85,7 +155,6 @@ void ConfirmationView::initializeUI() {
     labelEmail.setFillColor(Color(180, 180, 180));
     labelEmail.setPosition({leftCol, startY});
     
-    valueEmail.setCharacterSize(20);
     valueEmail.setFillColor(Color::White);
     valueEmail.setPosition({rightCol, startY});
     
@@ -94,7 +163,6 @@ void ConfirmationView::initializeUI() {
     labelMovie.setFillColor(Color(180, 180, 180));
     labelMovie.setPosition({leftCol, startY});
     
-    valueMovie.setCharacterSize(20);
     valueMovie.setFillColor(Color::White);
     valueMovie.setPosition({rightCol, startY});
     
@@ -103,7 +171,6 @@ void ConfirmationView::initializeUI() {
     labelRoom.setFillColor(Color(180, 180, 180));
     labelRoom.setPosition({leftCol, startY});
     
-    valueRoom.setCharacterSize(20);
     valueRoom.setFillColor(Color::White);
     valueRoom.setPosition({rightCol, startY});
     
@@ -112,7 +179,6 @@ void ConfirmationView::initializeUI() {
     labelDateTime.setFillColor(Color(180, 180, 180));
     labelDateTime.setPosition({leftCol, startY});
     
-    valueDateTime.setCharacterSize(20);
     valueDateTime.setFillColor(Color::White);
     valueDateTime.setPosition({rightCol, startY});
     
@@ -121,7 +187,6 @@ void ConfirmationView::initializeUI() {
     labelSeats.setFillColor(Color(180, 180, 180));
     labelSeats.setPosition({leftCol, startY});
     
-    valueSeats.setCharacterSize(20);
     valueSeats.setFillColor(Color::White);
     valueSeats.setPosition({rightCol, startY});
     
@@ -130,18 +195,16 @@ void ConfirmationView::initializeUI() {
     labelCombo.setFillColor(Color(180, 180, 180));
     labelCombo.setPosition({leftCol, startY});
     
-    valueCombo.setCharacterSize(20);
     valueCombo.setFillColor(Color::White);
     valueCombo.setPosition({rightCol, startY});
     
     // Divider line before total
-    startY += lineHeight + 20.f;
+    startY += lineHeight + 50.f;
     
     // Tổng cộng
     labelTotal.setFillColor(Color::White);
     labelTotal.setPosition({leftCol, startY});
     
-    valueTotal.setCharacterSize(24);
     valueTotal.setFillColor(Color(255, 215, 0));
     valueTotal.setPosition({rightCol, startY});
     
@@ -150,48 +213,37 @@ void ConfirmationView::initializeUI() {
     homeButton.setFillColor(Color(20, 118, 172));
 }
 
-void ConfirmationView::setTicketData(
-    const Ticket& ticket,
-    const string& userName,
-    const string& userPhone,
-    const string& movieName,
-    const string& roomName,
-    const string& date,
-    const string& time
-) {
-    this->currentTicket = ticket;
-    this->userName = userName;
+void ConfirmationView::setBookingData(const BookingData& data) {
+    // Mã vé
+    valueTicketId.setString(String::fromUtf8(data.ticketId.begin(), data.ticketId.end()));
     
-    // Mã vé - String::fromUtf8
-    valueTicketId.setString(String::fromUtf8(ticket.ticketId.begin(), ticket.ticketId.end()));
+    // Khách hàng
+    valueCustomer.setString(String::fromUtf8(data.customerName.begin(), data.customerName.end()));
     
-    // Khách hàng - String::fromUtf8
-    valueCustomer.setString(String::fromUtf8(ticket.fullName.begin(), ticket.fullName.end()));
+    // Email
+    valueEmail.setString(String::fromUtf8(data.customerEmail.begin(), data.customerEmail.end()));
     
-    // Email - String::fromUtf8
-    valueEmail.setString(String::fromUtf8(ticket.email.begin(), ticket.email.end()));
+    // Phim
+    valueMovie.setString(String::fromUtf8(data.movieName.begin(), data.movieName.end()));
     
-    // Phim - String::fromUtf8
-    valueMovie.setString(String::fromUtf8(movieName.begin(), movieName.end()));
+    // Phòng
+    valueRoom.setString(String::fromUtf8(data.roomName.begin(), data.roomName.end()));
     
-    // Phòng - String::fromUtf8
-    valueRoom.setString(String::fromUtf8(roomName.begin(), roomName.end()));
-    
-    // Ngày & Giờ - Format ngày sang DD/MM/YYYY, String::fromUtf8
-    string formattedDate = formatDateToDDMMYYYY(date);
-    string dateTime = formattedDate + " - " + time;
+    // Ngày & Giờ - Format ngày sang DD/MM/YYYY
+    string formattedDate = formatDateToDDMMYYYY(data.date);
+    string dateTime = formattedDate + " - " + data.time;
     valueDateTime.setString(String::fromUtf8(dateTime.begin(), dateTime.end()));
     
-    // Ghế - String::fromUtf8
-    valueSeats.setString(String::fromUtf8(ticket.booked.begin(), ticket.booked.end()));
+    // Ghế
+    valueSeats.setString(String::fromUtf8(data.seatsDisplay.begin(), data.seatsDisplay.end()));
     
-    // Combo - String::fromUtf8
-    string comboDisplay = (ticket.comboName.empty() || ticket.comboName == "Không có") ? "Không có" : ticket.comboName;
+    // Combo - ✅ Format với line break mỗi 2 combo
+    string comboDisplay = data.getFormattedComboDisplay(2);  // Max 2 combos per line
     valueCombo.setString(String::fromUtf8(comboDisplay.begin(), comboDisplay.end()));
     
     // Tổng tiền - Format with thousand separators
     stringstream ss;
-    ss << ticket.price;
+    ss << data.totalPrice;
     string priceStr = ss.str();
     
     // Manual thousand separator for Vietnamese format

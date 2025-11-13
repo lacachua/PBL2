@@ -1,16 +1,24 @@
 #pragma once
 #include <SFML/Graphics.hpp>
+#include <memory>
 using namespace sf;
+using namespace std;
 
 class Button {
     private:
         const Font& font;
         RectangleShape box;
-        Text text;
+        unique_ptr<Text> text;
         bool hovered = false;
         bool pressed = false;
     public:
         Button(const Font&, const String&, float, float, int);
+        
+        // Custom copy constructor (deep copy text)
+        Button(const Button& other);
+        Button& operator=(const Button& other);
+        Button(Button&&) = default;
+        Button& operator=(Button&&) = default;
 
         void setPosition(Vector2f);
         void setText(const String&);
@@ -22,7 +30,7 @@ class Button {
         Vector2f getPosition() const { return box.getPosition(); }
         Vector2f getSize() const { return box.getSize(); }
         FloatRect getGlobalBounds() const { return box.getGlobalBounds(); }
-        String getString() const { return text.getString(); }
+        String getString() const { return text ? text->getString() : ""; }
         bool isHovered() const { return hovered; }
         bool isPressed() const { return pressed; }
 

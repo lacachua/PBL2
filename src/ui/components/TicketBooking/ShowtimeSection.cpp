@@ -182,7 +182,7 @@ void ShowtimeSection::draw(RenderWindow& window) {
 
     // Vẽ các nút ngày
     for (int i = 0; i < dateButtons.getSize(); ++i) {
-        Button btn = dateButtons[i]; // copy state để set lại màu nếu cần
+        Button& btn = dateButtons[i]; // Use reference instead of copy
         if (i == selectedDateIndex) {
             btn.setFillColor(Color(20, 118, 172));
             btn.setTextColor(Color::White);
@@ -190,9 +190,16 @@ void ShowtimeSection::draw(RenderWindow& window) {
             btn.setFillColor(Color(40, 40, 50));
             btn.setTextColor(Color::White);
         }
-        btn.setPosition({kViewX + kDateStartX + i * (kDateW + kDateSpacing),
-                         kViewY + kDateStartY});
+        // Calculate absolute position (don't modify button's stored position)
+        float absX = kViewX + kDateStartX + i * (kDateW + kDateSpacing);
+        float absY = kViewY + kDateStartY;
+        
+        // Save original position
+        Vector2f originalPos = btn.getPosition();
+        btn.setPosition({absX, absY});
         btn.draw(window);
+        // Restore original position
+        btn.setPosition(originalPos);
     }
 
     // Nếu không có suất chiếu
@@ -216,7 +223,7 @@ void ShowtimeSection::draw(RenderWindow& window) {
 
     // Vẽ các nút giờ
     for (int i = 0; i < timeButtons.getSize(); ++i) {
-        Button btn = timeButtons[i];
+        Button& btn = timeButtons[i]; // Use reference instead of copy
         // CHỈ highlight nếu đã chọn (selectedShowtimeIndex >= 0)
         if (i == selectedShowtimeIndex) {
             btn.setFillColor(Color(20, 118, 172));
@@ -225,8 +232,15 @@ void ShowtimeSection::draw(RenderWindow& window) {
             btn.setFillColor(Color(40, 40, 50));
             btn.setTextColor(Color::White);
         }
-        btn.setPosition({kViewX + btn.getPosition().x, kViewY + btn.getPosition().y});
+        // Calculate absolute position (don't modify button's stored position)
+        Vector2f originalPos = btn.getPosition();
+        float absX = kViewX + originalPos.x;
+        float absY = kViewY + originalPos.y;
+        
+        btn.setPosition({absX, absY});
         btn.draw(window);
+        // Restore original position
+        btn.setPosition(originalPos);
     }
 }
 

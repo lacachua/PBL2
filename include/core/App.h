@@ -54,6 +54,7 @@
 #include "UI/screens/LoginScreen.h"
 #include "UI/screens/RegisterScreen.h"
 #include "UI/screens/AccountScreen.h"
+#include "UI/screens/AdminScreen.h"
 #include "services/AuthService.h"
 #include "services/ShowtimeCleanupService.h"
 #include "core/AppState.h"
@@ -70,6 +71,7 @@ class App {
         unique_ptr<LoginScreen> loginScreen;
         unique_ptr<RegisterScreen> registerScreen;
         unique_ptr<AccountScreen> accountScreen;
+        unique_ptr<AdminScreen> adminScreen;
         unique_ptr<AuthService> authService;
         string currentUser;
         string currentUserEmail;

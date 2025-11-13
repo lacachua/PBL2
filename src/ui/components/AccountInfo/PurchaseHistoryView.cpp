@@ -229,8 +229,9 @@ void PurchaseHistoryView::draw(RenderWindow& window, Vector2f cardPos) {
             seatText.setPosition({cardPos.x + 60.f, itemY + 60.f});
             window.draw(seatText);
             
-            if (!ticket.comboName.empty()) {
-                Text comboText(font, L"  |  Combo: " + TicketRepository::getComboUtf8(ticket), 14);
+            if (!ticket.comboName.empty() && ticket.comboName != "Không có") {
+                // ✅ Use formatted combo with "..." for > 2 combos
+                Text comboText(font, L"  |  Combo: " + TicketRepository::getComboForHistoryUtf8(ticket), 14);
                 comboText.setFillColor(Color(255, 200, 100));
                 FloatRect seatBounds = seatText.getLocalBounds();
                 comboText.setPosition({cardPos.x + 60.f + seatBounds.size.x, itemY + 60.f});

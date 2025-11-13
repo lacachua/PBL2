@@ -1,0 +1,51 @@
+#pragma once
+#include <SFML/Graphics.hpp>
+#include <string>
+#include <vector>
+#include <memory>
+
+using namespace std;
+using namespace sf;
+
+class DropdownBox {
+private:
+    Font& font;
+    unique_ptr<Text> labelText;
+    unique_ptr<Text> selectedText;
+    vector<unique_ptr<Text>> optionTexts;
+    
+    RectangleShape background;
+    RectangleShape dropdownPanel;
+    vector<RectangleShape> optionBackgrounds;
+    
+    RectangleShape arrow; // Triangle pointing down/up
+    
+    vector<string> options;
+    int selectedIndex;
+    bool isOpen;
+    
+    float x, y, width, height;
+    string label;
+    
+    Color bgColor;
+    Color hoverColor;
+    Color selectedColor;
+    Color borderColor;
+    Color textColor;
+    
+public:
+    DropdownBox(Font& font, const string& label, float x, float y, float width, float height);
+    
+    void setOptions(const vector<string>& opts);
+    void setSelectedIndex(int index);
+    void setSelectedValue(const string& value);
+    string getSelectedValue() const;
+    int getSelectedIndex() const;
+    
+    void handleEvent(const Event& event, const Vector2f& mousePos);
+    void update();
+    void draw(RenderWindow& window);
+    
+    bool isMouseOver(const Vector2f& mousePos) const;
+    bool isDropdownOpen() const { return isOpen; }
+};

@@ -147,4 +147,48 @@ public:
     static String getDateUtf8(const Ticket& t) { return String::fromUtf8(t.date.begin(), t.date.end()); }
     static String getTimeUtf8(const Ticket& t) { return String::fromUtf8(t.time.begin(), t.time.end()); }
     static String getBookedUtf8(const Ticket& t) { return String::fromUtf8(t.booked.begin(), t.booked.end()); }
+    
+    // ✅ Format combo for purchase history (max 2 combos, then "...")
+    static String getComboForHistoryUtf8(const Ticket& t) {
+        if (t.comboName.empty() || t.comboName == "Không có") {
+            return String::fromUtf8(t.comboName.begin(), t.comboName.end());
+        }
+        
+        // Parse combo string: "Combo A x2, Combo B x1, Combo C x3"
+        string comboStr = t.comboName;
+        string result;
+        int comboCount = 0;
+        size_t pos = 0;
+        
+        while (pos < comboStr.length()) {
+            // Find next comma
+            size_t commaPos = comboStr.find(',', pos);
+            if (commaPos == string::npos) commaPos = comboStr.length();
+            
+            // Extract this combo item
+            string item = comboStr.substr(pos, commaPos - pos);
+            
+            // Trim whitespace
+            size_t start = item.find_first_not_of(" \t");
+            size_t end = item.find_last_not_of(" \t");
+            if (start != string::npos) {
+                item = item.substr(start, end - start + 1);
+            }
+            
+            if (comboCount < 2) {
+                if (comboCount > 0) result += ", ";
+                result += item;
+            }
+            
+            comboCount++;
+            pos = commaPos + 1;
+        }
+        
+        // Add "..." if more than 2 combos
+        if (comboCount > 2) {
+            result += "...";
+        }
+        
+        return String::fromUtf8(result.begin(), result.end());
+    }
 };

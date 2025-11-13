@@ -151,14 +151,15 @@ void PersonalInfoView::setUser(const string& email) {
     currentUser = authService->getUser(email);
     
     if (currentUser) {
-        fullNameInput = utf8_to_wstring(currentUser->fullName);
-        birthDateInput = utf8_to_wstring(currentUser->birthDate);
-        phoneInput = utf8_to_wstring(currentUser->phone);
+        fullNameInput = utf8_to_wstring(currentUser->getFullName());
+        birthDateInput = utf8_to_wstring(currentUser->getBirthDate());
+        phoneInput = utf8_to_wstring(currentUser->getPhone());
         
         fullNameText.setString(fullNameInput);
         birthDateText.setString(birthDateInput);
         phoneText.setString(phoneInput);
-        emailText.setString(String::fromUtf8(currentUser->email.begin(), currentUser->email.end()));
+        // ✅ Fix: Use utf8_to_wstring for consistent UTF-8 handling
+        emailText.setString(utf8_to_wstring(currentUser->getEmail()));
         
         userDataLoaded = true;
     } else {
@@ -252,7 +253,7 @@ void PersonalInfoView::savePasswordChange() {
         return;
     }
     
-    if (!PasswordHasher::verifyPassword(oldPasswordInput, currentUser->passwordHash)) {
+    if (!PasswordHasher::verifyPassword(oldPasswordInput, currentUser->getPasswordHash())) {
         passwordMessage.setFillColor(Color(200, 60, 60));
         passwordMessage.setString(L"Mật khẩu cũ không đúng!");
         showPasswordMessage = true;
@@ -276,8 +277,7 @@ void PersonalInfoView::savePasswordChange() {
         return;
     }
     
-    currentUser->passwordHash = PasswordHasher::hashPassword(newPasswordInput);
-    authService->saveUsers();
+    currentUser->setPasswordHash(PasswordHasher::hashPassword(newPasswordInput));
     
     passwordMessage.setFillColor(Color(60, 160, 90));
     passwordMessage.setString(L"Đổi mật khẩu thành công!");
@@ -347,11 +347,9 @@ void PersonalInfoView::saveInfoChange() {
     phoneBox.setOutlineColor(Color(201, 214, 226));
     phoneBox.setOutlineThickness(1.f);
     
-    currentUser->fullName = newFullName;
-    currentUser->birthDate = newBirthDate;
-    currentUser->phone = newPhone;
-    
-    authService->saveUsers();
+    currentUser->setFullName(newFullName);
+    currentUser->setBirthDate(newBirthDate);
+    currentUser->setPhone(newPhone);
     
     userDataLoaded = false;
     setUser(currentUserEmail);

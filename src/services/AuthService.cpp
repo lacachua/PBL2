@@ -1,152 +1,89 @@
 #include "services/AuthService.h"
-#include "utils/PasswordHasher.h"
-#include <fstream>
-#include <sstream>
-#include <filesystem>
+#include <iostream>
 
 using namespace std;
 
 AuthService::AuthService(const string& filePath) 
-    : filePath(filePath), currentUserEmail(""), loggedIn(false) {
-    namespace fs = filesystem;
-    fs::path p(filePath);
-    fs::create_directories(p.parent_path());
-    
-    loadUsers();
+    : currentUserEmail(""), loggedIn(false) {
+    repository = make_unique<UserRepository>(filePath);
+    ensureDefaultAdminAndStaff();
 }
 
 AuthService::~AuthService() {
-    saveUsers();
+    // UserRepository will auto-save in its destructor
 }
 
-void AuthService::loadUsers() {
-    std::ifstream file(filePath, std::ios::binary);
-    if (!file.is_open()) return;
-
-    // đọc toàn bộ file
-    std::string data((std::istreambuf_iterator<char>(file)), {});
-    file.close();
-
-    // bỏ BOM nếu có
-    if (data.size() >= 3 &&
-        (unsigned char)data[0] == 0xEF &&
-        (unsigned char)data[1] == 0xBB &&
-        (unsigned char)data[2] == 0xBF) {
-        data.erase(0, 3);
-    }
-
-    // parse TXT file với delimiter |
-    std::stringstream ss(data);
-    std::string line;
-    std::getline(ss, line); // bỏ header
-
-    while (std::getline(ss, line)) {
-        if (line.empty()) continue;
-        std::stringstream ls(line);
-
-        User user;
-        std::string regTimeStr;
-        std::getline(ls, user.email, '|');
-        std::getline(ls, user.passwordHash, '|');
-        std::getline(ls, user.fullName, '|');
-        std::getline(ls, user.birthDate, '|');
-        std::getline(ls, user.phone, '|');
-        std::getline(ls, regTimeStr, '|');
-
-        if (!user.email.empty() && !user.passwordHash.empty()) {
-            try { user.registeredAt = std::stoll(regTimeStr); }
-            catch (...) { user.registeredAt = time(nullptr); }
-
-            size_t atPos = user.email.find('@');
-            user.username = (atPos != std::string::npos)
-                ? user.email.substr(0, atPos) : user.email;
-
-            userByEmail.insert(user.email, user);
-        }
-    }
-}
-
-
-void AuthService::saveUsers() {
-    // Mở file với UTF-8 BOM để hỗ trợ tiếng Việt
-    ofstream file(filePath, ios::out | ios::trunc | ios::binary);
-    if (!file.is_open()) return;
-    
-    // Write UTF-8 BOM
-    const char bom[] = { (char)0xEF, (char)0xBB, (char)0xBF };
-    file.write(bom, 3);
-    
-    // Write header với delimiter |
-    file << "email|passwordHash|fullName|birthDate|phone|registeredAt\n";
-    
-    // Write all users
-    userByEmail.forEach([&](const string& email, User& user) {
-        file << user.email << "|"
-             << user.passwordHash << "|"
-             << user.fullName << "|"
-             << user.birthDate << "|"
-             << user.phone << "|"
-             << user.registeredAt << "\n";
-    });
-    
-    file.close();
-}
-
-bool AuthService::registerUser(const string& email, const string& password,
-                               const string& fullName, const string& birthDate,
-                               const string& phone) {
+bool AuthService::registerUser(const string& email, 
+                               const string& password, 
+                               const string& fullName, 
+                               const string& birthDate, 
+                               const string& phone,
+                               AppRole role) {
     // Validate inputs
-    if (email.empty() || password.empty()) return false;
-    if (!Validator::isValidEmail(email)) return false;
-    if (!Validator::isStrongPassword(password)) return false;
+    if (!Validator::isValidEmail(email)) {
+        return false;
+    }
     
-    if (!phone.empty() && !Validator::isValidPhone(phone)) return false;
-    if (!birthDate.empty() && !Validator::isValidDate(birthDate)) return false;
+    if (!Validator::isStrongPassword(password)) {
+        return false;
+    }
     
     // Check if email already exists
-    if (emailExists(email)) return false;
+    if (repository->exists(email)) {
+        return false;
+    }
+    
+    // Hash password
+    string passwordHash = PasswordHasher::hashPassword(password);
     
     // Create new user
-    User newUser;
-    newUser.email = email;
-    newUser.passwordHash = PasswordHasher::hashPassword(password);
-    newUser.fullName = fullName;
-    newUser.birthDate = birthDate;
-    newUser.phone = phone;
-    newUser.registeredAt = time(nullptr);
+    User newUser(
+        email,
+        passwordHash,
+        fullName.empty() ? email : fullName,
+        birthDate,
+        phone,
+        time(nullptr),
+        role,
+        UserStatus::Active
+    );
     
-    // Tạo username từ email
-    size_t atPos = email.find('@');
-    newUser.username = (atPos != string::npos) ? email.substr(0, atPos) : email;
-    
-    // Insert into hash table
-    userByEmail.insert(email, newUser);
-    
-    // Save to file
-    saveUsers();
-    
-    return true;
+    return repository->addUser(newUser);
 }
 
 bool AuthService::verify(const string& email, const string& password) {
-    // Find user
-    User* user = userByEmail.find(email);
+    User* user = repository->findByEmail(email);
+    
     if (!user) {
         return false;
     }
     
     // Verify password
-    return PasswordHasher::verifyPassword(password, user->passwordHash);
+    return PasswordHasher::verifyPassword(password, user->getPasswordHash());
 }
 
-// ✅ Session management implementation
 bool AuthService::login(const string& email, const string& password) {
-    if (verify(email, password)) {
-        currentUserEmail = email;
-        loggedIn = true;
-        return true;
+    User* user = repository->findByEmail(email);
+    
+    if (!user) {
+        return false; // User not found
     }
-    return false;
+    
+    // Check if account is locked
+    if (user->isLocked()) {
+        return false; // Account locked
+    }
+    
+    // Verify password
+    if (!PasswordHasher::verifyPassword(password, user->getPasswordHash())) {
+        return false; // Wrong password
+    }
+    
+    // Login successful
+    currentUserEmail = email;
+    loggedIn = true;
+    
+    return true;
 }
 
 void AuthService::logout() {
@@ -163,20 +100,116 @@ string AuthService::getCurrentUserEmail() const {
 }
 
 User* AuthService::getCurrentUser() {
-    if (!isLoggedIn()) return nullptr;
-    return getUser(currentUserEmail);
+    if (!isLoggedIn()) {
+        return nullptr;
+    }
+    
+    return repository->findByEmail(currentUserEmail);
+}
+
+bool AuthService::hasRole(AppRole role) const {
+    if (!isLoggedIn()) {
+        return false;
+    }
+    
+    User* user = const_cast<AuthService*>(this)->getCurrentUser();
+    if (!user) {
+        return false;
+    }
+    
+    return user->getRole() == role;
+}
+
+bool AuthService::isAdmin() const {
+    return hasRole(AppRole::Admin);
+}
+
+bool AuthService::isStaffOrAbove() const {
+    if (!isLoggedIn()) {
+        return false;
+    }
+    
+    User* user = const_cast<AuthService*>(this)->getCurrentUser();
+    if (!user) {
+        return false;
+    }
+    
+    AppRole role = user->getRole();
+    return (role == AppRole::Admin || role == AppRole::Staff);
 }
 
 User* AuthService::getUser(const string& email) {
-    return userByEmail.find(email);
+    return repository->findByEmail(email);
 }
 
 bool AuthService::emailExists(const string& email) {
-    return userByEmail.exists(email);
+    return repository->exists(email);
+}
+
+bool AuthService::lockUserAccount(const string& email) {
+    // Don't allow locking yourself
+    if (isLoggedIn() && currentUserEmail == email) {
+        return false;
+    }
+    
+    return repository->lockUser(email);
+}
+
+bool AuthService::unlockUserAccount(const string& email) {
+    return repository->unlockUser(email);
+}
+
+bool AuthService::changeUserRole(const string& email, AppRole newRole) {
+    User* user = repository->findByEmail(email);
+    if (!user) {
+        return false;
+    }
+    
+    user->setRole(newRole);
+    return repository->updateUser(*user);
 }
 
 void AuthService::ensureSampleUser() {
-    if (!emailExists("test@gmail.com")) {
-        registerUser("test@gmail.com", "Test1234", "Test User", "01/01/2000", "0901234567");
+    // Backward compatibility - create a sample customer
+    if (!repository->exists("test@gmail.com")) {
+        registerUser(
+            "test@gmail.com",
+            "12345678",
+            "Test User",
+            "01/01/2000",
+            "0901234567",
+            AppRole::Customer
+        );
     }
+}
+
+void AuthService::ensureDefaultAdminAndStaff() {
+    // Create default admin if not exists
+    if (!repository->exists("admin@cinexine.vn")) {
+        registerUser(
+            "admin@cinexine.vn",
+            "admin123",  // ⚠️ CHANGE THIS IN PRODUCTION!
+            "Nguyễn Văn Quản Trị",
+            "01/01/1990",
+            "0900000000",
+            AppRole::Admin
+        );
+        cout << "[AuthService] Created default admin: admin@cinexine.vn / admin123\n";
+    }
+    
+    // Create default staff if not exists
+    if (!repository->exists("staff01@cinexine.vn")) {
+        registerUser(
+            "staff01@cinexine.vn",
+            "staff123",  // ⚠️ CHANGE THIS IN PRODUCTION!
+            "Nguyễn Văn Nhân Viên",
+            "01/01/1995",
+            "0901111111",
+            AppRole::Staff
+        );
+        cout << "[AuthService] Created default staff: staff01@cinexine.vn / staff123\n";
+    }
+    
+    // Ensure sample user exists (backward compatibility)
+    ensureSampleUser();
 }

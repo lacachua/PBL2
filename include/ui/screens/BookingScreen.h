@@ -191,6 +191,10 @@ private:
     SummaryPanel summary;
 
     BookingState currentState;
+    
+    // ✅ Booking data - lưu trữ toàn bộ thông tin booking qua các state
+    BookingData bookingData;
+    
     ShowtimeSection showtimeSection;
 
     // 🔥 chuyển sang smart pointer

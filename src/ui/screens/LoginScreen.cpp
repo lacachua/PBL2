@@ -1,5 +1,6 @@
 #include "UI/screens/LoginScreen.h"    
 #include "core/AppState.h"
+#include "core/AppRole.h"
 #include <SFML/Graphics.hpp>
 using namespace sf;
 
@@ -159,11 +160,21 @@ bool LoginScreen::update(Vector2f mouse, bool mousePressed, const Event& event, 
         currentUserEmail = loggedUser;  // Lưu email
         User* user = auth.getUser(loggedUser);
         if (user) {
-            currentUser = user->username;  // Chỉ lấy username để hiển thị
+            currentUser = user->getUsername();  // Chỉ lấy username để hiển thị
+            
+            // ✅ Role-based redirect
+            if (user->getRole() == AppRole::Admin) {
+                state = AppState::ADMIN_DASHBOARD;
+            } else if (user->getRole() == AppRole::Staff) {
+                state = AppState::STAFF_DASHBOARD;
+            } else {
+                // Customer goes to HOME
+                state = AppState::HOME;
+            }
         } else {
             currentUser = loggedUser;  // Fallback
         }
-        return true;   // báo cho App biết là đóng login và quay lại home
+        return true;   // báo cho App biết là đóng login
     }
     return false; // không đóng
 }

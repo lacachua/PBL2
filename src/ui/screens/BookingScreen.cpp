@@ -160,7 +160,7 @@ void BookingScreen::update(Vector2f mousePos, bool mousePressed, AppState& state
                 return;
             }
             
-            // ✅ ĐÃ ĐĂNG NHẬP - Thực hiện xác nhận đặt vé
+            // ✅ ĐÃ ĐĂNG NHẬP - Thu thập và lưu dữ liệu vào bookingData
             
             // Kiểm tra dữ liệu cần thiết
             if (!seatSelection || !orderSummary) {
@@ -169,64 +169,97 @@ void BookingScreen::update(Vector2f mousePos, bool mousePressed, AppState& state
             }
             
             try {
-                // (1) Lấy thông tin user từ TXT
-                string userEmail = BaseScreen::getLoggedInUserEmail();  // ✅ Lấy email đầy đủ
+                // ====== THU THẬP DỮ LIỆU VÀO bookingData ======
+                
+                // (1) Thông tin user
+                string userEmail = BaseScreen::getLoggedInUserEmail();
                 string fullName, userPhone;
                 getUserInfo(userEmail, fullName, userPhone);
                 
-                // (2) Lấy thông tin đặt vé
-                string showtimeIdStr = showtimeSection.getSelectedShowtimeId().toAnsiString();
-                string roomIdStr = showtimeSection.getSelectedRoomId().toAnsiString();
-                string movieTitle = showtimeSection.getSelectedMovieName().toAnsiString();
-                string roomName = showtimeSection.getSelectedRoomName().toAnsiString();
-                string dateStr = showtimeSection.getSelectedDate().toAnsiString();
-                string timeStr = showtimeSection.getSelectedTime().toAnsiString();
-                string seatsStr = seatSelection->getSelectedSeatsDisplay();
+                bookingData.customerEmail = userEmail;
+                bookingData.customerName = fullName;
+                bookingData.customerPhone = userPhone;
                 
-                // Format combos
-                string combosStr = "Không có";
+                // (2) Thông tin suất chiếu
+                bookingData.showtimeId = showtimeSection.getSelectedShowtimeId().toAnsiString();
+                bookingData.movieId = showtimeSection.getSelectedMovieId().toAnsiString();
+                bookingData.movieName = showtimeSection.getSelectedMovieName().toAnsiString();
+                bookingData.roomId = showtimeSection.getSelectedRoomId().toAnsiString();
+                bookingData.roomName = showtimeSection.getSelectedRoomName().toAnsiString();
+                bookingData.date = showtimeSection.getSelectedDate().toAnsiString();
+                bookingData.time = showtimeSection.getSelectedTime().toAnsiString();
+                bookingData.ticketPrice = showtimeSection.getSelectedPrice();
+                
+                // (3) Thông tin ghế
+                auto selectedSeatsList = seatSelection->getSelectedSeats();
+                bookingData.selectedSeats.clear();
+                for (int i = 0; i < selectedSeatsList.getSize(); i++) {
+                    bookingData.selectedSeats.push_back(selectedSeatsList[i]);
+                }
+                bookingData.seatsDisplay = seatSelection->getSelectedSeatsDisplay();
+                bookingData.totalSeats = selectedSeatsList.getSize();
+                
+                // (4) Thông tin combo
+                bookingData.selectedCombos.clear();
+                bookingData.comboTotalPrice = 0;
+                
                 if (comboSelection && comboSelection->hasSelectedCombos()) {
-                    auto selectedCombos = comboSelection->getSelectedCombos();
-                    combosStr = "";
-                    for (size_t i = 0; i < selectedCombos.getSize(); ++i) {
-                        auto combo = selectedCombos[i];
-                        if (i > 0) combosStr += ", ";
-                        string comboName = combo.name.toAnsiString();
-                        combosStr += comboName + " x" + to_string(combo.quantity);
+                    auto selectedCombosDLL = comboSelection->getSelectedCombos();
+                    for (int i = 0; i < selectedCombosDLL.getSize(); i++) {
+                        auto combo = selectedCombosDLL[i];
+                        BookingData::ComboItem item;
+                        item.comboName = combo.name.toAnsiString();
+                        item.price = combo.price;
+                        item.quantity = combo.quantity;
+                        
+                        bookingData.selectedCombos.push_back(item);
+                        bookingData.comboTotalPrice += combo.price * combo.quantity;
                     }
                 }
                 
-                int totalPrice = orderSummary->getTotal();
+                // (5) Tổng tiền
+                bookingData.totalPrice = orderSummary->getTotal();
                 
-                // (3) Tạo ticket và lưu vào tickets.txt
+                // ====== TẠO VÉ VÀ LƯU VÀO DATABASE ======
+                
+                // Format combo string cho database (old format)
+                string combosStr = "Không có";
+                if (!bookingData.selectedCombos.empty()) {
+                    combosStr = "";
+                    for (size_t i = 0; i < bookingData.selectedCombos.size(); i++) {
+                        if (i > 0) combosStr += ", ";
+                        combosStr += bookingData.selectedCombos[i].comboName 
+                                   + " x" + to_string(bookingData.selectedCombos[i].quantity);
+                    }
+                }
+                
+                // Tạo ticket
                 Ticket ticket = ticketRepo.createTicket(
-                    showtimeIdStr,    // showtime_id
-                    movieTitle,       // title
-                    dateStr,          // date
-                    timeStr,          // time
-                    roomName,         // room_name
-                    seatsStr,         // booked (ghế)
-                    combosStr,        // combo_name
-                    totalPrice,       // price
-                    userEmail,        // email
-                    fullName          // fullName
+                    bookingData.showtimeId,
+                    bookingData.movieName,
+                    bookingData.date,
+                    bookingData.time,
+                    bookingData.roomName,
+                    bookingData.seatsDisplay,
+                    combosStr,
+                    bookingData.totalPrice,
+                    bookingData.customerEmail,
+                    bookingData.customerName
                 );
                 
-                // (4) Lưu ghế vào RoomStatusAtShowtime.txt
-                seatRepo.addBookedSeats(showtimeIdStr, roomIdStr, seatSelection->getSelectedSeats());
+                // Lưu ticket ID
+                bookingData.ticketId = ticket.ticketId;
                 
-                // (5) Khởi tạo ConfirmationView với thông tin ticket
+                // Lưu ghế vào RoomStatusAtShowtime.txt
+                DLL<string> seatsDLL;
+                for (const auto& seat : bookingData.selectedSeats) {
+                    seatsDLL.push_back(seat);
+                }
+                seatRepo.addBookedSeats(bookingData.showtimeId, bookingData.roomId, seatsDLL);
+                
+                // ====== KHỞI TẠO CONFIRMATION VIEW ======
                 confirmationView = make_unique<ConfirmationView>(font);
-                
-                confirmationView->setTicketData(
-                    ticket,
-                    fullName,
-                    userPhone,
-                    movieTitle,
-                    roomName,
-                    dateStr,
-                    timeStr
-                );
+                confirmationView->setBookingData(bookingData);
             }
             catch (...) {
                 // Nếu có lỗi, quay lại state thanhtoan
@@ -244,6 +277,7 @@ void BookingScreen::update(Vector2f mousePos, bool mousePressed, AppState& state
         if (confirmationView->handleHomeButtonClick(mousePos, mousePressed, state)) {
             // Reset toàn bộ booking state khi quay về home
             currentState = BookingState::suatchieu;
+            bookingData.clear();  // ✅ Clear booking data
             seatSelection.reset();
             comboSelection.reset();
             orderSummary.reset();

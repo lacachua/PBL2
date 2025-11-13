@@ -96,8 +96,11 @@ class BaseScreen {
             }
             
             // ✅ Tự động cập nhật text nút đăng nhập dựa vào trạng thái
-            if (isUserLoggedIn())
-                buttons[2].setString(L"Xin chào, " + String::fromUtf8(loggedInUsername.begin(), loggedInUsername.end()) + L"!");
+            if (isUserLoggedIn()) {
+                // Extract first name (last word in Vietnamese full name)
+                string firstName = getFirstName(loggedInUsername);
+                buttons[2].setString(L"Xin chào, " + String::fromUtf8(firstName.begin(), firstName.end()) + L"!");
+            }
             else
                 buttons[2].setString(L"Đăng nhập | Đăng ký");
             
@@ -246,6 +249,20 @@ class BaseScreen {
         }
         
     protected:
+        // ✅ Helper to extract first name (last word) from full name
+        static string getFirstName(const string& fullName) {
+            if (fullName.empty()) return fullName;
+            
+            // Find the last space to get the first name (Vietnamese naming: last word is first name)
+            size_t lastSpace = fullName.find_last_of(" ");
+            if (lastSpace != string::npos && lastSpace < fullName.length() - 1) {
+                return fullName.substr(lastSpace + 1);
+            }
+            
+            // If no space found, return the full name
+            return fullName;
+        }
+        
         // ✅ Update vị trí dropdown ngay bên dưới nút "Xin chào"
         void updateDropdownPosition() {
             FloatRect loginButtonBounds = buttons[2].getGlobalBounds();

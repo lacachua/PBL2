@@ -1,6 +1,7 @@
 #pragma once
 #include <SFML/Graphics.hpp>
 #include "TicketRepository.h"
+#include "BookingState.h"  // For BookingData struct
 #include "../Button.h"
 #include "core/AppState.h"
 using namespace sf;
@@ -9,11 +10,6 @@ class ConfirmationView {
 private:
     Font& font;
     Button homeButton;
-    
-    // Ticket info
-    Ticket currentTicket;
-    string userName;
-    string userPhone;
     
     // Display texts - Title
     Text titleText;
@@ -45,15 +41,8 @@ private:
 public:
     ConfirmationView(Font& f);
     
-    void setTicketData(
-        const Ticket& ticket,
-        const string& userName,
-        const string& userPhone,
-        const string& movieName,
-        const string& roomName,
-        const string& date,
-        const string& time
-    );
+    // ✅ NEW: Set data directly from BookingData
+    void setBookingData(const BookingData& data);
     
     void update(Vector2f mousePos, bool mousePressed);
     bool handleHomeButtonClick(Vector2f mousePos, bool mousePressed, AppState& state);

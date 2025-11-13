@@ -142,6 +142,25 @@ public:
         return find(key) != nullptr;
     }
     
+    // Alias for exists() - more readable
+    bool contains(const K& key) const {
+        int index = hashFunction(key);
+        Node* current = buckets[index];
+        
+        while (current) {
+            if (current->key == key) {
+                return true;
+            }
+            current = current->next;
+        }
+        return false;
+    }
+    
+    // Get value (const version for const objects)
+    V* get(const K& key) {
+        return find(key);
+    }
+    
     int getSize() const { return size; }
     
     // Iterator support
