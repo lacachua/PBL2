@@ -1,13 +1,11 @@
 #include "UI/components/Admin/MoviePanel.h"
 #include <algorithm>
 #include <iostream>
+#include <stdexcept>
 
 MoviePanel::MoviePanel(Font& font, float width, float height)
-    :   font(font), width(width), height(height), currentPopup(NONE), 
-        selectedRow(-1), scrollOffset(0), hoveredRow(-1),
-        reloadTexture("../assets/elements/reload.png"),
-        reloadSprite(reloadTexture)
-       {
+        : font(font), width(width), height(height), currentPopup(NONE),
+            selectedRow(-1), scrollOffset(0), hoveredRow(-1), reloadSprite(reloadTexture) {
     
     // Initialize repository
     repository = make_unique<AdminMovieRepository>("../data/movies.txt");
@@ -33,8 +31,6 @@ void MoviePanel::drawRoundedRect(RenderWindow& window, const Vector2f& pos, cons
     // 4 corner circles
     CircleShape corner(radius);
     corner.setFillColor(color);
-    
-    corner.setPosition(Vector2f(pos.x, pos.y)); // top-left
     window.draw(corner);
     
     corner.setPosition(Vector2f(pos.x + size.x - 2*radius, pos.y)); // top-right
@@ -100,7 +96,17 @@ void MoviePanel::setupUI() {
     btnDeleteText->setCharacterSize(16);
     btnDeleteText->setFillColor(Color::White);
 
+    reloadButtonBg.setSize(Vector2f(btnH, btnH));
+    reloadButtonBg.setFillColor(Color(20,118,172));
+    reloadButtonBg.setOutlineThickness(0.f);
+
+    reloadTextureLoaded = reloadTexture.loadFromFile("../assets/elements/reload.png");
+    if (!reloadTextureLoaded) {
+        throw std::runtime_error("[MoviePanel] Missing reload icon: ../assets/elements/reload.png");
+    }
+
     reloadTexture.setSmooth(true);
+    reloadSprite.setTexture(reloadTexture);
     float maxDim = static_cast<float>(std::max(reloadTexture.getSize().x, reloadTexture.getSize().y));
     float targetSize = btnH * 0.9f;
     float scale = targetSize / maxDim;
@@ -137,11 +143,15 @@ void MoviePanel::setPosition(Vector2f pos) {
     float reloadX = btnDeleteBg.getPosition().x + btnDeleteBg.getSize().x + spacing;
     float reloadY = pos.y + buttonRowY;
 
-    FloatRect bounds = reloadSprite.getGlobalBounds();
-    reloadSprite.setPosition({
-        reloadX + (100.f - bounds.size.x) / 2.f,
-        reloadY + (btnHeight - bounds.size.y) / 2.f
-    });
+    reloadButtonBg.setPosition({reloadX, reloadY});
+
+    if (reloadTextureLoaded) {
+        FloatRect spriteBounds = reloadSprite.getGlobalBounds();
+        reloadSprite.setPosition({
+            reloadX + (reloadButtonBg.getSize().x - spriteBounds.size.x) / 2.f,
+            reloadY + (btnHeight - spriteBounds.size.y) / 2.f
+        });
+    }
 
 }
 
@@ -617,7 +627,10 @@ void MoviePanel::update(Vector2f mousePos, bool mousePressed) {
         if (btnAddHover) btnAddBg.setFillColor(brighten(addBase, 0.10f)); else btnAddBg.setFillColor(addBase);
         if (btnEditHover) btnEditBg.setFillColor(brighten(editBase, 0.10f)); else btnEditBg.setFillColor(editBase);
         if (btnDeleteHover) btnDeleteBg.setFillColor(brighten(delBase, 0.10f)); else btnDeleteBg.setFillColor(delBase);
-        reloadSprite.setColor(btnReloadHover ? Color(180, 220, 255) : Color::White);
+        reloadButtonBg.setFillColor(btnReloadHover ? brighten(reloadBase, 0.10f) : reloadBase);
+        if (reloadTextureLoaded) {
+            reloadSprite.setColor(btnReloadHover ? Color(180, 220, 255) : Color::White);
+        }
 
         if (mousePressed) {
             if (btnAddHover) {
@@ -842,8 +855,11 @@ void MoviePanel::render(RenderWindow& window) {
         window.draw(*btnDeleteText);
     }
 
-    // Reload button uses icon (fallbacks to text when texture missing)
-    window.draw(reloadSprite);
+    // Reload button (icon centered inside rounded background)
+    drawRoundedRect(window, reloadButtonBg.getPosition(), reloadButtonBg.getSize(), 6.f, reloadButtonBg.getFillColor());
+    if (reloadTextureLoaded) {
+        window.draw(reloadSprite);
+    }
     
     // Draw popup if active
     renderPopup(window);

@@ -4,6 +4,7 @@
 #include <algorithm>
 #include <iostream>
 #include <cstring>
+#include <filesystem>
 
 #ifdef _WIN32
 #include <windows.h>
@@ -91,10 +92,18 @@ void PurchaseHistoryView::setUserEmail(const string& email) {
     currentUserEmail = email;
 }
 
-void PurchaseHistoryView::loadTickets() {
+void PurchaseHistoryView::loadTickets(bool preservePage) {
+    namespace fs = std::filesystem;
+    int previousPage = currentPage;
     userTickets.clear();
-    
-    ifstream file("../data/tickets.txt", ios::binary);
+
+    std::error_code ec;
+    auto writeTime = fs::last_write_time(ticketsFilePath, ec);
+    if (!ec) {
+        lastTicketsWriteTime = writeTime;
+    }
+
+    ifstream file(ticketsFilePath.string(), ios::binary);
     if (!file.is_open()) return;
     
     // Read entire file
@@ -154,7 +163,14 @@ void PurchaseHistoryView::loadTickets() {
         return a.bookedTime > b.bookedTime;
     });
     
-    currentPage = 0;
+    hasLoadedTickets = true;
+
+    if (preservePage) {
+        int maxPage = std::max(0, getTotalPages() - 1);
+        currentPage = std::clamp(previousPage, 0, maxPage);
+    } else {
+        currentPage = 0;
+    }
 }
 
 int PurchaseHistoryView::getTotalPages() const {
@@ -174,7 +190,24 @@ vector<Ticket> PurchaseHistoryView::getCurrentPageTickets() const {
     return pageTickets;
 }
 
+void PurchaseHistoryView::refreshTicketsIfChanged() {
+    namespace fs = std::filesystem;
+
+    if (!hasLoadedTickets) {
+        loadTickets();
+        return;
+    }
+
+    std::error_code ec;
+    auto writeTime = fs::last_write_time(ticketsFilePath, ec);
+    if (!ec && writeTime != lastTicketsWriteTime) {
+        loadTickets(true);
+    }
+}
+
 void PurchaseHistoryView::update(Vector2f mousePos, bool mousePressed, Vector2f cardPos) {
+    refreshTicketsIfChanged();
+
     // Update button positions
     float buttonY = cardPos.y + 650.f;
     prevButton.setPosition({cardPos.x + 26.f, buttonY});
@@ -185,6 +218,7 @@ void PurchaseHistoryView::update(Vector2f mousePos, bool mousePressed, Vector2f 
     
     // Page info
     int totalPages = getTotalPages();
+    currentPage = std::clamp(currentPage, 0, std::max(0, totalPages - 1));
     string pageInfo = "Trang " + to_string(currentPage + 1) + " / " + to_string(totalPages);
     pageInfoText.setString(utf8(pageInfo));
     FloatRect textBounds = pageInfoText.getLocalBounds();

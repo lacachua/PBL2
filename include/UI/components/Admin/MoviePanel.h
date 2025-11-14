@@ -52,6 +52,8 @@ private:
     // Reload icon button
     Texture reloadTexture;
     Sprite reloadSprite;
+    RectangleShape reloadButtonBg;
+    bool reloadTextureLoaded = false;
     bool btnReloadHover = false;
     bool btnReloadPressed = false;
     

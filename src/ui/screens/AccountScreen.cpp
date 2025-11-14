@@ -41,8 +41,11 @@ AccountScreen::AccountScreen(Font& f, AuthService& auth)
 }
 
 void AccountScreen::setCurrentUser(const string& email) {
+    if (email.empty() || email == currentUserEmail) {
+        return;
+    }
+
     currentUserEmail = email;
-    
     personalInfoView->setUser(email);
     purchaseHistoryView->setUserEmail(email);
     purchaseHistoryView->loadTickets();

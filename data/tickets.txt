@@ -3,3 +3,12 @@ T0001|SUATCHIEU_20251114_0002|TỬ CHIẾN TRÊN KHÔNG|2025-11-14|14:30|Phòng 
 T0002|SUATCHIEU_20251114_0012|LẬT MẶT: 48H|2025-11-14|19:00|Phòng Chiếu 4|I6, I5|2 CocaCola + 1 Bắp Caramel x1, 1 CocaCola + 1 Bắp Caramel x1, 2 CocaCola + 1 Bắp Phô Mai x1, 1 CocaCola + 1 Bắp Phô Mai x1, 2 CocaCola + 2 Bắp Caramel x1, 2 CocaCola + 2 Bắp Phô Mai x1|920000|vanvu41ht1@gmail.com|Nguyễn Văn Vũ|13/11/2025|22:06:51
 T0003|SUATCHIEU_20251114_0002|TỬ CHIẾN TRÊN KHÔNG|2025-11-14|14:30|Phòng Chiếu 1|H7, H6|2 CocaCola + 2 Bắp Phô Mai x1|335000|vanvu41ht5@gmail.com|Khách hàng|13/11/2025|22:40:50
 T0004|SUATCHIEU_20251114_0008|ĐÀO, PHỞ VÀ PIANO|2025-11-14|18:30|Phòng Chiếu 3|I5, I6|2 CocaCola + 1 Bắp Caramel x1, 1 CocaCola + 1 Bắp Caramel x1, 2 CocaCola + 1 Bắp Phô Mai x1, 1 CocaCola + 1 Bắp Phô Mai x1, 2 CocaCola + 2 Bắp Caramel x1, 2 CocaCola + 2 Bắp Phô Mai x1|920000|vanvu41ht1@gmail.com|Nguyễn Văn Vũ|13/11/2025|23:37:25
+T0005|SUATCHIEU_20251114_0003|TỬ CHIẾN TRÊN KHÔNG|2025-11-14|20:00|Phòng Chiếu 1|H6, H5|2 CocaCola + 2 Bắp Caramel x1, 2 CocaCola + 2 Bắp Phô Mai x1|510000|vanvu41ht1@gmail.com|Nguyễn Văn Vũ|14/11/2025|09:54:05
+T0006|SUATCHIEU_20251114_0015|DUNE: PART TWO|2025-11-14|20:30|Phòng Chiếu 5|I6, I4, I5|2 CocaCola + 2 Bắp Caramel x1, 2 CocaCola + 2 Bắp Phô Mai x1|590000|vanvu41ht1@gmail.com|Nguyễn Văn Vũ|14/11/2025|09:55:04
+T0007|SUATCHIEU_20251114_0016|INSIDE OUT 2|2025-11-14|10:00|Phòng Chiếu 6|I6, I5|Không có|130000|vanvu41ht1@gmail.com|Nguyễn Văn Vũ|14/11/2025|09:55:14
+T0008|SUATCHIEU_20251114_0003|TỬ CHIẾN TRÊN KHÔNG|2025-11-14|20:00|Phòng Chiếu 1|I6, I5|2 CocaCola + 2 Bắp Phô Mai x1|345000|vanvu41ht1@gmail.com|Nguyễn Văn Vũ|14/11/2025|10:19:08
+T0009|SUATCHIEU_20251114_0003|TỬ CHIẾN TRÊN KHÔNG|2025-11-14|20:00|Phòng Chiếu 1|I4, I3|2 CocaCola + 1 Bắp Caramel x1|270000|vuvannguyen@gmail.com|Nguyễn Văn Vũ|14/11/2025|10:19:46
+T0010|SUATCHIEU_20251114_0003|TỬ CHIẾN TRÊN KHÔNG|2025-11-14|20:00|Phòng Chiếu 1|I7, I8|Không có|160000|vuvannguyen@gmail.com|Nguyễn Văn Vũ|14/11/2025|10:20:32
+T0011|SUATCHIEU_20251114_0002|TỬ CHIẾN TRÊN KHÔNG|2025-11-14|14:30|Phòng Chiếu 1|I7, I8|Không có|150000|vanvu41ht1@gmail.com|Nguyễn Văn Vũ|14/11/2025|10:21:22
+T0012|SUATCHIEU_20251114_0009|ĐÀO, PHỞ VÀ PIANO|2025-11-14|22:00|Phòng Chiếu 3|I7, I6|2 CocaCola + 2 Bắp Phô Mai x1|345000|vanvu41ht1@gmail.com|Nguyễn Văn Vũ|14/11/2025|10:27:43
+T0013|SUATCHIEU_20251114_0009|ĐÀO, PHỞ VÀ PIANO|2025-11-14|22:00|Phòng Chiếu 3|I8|Không có|80000|vuvannguyen@gmail.com|Nguyễn Văn Vũ|14/11/2025|10:28:13
