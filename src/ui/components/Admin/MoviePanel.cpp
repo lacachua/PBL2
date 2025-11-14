@@ -5,7 +5,9 @@
 
 MoviePanel::MoviePanel(Font& font, float width, float height)
         : font(font), width(width), height(height), currentPopup(NONE),
-            selectedRow(-1), scrollOffset(0), hoveredRow(-1), reloadSprite(reloadTexture) {
+            selectedRow(-1), scrollOffset(0), hoveredRow(-1), 
+            reloadTexture("../assets/elements/reload.png"),
+            reloadSprite(reloadTexture) {
     
     // Initialize repository
     repository = make_unique<AdminMovieRepository>("../data/movies.txt");
@@ -31,8 +33,9 @@ void MoviePanel::drawRoundedRect(RenderWindow& window, const Vector2f& pos, cons
     // 4 corner circles
     CircleShape corner(radius);
     corner.setFillColor(color);
+    corner.setPosition(pos);
     window.draw(corner);
-    
+
     corner.setPosition(Vector2f(pos.x + size.x - 2*radius, pos.y)); // top-right
     window.draw(corner);
     
@@ -100,17 +103,8 @@ void MoviePanel::setupUI() {
     reloadButtonBg.setFillColor(Color(20,118,172));
     reloadButtonBg.setOutlineThickness(0.f);
 
-    reloadTextureLoaded = reloadTexture.loadFromFile("../assets/elements/reload.png");
-    if (!reloadTextureLoaded) {
-        throw std::runtime_error("[MoviePanel] Missing reload icon: ../assets/elements/reload.png");
-    }
-
     reloadTexture.setSmooth(true);
-    reloadSprite.setTexture(reloadTexture);
-    float maxDim = static_cast<float>(std::max(reloadTexture.getSize().x, reloadTexture.getSize().y));
-    float targetSize = btnH * 0.9f;
-    float scale = targetSize / maxDim;
-    reloadSprite.setScale({scale, scale});
+    reloadSprite.setScale({0.1, 0.1});
     reloadSprite.setColor(Color::White);
     
     // Notification setup
@@ -603,10 +597,12 @@ void MoviePanel::update(Vector2f mousePos, bool mousePressed) {
         FloatRect addBounds = btnAddBg.getGlobalBounds();
         FloatRect editBounds = btnEditBg.getGlobalBounds();
         FloatRect delBounds = btnDeleteBg.getGlobalBounds();
+        FloatRect reloadBounds = reloadButtonBg.getGlobalBounds();
 
         btnAddHover = addBounds.contains(mousePos);
         btnEditHover = editBounds.contains(mousePos);
         btnDeleteHover = delBounds.contains(mousePos);
+        btnReloadHover = reloadBounds.contains(mousePos);
 
         // Hover color tweak (10% brighter)
         auto brighten = [](const Color& c, float pct) {
@@ -618,10 +614,10 @@ void MoviePanel::update(Vector2f mousePos, bool mousePressed) {
         };
 
         // Base colors
-        Color addBase(20,118,172);
-        Color editBase(233,164,0);
-        Color delBase(211,47,47);
-        Color reloadBase(20,118,172);
+        Color addBase(20, 118, 172);
+        Color editBase(233, 164, 0);
+        Color delBase(211, 47, 47);
+        Color reloadBase(20, 118, 172);
 
         // Apply hover/press visuals
         if (btnAddHover) btnAddBg.setFillColor(brighten(addBase, 0.10f)); else btnAddBg.setFillColor(addBase);
@@ -857,9 +853,15 @@ void MoviePanel::render(RenderWindow& window) {
 
     // Reload button (icon centered inside rounded background)
     drawRoundedRect(window, reloadButtonBg.getPosition(), reloadButtonBg.getSize(), 6.f, reloadButtonBg.getFillColor());
-    if (reloadTextureLoaded) {
+        FloatRect localBounds = reloadSprite.getLocalBounds();
+        Vector2f spriteScale = reloadSprite.getScale();
+        float scaledW = localBounds.size.x * spriteScale.x;
+        float scaledH = localBounds.size.y * spriteScale.y;
+        reloadSprite.setPosition({
+            reloadButtonBg.getPosition().x + (reloadButtonBg.getSize().x - scaledW) / 2.f,
+            reloadButtonBg.getPosition().y + (reloadButtonBg.getSize().y - scaledH) / 2.f
+        });
         window.draw(reloadSprite);
-    }
     
     // Draw popup if active
     renderPopup(window);
