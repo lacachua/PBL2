@@ -33,7 +33,7 @@ enum class AppState {
     ADMIN_MOVIES,           // Quản lý phim
     ADMIN_ROOMS,            // Quản lý phòng chiếu
     ADMIN_SHOWTIMES,        // Quản lý suất chiếu
-    ADMIN_TICKETS,          // Quản lý vé / đặt vé
+    ADMIN_TICKETS,          // Quản lý vé
     ADMIN_COMBOS,           // Quản lý combo bắp nước
     ADMIN_STAFF,            // Quản lý nhân viên
     ADMIN_CUSTOMERS,        // Quản lý khách hàng

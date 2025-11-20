@@ -57,6 +57,7 @@ void App::resetAfterLogout() {
     detailScreen.reset();
     bookingScreen.reset();
     accountScreen.reset();
+    adminScreen.reset();
     
     loginScreen = make_unique<LoginScreen>(font, *authService);
     registerScreen = make_unique<RegisterScreen>(font, *authService);

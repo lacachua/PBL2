@@ -36,6 +36,11 @@ void AdminScreen::switchPanel(AppState newState) {
     
     float panelWidth = window.getSize().x - 260 - 40;
     float panelHeight = window.getSize().y - 40;
+    moviePanel.reset();
+    comboPanel.reset();
+    roomPanel.reset();
+    ticketPanel.reset();
+    revenuePanel.reset();
     
     // Create appropriate panel based on state
     switch (newState) {
@@ -43,36 +48,40 @@ void AdminScreen::switchPanel(AppState newState) {
             moviePanel = make_unique<MoviePanel>(font, panelWidth, panelHeight);
             moviePanel->setPosition(Vector2f(280, 20));
             break;
-            
+
+        case AppState::ADMIN_COMBOS:
+            comboPanel = make_unique<ComboPanel>(font, panelWidth, panelHeight);
+            comboPanel->setPosition(Vector2f(280, 20));
+            break;
         case AppState::ADMIN_ROOMS:
-            // TODO: Implement RoomPanel
-            cout << "[AdminScreen] RoomPanel not implemented yet\n";
-            moviePanel = nullptr;
+            roomPanel = make_unique<RoomPanel>(font, panelWidth, panelHeight);
+            roomPanel->setPosition(Vector2f(280, 20));
+            break;
+        case AppState::ADMIN_TICKETS:
+            ticketPanel = make_unique<TicketPanel>(font, panelWidth, panelHeight);
+            ticketPanel->setPosition(Vector2f(280, 20));
+            break;
+        case AppState::ADMIN_REVENUE:
+            revenuePanel = make_unique<RevenuePanel>(font, panelWidth, panelHeight);
+            revenuePanel->setPosition(Vector2f(280, 20));
             break;
             
         case AppState::ADMIN_SHOWTIMES:
-        case AppState::ADMIN_TICKETS:
-        case AppState::ADMIN_COMBOS:
         case AppState::ADMIN_STAFF:
         case AppState::ADMIN_CUSTOMERS:
-        case AppState::ADMIN_REVENUE:
         case AppState::ADMIN_SOLD_TICKETS:
         case AppState::ADMIN_CHANGE_PASSWORD:
-            // TODO: Implement other panels
             cout << "[AdminScreen] Panel not implemented yet\n";
-            moviePanel = nullptr;
             break;
             
         default:
-            moviePanel = nullptr;
             break;
     }
 }
 
 void AdminScreen::handleAdminLogout() {
     cout << "[AdminScreen] Logging out...\n";
-    authService->logout();
-    appState = AppState::LOGIN;
+    BaseScreen::handleLogout();
 }
 
 void AdminScreen::handleEvent(const Event& event) {
@@ -81,6 +90,18 @@ void AdminScreen::handleEvent(const Event& event) {
     // Pass events to current panel
     if (moviePanel) {
         moviePanel->handleEvent(event, window);
+    }
+    if (comboPanel) {
+        comboPanel->handleEvent(event, window);
+    }
+    if (roomPanel) {
+        roomPanel->handleEvent(event, window);
+    }
+    if (ticketPanel) {
+        ticketPanel->handleEvent(event, window);
+    }
+    if (revenuePanel) {
+        revenuePanel->handleEvent(event, window);
     }
 }
 
@@ -92,17 +113,29 @@ void AdminScreen::update(Vector2f mousePos, bool mousePressed, AppState& state) 
     if (moviePanel) {
         moviePanel->update(mousePos, mousePressed);
     }
+    if (comboPanel) {
+        comboPanel->update(mousePos, mousePressed);
+    }
+    if (roomPanel) {
+        roomPanel->update(mousePos, mousePressed);
+    }
+    if (ticketPanel) {
+        ticketPanel->update(mousePos, mousePressed);
+    }
+    if (revenuePanel) {
+        revenuePanel->update(mousePos, mousePressed);
+    }
 }
 
 void AdminScreen::render() {
     // Draw main panel background
     window.draw(mainPanelBg);
     
-    // Draw current panel
-    if (moviePanel) {
-        moviePanel->render(window);
-    }
-    
-    // Draw sidebar on top
+    if (moviePanel) moviePanel->render(window);
+    if (comboPanel) comboPanel->render(window);
+    if (roomPanel) roomPanel->render(window);
+    if (ticketPanel) ticketPanel->render(window);
+    if (revenuePanel) revenuePanel->render(window);
+
     sidebar->render(window);
 }

@@ -2,6 +2,7 @@
 #include <algorithm>
 #include <iostream>
 #include <stdexcept>
+#include <array>
 
 MoviePanel::MoviePanel(Font& font, float width, float height)
         : font(font), width(width), height(height), currentPopup(NONE),
@@ -53,7 +54,7 @@ void MoviePanel::setupUI() {
     
     // Title (reduced size for compact layout)
     string titleStr = "Quản lý phim";
-    titleText = make_unique<Text>(font, String::fromUtf8(titleStr.begin(), titleStr.end()), 20);
+    titleText = make_unique<Text>(font, String::fromUtf8(titleStr.begin(), titleStr.end()), 26);
     titleText->setFillColor(Color(27, 38, 59)); // #1B263B
     titleText->setStyle(Text::Bold);
     
@@ -119,10 +120,7 @@ void MoviePanel::setPosition(Vector2f pos) {
     position = pos;
     background.setPosition(pos);
     
-    if (titleText) {
-        // Title positioned at top-left with padding
-        titleText->setPosition(Vector2f(pos.x + 50, pos.y + 20));
-    }
+    if (titleText) titleText->setPosition(Vector2f(pos.x + 40, pos.y + 20));
     
     tableHeaderBg.setPosition(Vector2f(pos.x + TABLE_X, pos.y + TABLE_Y));
 
@@ -139,14 +137,8 @@ void MoviePanel::setPosition(Vector2f pos) {
 
     reloadButtonBg.setPosition({reloadX, reloadY});
 
-    if (reloadTextureLoaded) {
-        FloatRect spriteBounds = reloadSprite.getGlobalBounds();
-        reloadSprite.setPosition({
-            reloadX + (reloadButtonBg.getSize().x - spriteBounds.size.x) / 2.f,
-            reloadY + (btnHeight - spriteBounds.size.y) / 2.f
-        });
-    }
-
+    FloatRect spriteBounds = reloadSprite.getGlobalBounds();
+    reloadSprite.setPosition({reloadX + (reloadButtonBg.getSize().x - spriteBounds.size.x) / 2.f, reloadY + (btnHeight - spriteBounds.size.y) / 2.f});
 }
 
 void MoviePanel::openAddPopup() {
@@ -241,7 +233,10 @@ void MoviePanel::openAddPopup() {
 }
 
 void MoviePanel::openEditPopup() {
-    if (selectedRow < 0) return;
+    if (selectedRow < 0) {
+        showSelectionWarning("Vui lòng chọn phim trước khi sửa.");
+        return;
+    }
     
     currentPopup = EDIT;
     
@@ -345,7 +340,10 @@ void MoviePanel::openEditPopup() {
 }
 
 void MoviePanel::openDeleteConfirm() {
-    if (selectedRow < 0) return;
+    if (selectedRow < 0) {
+        showSelectionWarning("Vui lòng chọn phim trước khi xóa.");
+        return;
+    }
     
     currentPopup = DELETE_CONFIRM;
     
@@ -406,7 +404,7 @@ void MoviePanel::closePopup() {
 }
 
 void MoviePanel::handleAdd() {
-    if (inputBoxes.size() < 11) return;  // Changed from 12 to 11
+    if (inputBoxes.getSize() < 11) return;  // Changed from 12 to 11
     
     // Get all 11 field values from TextBoxes
     string title = inputBoxes[0]->getValue();
@@ -456,7 +454,7 @@ void MoviePanel::handleAdd() {
 }
 
 void MoviePanel::handleEdit() {
-    if (selectedRow < 0 || inputBoxes.size() < 11) return;  // Changed from 12 to 11
+    if (selectedRow < 0 || inputBoxes.getSize() < 11) return;  // Changed from 12 to 11
     
     // Get all 11 field values from TextBoxes
     string title = inputBoxes[0]->getValue();
@@ -521,10 +519,87 @@ void MoviePanel::handleReload() {
 
 void MoviePanel::showNotification(const string& message) {
     notificationText = message;
-    notificationClock.restart();
+    notificationVisible = !message.empty();
+    if (notificationVisible) {
+        notificationClock.restart();
+    }
+}
+
+void MoviePanel::showSelectionWarning(const string& message) {
+    selectionWarningVisible = true;
+    selectionWarningMessage = message;
+    selectionWarningOverlay.setSize(Vector2f(1728.f, 972.f));
+    selectionWarningOverlay.setPosition(Vector2f(0.f, 0.f));
+    selectionWarningOverlay.setFillColor(Color(0, 0, 0, 150));
+
+    selectionWarningBg.setSize(Vector2f(420.f, 200.f));
+    selectionWarningBg.setFillColor(Color::White);
+    selectionWarningBg.setOutlineThickness(0.f);
+    selectionWarningBg.setPosition(Vector2f((1728.f - 420.f) / 2.f, (972.f - 200.f) / 2.f));
+
+    selectionWarningText = make_unique<Text>(font, String::fromUtf8(message.begin(), message.end()), 20);
+    selectionWarningText->setFillColor(Color(27, 38, 59));
+    selectionWarningText->setStyle(Text::Bold);
+    FloatRect textBounds = selectionWarningText->getLocalBounds();
+    selectionWarningText->setPosition(Vector2f(
+        selectionWarningBg.getPosition().x + (selectionWarningBg.getSize().x - textBounds.size.x) / 2.f - textBounds.position.x,
+        selectionWarningBg.getPosition().y + 40.f
+    ));
+
+    selectionWarningButton.setSize(Vector2f(160.f, 46.f));
+    selectionWarningButton.setFillColor(Color(20, 118, 172));
+    selectionWarningButton.setPosition(Vector2f(
+        selectionWarningBg.getPosition().x + (selectionWarningBg.getSize().x - selectionWarningButton.getSize().x) / 2.f,
+        selectionWarningBg.getPosition().y + selectionWarningBg.getSize().y - 70.f
+    ));
+
+    selectionWarningButtonText = make_unique<Text>(font, L"Đã hiểu", 18);
+    selectionWarningButtonText->setFillColor(Color::White);
+    FloatRect btnBounds = selectionWarningButtonText->getLocalBounds();
+    selectionWarningButtonText->setPosition(Vector2f(
+        selectionWarningButton.getPosition().x + (selectionWarningButton.getSize().x - btnBounds.size.x) / 2.f - btnBounds.position.x,
+        selectionWarningButton.getPosition().y + (selectionWarningButton.getSize().y - btnBounds.size.y) / 2.f - btnBounds.position.y
+    ));
+    selectionWarningButtonHover = false;
+}
+
+void MoviePanel::handleSelectionWarningEvent(const Event& event, const RenderWindow& window) {
+    if (!selectionWarningVisible) return;
+    if (const auto* mouseEvent = event.getIf<Event::MouseButtonPressed>()) {
+        if (mouseEvent->button == Mouse::Button::Left) {
+            Vector2f mousePos(mouseEvent->position.x, mouseEvent->position.y);
+            if (selectionWarningButton.getGlobalBounds().contains(mousePos)) {
+                selectionWarningVisible = false;
+            }
+        }
+    }
+    (void)window;
+}
+
+void MoviePanel::updateSelectionWarning(Vector2f mousePos, bool /*mousePressed*/) {
+    if (!selectionWarningVisible) return;
+    selectionWarningButtonHover = selectionWarningButton.getGlobalBounds().contains(mousePos);
+    selectionWarningButton.setFillColor(selectionWarningButtonHover ? Color(17, 98, 144) : Color(20, 118, 172));
+}
+
+void MoviePanel::renderSelectionWarning(RenderWindow& window) {
+    if (!selectionWarningVisible) return;
+    window.draw(selectionWarningOverlay);
+    window.draw(selectionWarningBg);
+    if (selectionWarningText) {
+        window.draw(*selectionWarningText);
+    }
+    window.draw(selectionWarningButton);
+    if (selectionWarningButtonText) {
+        window.draw(*selectionWarningButtonText);
+    }
 }
 
 void MoviePanel::handleEvent(const Event& event, const RenderWindow& window) {
+    if (selectionWarningVisible) {
+        handleSelectionWarningEvent(event, window);
+        return;
+    }
     // Change cursor on hover over CRUD buttons
     if (const auto* moveEvent = event.getIf<Event::MouseMoved>()) {
         // We intentionally do not change OS cursor (compatibility across platforms/SFML versions).
@@ -534,8 +609,10 @@ void MoviePanel::handleEvent(const Event& event, const RenderWindow& window) {
     // Handle popup events
     if (currentPopup != NONE && currentPopup != DELETE_CONFIRM) {
         // Handle input boxes
-        for (auto& box : inputBoxes) {
-            box->handleEvent(event);
+        for (int i = 0; i < inputBoxes.getSize(); ++i) {
+            if (inputBoxes[i]) {
+                inputBoxes[i]->handleEvent(event);
+            }
         }
         
         // Handle dropdown
@@ -571,6 +648,10 @@ void MoviePanel::handleEvent(const Event& event, const RenderWindow& window) {
 }
 
 void MoviePanel::update(Vector2f mousePos, bool mousePressed) {
+    if (selectionWarningVisible) {
+        updateSelectionWarning(mousePos, mousePressed);
+        return;
+    }
     // Update hover state for rows
     if (currentPopup == NONE) {
         float startY = position.y + TABLE_Y + HEADER_HEIGHT;
@@ -624,9 +705,7 @@ void MoviePanel::update(Vector2f mousePos, bool mousePressed) {
         if (btnEditHover) btnEditBg.setFillColor(brighten(editBase, 0.10f)); else btnEditBg.setFillColor(editBase);
         if (btnDeleteHover) btnDeleteBg.setFillColor(brighten(delBase, 0.10f)); else btnDeleteBg.setFillColor(delBase);
         reloadButtonBg.setFillColor(btnReloadHover ? brighten(reloadBase, 0.10f) : reloadBase);
-        if (reloadTextureLoaded) {
-            reloadSprite.setColor(btnReloadHover ? Color(180, 220, 255) : Color::White);
-        }
+        reloadSprite.setColor(btnReloadHover ? Color(180, 220, 255) : Color::White);
 
         if (mousePressed) {
             if (btnAddHover) {
@@ -651,8 +730,10 @@ void MoviePanel::update(Vector2f mousePos, bool mousePressed) {
     // Update popup
     if (currentPopup != NONE) {
         // Update input boxes
-        for (auto& box : inputBoxes) {
-            box->update(mousePos, mousePressed);
+        for (int i = 0; i < inputBoxes.getSize(); ++i) {
+            if (inputBoxes[i]) {
+                inputBoxes[i]->update(mousePos, mousePressed);
+            }
         }
         
         // Update popup buttons
@@ -688,70 +769,100 @@ void MoviePanel::update(Vector2f mousePos, bool mousePressed) {
 }
 
 void MoviePanel::renderTable(RenderWindow& window) {
-    // Draw table header
     window.draw(tableHeaderBg);
-    
-    // Header texts
-    vector<pair<string, float>> headers = {
-        {"ID", COL_ID_X},
-        {"Tên phim", COL_TITLE_X},
-        {"Thời lượng", COL_DURATION_X},
-        {"Ngày chiếu", COL_DATE_X},
-        {"Trạng thái", COL_STATUS_X}
+
+    struct ColumnSpec {
+        string label;
+        float ratio; // ratio of TABLE_WIDTH
     };
-    
-    for (const auto& [label, xPos] : headers) {
-        Text headerText(font, String::fromUtf8(label.begin(), label.end()), 18);
+
+    static const array<ColumnSpec, 5> columns = {{{"ID Phim", 0.10f},
+        {"Tên phim", 0.36f}, {"Thời lượng", 0.14f}, {"Ngày chiếu", 0.20f}, {"Trạng thái", 0.20f}}};
+
+    vector<float> columnWidths;
+    columnWidths.reserve(columns.size());
+    for (const auto& col : columns) {
+        columnWidths.push_back(TABLE_WIDTH * col.ratio);
+    }
+
+    vector<float> columnLefts(columns.size(), position.x + TABLE_X);
+    for (size_t i = 1; i < columns.size(); ++i) {
+        columnLefts[i] = columnLefts[i - 1] + columnWidths[i - 1];
+    }
+
+    float headerTop = position.y + TABLE_Y;
+    float tableLeft = position.x + TABLE_X;
+    auto allData = repository->getAllData();
+    float totalHeight = HEADER_HEIGHT + static_cast<float>(allData.size()) * ROW_HEIGHT;
+
+    // Draw vertical separators (including left and right borders)
+    RectangleShape separator(Vector2f(1.f, totalHeight));
+    separator.setFillColor(borderColor);
+    separator.setPosition(Vector2f(tableLeft, headerTop));
+    window.draw(separator);
+    for (size_t i = 0; i < columns.size(); ++i) {
+        float x = columnLefts[i] + columnWidths[i];
+        separator.setPosition(Vector2f(x, headerTop));
+        window.draw(separator);
+    }
+
+    // Header text centered
+    for (size_t i = 0; i < columns.size(); ++i) {
+        Text headerText(font, String::fromUtf8(columns[i].label.begin(), columns[i].label.end()), 18);
         headerText.setFillColor(Color::White);
         headerText.setStyle(Text::Bold);
-        headerText.setPosition(Vector2f(position.x + xPos, position.y + TABLE_Y + 10));
+        FloatRect bounds = headerText.getLocalBounds();
+        float colLeft = columnLefts[i];
+        float colWidth = columnWidths[i];
+        headerText.setPosition(Vector2f(
+            colLeft + (colWidth - bounds.size.x) / 2.f - bounds.position.x,
+            headerTop + (HEADER_HEIGHT - bounds.size.y) / 2.f - bounds.position.y
+        ));
         window.draw(headerText);
     }
-    
+
     // Draw rows
-    float startY = position.y + TABLE_Y + HEADER_HEIGHT;
-    auto allData = repository->getAllData();
-    
+    float startY = headerTop + HEADER_HEIGHT;
     for (size_t i = 0; i < allData.size(); i++) {
-        float rowY = startY + i * ROW_HEIGHT;
-        
-        // Row background
+        float rowY = startY + static_cast<float>(i) * ROW_HEIGHT;
+
         RectangleShape rowBg(Vector2f(TABLE_WIDTH, ROW_HEIGHT));
-        rowBg.setPosition(Vector2f(position.x + TABLE_X, rowY));
-        
-        if (i == selectedRow) {
+        rowBg.setPosition(Vector2f(tableLeft, rowY));
+
+        if (static_cast<int>(i) == selectedRow) {
             rowBg.setFillColor(selectedColor);
-        } else if (i == hoveredRow) {
+        } else if (static_cast<int>(i) == hoveredRow) {
             rowBg.setFillColor(hoverColor);
         } else {
             rowBg.setFillColor(rowColor);
         }
-        
         window.draw(rowBg);
-        
-        // Row border
-        RectangleShape rowBorder(Vector2f(TABLE_WIDTH, 1));
-        rowBorder.setPosition(Vector2f(position.x + TABLE_X, rowY + ROW_HEIGHT));
+
+        RectangleShape rowBorder(Vector2f(TABLE_WIDTH, 1.f));
+        rowBorder.setPosition(Vector2f(tableLeft, rowY + ROW_HEIGHT));
         rowBorder.setFillColor(borderColor);
         window.draw(rowBorder);
-        
-        // Cell texts
+
         const auto& row = allData[i];
-        if (row.size() >= 13) {
-            vector<pair<string, float>> cells = {
-                {row[0], COL_ID_X},              // ID
-                {row[1], COL_TITLE_X},           // Title
-                {row[6] + " phút", COL_DURATION_X},  // Duration
-                {row[7], COL_DATE_X},            // Release date
-                {row[12], COL_STATUS_X}          // Status
-            };
-            
-            for (const auto& [value, xPos] : cells) {
-                Text cellText(font, String::fromUtf8(value.begin(), value.end()), 15);
-                cellText.setFillColor(textColor);
-                cellText.setPosition(Vector2f(position.x + xPos + 8, rowY + 10));
-                window.draw(cellText);
-            }
+        if (row.size() < 13) continue;
+
+        array<string, 5> cellValues = {
+            row[0],
+            row[1],
+            row[6] + " phút",
+            row[7],
+            row[12]
+        };
+
+        for (size_t col = 0; col < columns.size(); ++col) {
+            Text cellText(font, String::fromUtf8(cellValues[col].begin(), cellValues[col].end()), 15);
+            cellText.setFillColor(textColor);
+            FloatRect bounds = cellText.getLocalBounds();
+            cellText.setPosition(Vector2f(
+                columnLefts[col] + 12.f - bounds.position.x,
+                rowY + (ROW_HEIGHT - bounds.size.y) / 2.f - bounds.position.y
+            ));
+            window.draw(cellText);
         }
     }
 }
@@ -771,8 +882,10 @@ void MoviePanel::renderPopup(RenderWindow& window) {
     }
     
     // Draw input boxes
-    for (auto& box : inputBoxes) {
-        box->render(window);
+    for (int i = 0; i < inputBoxes.getSize(); ++i) {
+        if (inputBoxes[i]) {
+            inputBoxes[i]->render(window);
+        }
     }
     
     // Draw dropdown
@@ -788,7 +901,11 @@ void MoviePanel::renderPopup(RenderWindow& window) {
 }
 
 void MoviePanel::renderNotification(RenderWindow& window) {
-    if (notificationClock.getElapsedTime().asSeconds() > 3.0f) return;
+    if (!notificationVisible) return;
+    if (notificationClock.getElapsedTime().asSeconds() > 3.0f) {
+        notificationVisible = false;
+        return;
+    }
     
     notificationBg.setPosition(Vector2f(1300, 50));
     window.draw(notificationBg);
@@ -868,4 +985,6 @@ void MoviePanel::render(RenderWindow& window) {
     
     // Draw notification
     renderNotification(window);
+
+    renderSelectionWarning(window);
 }

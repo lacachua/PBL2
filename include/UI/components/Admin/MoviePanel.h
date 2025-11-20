@@ -1,13 +1,12 @@
-#ifndef MOVIE_PANEL_H
-#define MOVIE_PANEL_H
+#pragma once
 
 #include <SFML/Graphics.hpp>
 #include "UI/components/Admin/TextBox.h"
 #include "UI/components/Admin/DropdownBox.h"
 #include "UI/components/Admin/MovieRepository.h"
 #include "UI/components/Button.h"
+#include "data-structures/DLL.h"
 #include <string>
-#include <vector>
 #include <memory>
 
 using namespace sf;
@@ -32,8 +31,8 @@ private:
     unique_ptr<Text> titleText;
     RectangleShape background;
     RectangleShape tableHeaderBg;
-    vector<RectangleShape> rowBackgrounds;
-    vector<RectangleShape> rowBorders;
+    DLL<RectangleShape> rowBackgrounds;
+    DLL<RectangleShape> rowBorders;
     
     // CRUD Buttons (custom, pixel-perfect)
     RectangleShape btnAddBg;      // Thêm phim
@@ -53,7 +52,6 @@ private:
     Texture reloadTexture;
     Sprite reloadSprite;
     RectangleShape reloadButtonBg;
-    bool reloadTextureLoaded = false;
     bool btnReloadHover = false;
     bool btnReloadPressed = false;
     
@@ -66,7 +64,7 @@ private:
     RectangleShape popupBackground;
     RectangleShape popupOverlay;
     unique_ptr<Text> popupTitle;
-    vector<unique_ptr<TextBox>> inputBoxes;
+    DLL<unique_ptr<TextBox>> inputBoxes;
     unique_ptr<DropdownBox> statusDropdown; // For movie status selection
     unique_ptr<Button> btnPopupSave;
     unique_ptr<Button> btnPopupCancel;
@@ -76,6 +74,17 @@ private:
     Clock notificationClock;
     RectangleShape notificationBg;
     unique_ptr<Text> notificationTextObj;
+    bool notificationVisible = false;
+
+    // Selection warning popup
+    bool selectionWarningVisible = false;
+    RectangleShape selectionWarningOverlay;
+    RectangleShape selectionWarningBg;
+    unique_ptr<Text> selectionWarningText;
+    RectangleShape selectionWarningButton;
+    unique_ptr<Text> selectionWarningButtonText;
+    bool selectionWarningButtonHover = false;
+    string selectionWarningMessage;
     
     // Table data
     int scrollOffset;
@@ -116,6 +125,7 @@ private:
     void renderTable(RenderWindow& window);
     void renderPopup(RenderWindow& window);
     void renderNotification(RenderWindow& window);
+    void renderSelectionWarning(RenderWindow& window);
     
     void openAddPopup();
     void openEditPopup();
@@ -128,14 +138,15 @@ private:
     void handleReload();
     
     void showNotification(const string& message);
+    void showSelectionWarning(const string& message);
+    void updateSelectionWarning(Vector2f mousePos, bool mousePressed);
+    void handleSelectionWarningEvent(const Event& event, const RenderWindow& window);
     
-public:
-    MoviePanel(Font& font, float width, float height);
+    public:
+        MoviePanel(Font& font, float width, float height);
     
-    void setPosition(Vector2f pos);
-    void handleEvent(const Event& event, const RenderWindow& window);
-    void update(Vector2f mousePos, bool mousePressed);
-    void render(RenderWindow& window);
-};
-
-#endif
+        void setPosition(Vector2f pos);
+        void handleEvent(const Event& event, const RenderWindow& window);
+        void update(Vector2f mousePos, bool mousePressed);
+        void render(RenderWindow& window);
+    };

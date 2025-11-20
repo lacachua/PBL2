@@ -105,6 +105,26 @@ public:
         --size;
     }
 
+    void removeAt(int index) {
+        if (index < 0 || index >= size) throw out_of_range("DLL removeAt index out of range");
+        Node<T>* cur = head;
+        for (int i = 0; i < index; ++i) {
+            cur = cur->next;
+        }
+        if (cur->prev) {
+            cur->prev->next = cur->next;
+        } else {
+            head = cur->next;
+        }
+        if (cur->next) {
+            cur->next->prev = cur->prev;
+        } else {
+            tail = cur->prev;
+        }
+        delete cur;
+        --size;
+    }
+
     void clear() {
         while (!isEmpty()) pop_front();
     }
@@ -122,4 +142,7 @@ public:
         for (int i = 0; i < index; ++i) cur = cur->next;
         return cur->data;
     }
+
+    Node<T>* getHead() { return head; }
+    const Node<T>* getHead() const { return head; }
 };

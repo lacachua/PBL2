@@ -48,4 +48,5 @@ public:
     
     bool isMouseOver(const Vector2f& mousePos) const;
     bool isDropdownOpen() const { return isOpen; }
+    Vector2f getPosition() const { return Vector2f(x, y); }
 };

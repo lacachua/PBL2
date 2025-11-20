@@ -1,37 +1,47 @@
-#ifndef ADMIN_SIDEBAR_H
-#define ADMIN_SIDEBAR_H
-
+#pragma once
 #include <SFML/Graphics.hpp>
 #include <string>
-#include <vector>
 #include <functional>
 #include <memory>
 #include "core/AppState.h"
+#include "data-structures/DLL.h"
 
 using namespace sf;
 using namespace std;
 
-/**
- * @brief Sidebar cho Admin Panel
- * 
- * Layout: 260px width, theme tối #0D1B2A
- * Chia thành 4 nhóm:
- * - QUẢN LÝ HỆ THỐNG (movies, rooms, showtimes, tickets, combos)
- * - THỐNG KÊ & BÁO CÁO (revenue, sold tickets)
- * - TÀI KHOẢN (staff, customers)
- * - HỆ THỐNG (change password, logout)
- */
+class RoundRectButton {
+private:
+    Font& font;
+    Vector2f size;
+    Vector2f position;
+    float radius;
+    Color baseColor;
+    Color hoverColor;
+    bool hovered;
+    unique_ptr<Text> label;
+
+public:
+    RoundRectButton(Font& font, const string& text, Vector2f size, float radius);
+
+    void setPosition(Vector2f pos);
+    void setColors(const Color& base, const Color& hover);
+    void setTextSize(unsigned int size);
+    void update(Vector2f mousePos);
+    bool contains(Vector2f point) const;
+    void draw(RenderWindow& window) const;
+    Vector2f getSize() const { return size; }
+};
+
 class AdminSidebar {
 private:
     struct MenuItem {
         string label;
-        string icon;
         AppState targetState;
         bool isGroupHeader;
         bool isLogout;
         
-        MenuItem(const string& l, const string& i, AppState state, bool header = false, bool logout = false)
-            : label(l), icon(i), targetState(state), isGroupHeader(header), isLogout(logout) {}
+        MenuItem(const string& l, AppState state, bool header = false, bool logout = false)
+            : label(l), targetState(state), isGroupHeader(header), isLogout(logout) {}
     };
     
     float width;
@@ -46,19 +56,20 @@ private:
     Color groupHeaderColor; // Slightly lighter
     
     // Menu items
-    vector<MenuItem> menuItems;
+    DLL<MenuItem> menuItems;
     int hoveredIndex;
     int activeIndex;
     
     // Shapes
     RectangleShape background;
-    vector<RectangleShape> itemBackgrounds;
+    DLL<RectangleShape> itemBackgrounds;
     
     // Text
     Font font;
+    Font montserratFont;
     unique_ptr<Text> headerText;
     unique_ptr<Text> userNameText;
-    vector<unique_ptr<Text>> itemTexts;
+    DLL<unique_ptr<Text>> itemTexts;
     
     // Callback for state change
     function<void(AppState)> onStateChange;
@@ -67,6 +78,7 @@ private:
     // User info
     string userName;
     RectangleShape userInfoBg;
+    unique_ptr<RoundRectButton> logoutButton;
     
     void initializeMenuItems();
     void setupGraphics();
@@ -86,5 +98,3 @@ public:
     
     float getWidth() const { return width; }
 };
-
-#endif

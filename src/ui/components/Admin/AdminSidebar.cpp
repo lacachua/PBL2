@@ -1,9 +1,88 @@
 #include "UI/components/Admin/AdminSidebar.h"
 #include <iostream>
 
+namespace {
+    void drawRoundedRect(RenderWindow& window, Vector2f pos, Vector2f size, float radius, const Color& color) {
+        RectangleShape center(Vector2f(size.x - 2 * radius, size.y));
+        center.setPosition(Vector2f(pos.x + radius, pos.y));
+        center.setFillColor(color);
+        window.draw(center);
+
+        RectangleShape mid(Vector2f(size.x, size.y - 2 * radius));
+        mid.setPosition(Vector2f(pos.x, pos.y + radius));
+        mid.setFillColor(color);
+        window.draw(mid);
+
+        CircleShape corner(radius);
+        corner.setFillColor(color);
+        corner.setPosition(pos);
+        window.draw(corner);
+
+        corner.setPosition(Vector2f(pos.x + size.x - 2 * radius, pos.y));
+        window.draw(corner);
+
+        corner.setPosition(Vector2f(pos.x, pos.y + size.y - 2 * radius));
+        window.draw(corner);
+
+        corner.setPosition(Vector2f(pos.x + size.x - 2 * radius, pos.y + size.y - 2 * radius));
+        window.draw(corner);
+    }
+}
+
+RoundRectButton::RoundRectButton(Font& f, const string& text, Vector2f sz, float r)
+    : font(f), size(sz), position(Vector2f()), radius(r), baseColor(Color::White),
+      hoverColor(Color::White), hovered(false) {
+    label = make_unique<Text>(font);
+    label->setCharacterSize(27);
+    label->setFillColor(Color::White);
+    label->setString(String::fromUtf8(text.begin(), text.end()));
+}
+
+void RoundRectButton::setPosition(Vector2f pos) {
+    position = pos;
+    if (label) {
+        FloatRect bounds = label->getLocalBounds();
+        label->setPosition(Vector2f(
+            position.x + (size.x - bounds.size.x) / 2.f - bounds.position.x,
+            position.y + (size.y - bounds.size.y) / 2.f - bounds.position.y
+        ));
+    }
+}
+
+void RoundRectButton::setColors(const Color& base, const Color& hover) {
+    baseColor = base;
+    hoverColor = hover;
+}
+
+void RoundRectButton::setTextSize(unsigned int size) {
+    if (label) {
+        label->setCharacterSize(size);
+        setPosition(position);
+    }
+}
+
+void RoundRectButton::update(Vector2f mousePos) {
+    FloatRect bounds(position, size);
+    hovered = bounds.contains(mousePos);
+}
+
+bool RoundRectButton::contains(Vector2f point) const {
+    FloatRect bounds(position, size);
+    return bounds.contains(point);
+}
+
+void RoundRectButton::draw(RenderWindow& window) const {
+    const Color& color = hovered ? hoverColor : baseColor;
+    drawRoundedRect(window, position, size, radius, color);
+    if (label) {
+        window.draw(*label);
+    }
+}
+
 AdminSidebar::AdminSidebar(float w, float h, const string& uName)
     : width(w), height(h), userName(uName), hoveredIndex(-1), activeIndex(0),
-    font("../assets/fonts/quicksand_medium.ttf") {
+    font("../assets/fonts/AMPLE_MEDIUM.ttf"),
+    montserratFont("../assets/fonts/Montserrat_SemiBold.ttf") {
     
     // Colors
     bgColor = Color(13, 27, 42);         // #0D1B2A
@@ -22,27 +101,26 @@ void AdminSidebar::initializeMenuItems() {
     // Header (user info area - will be handled separately)
     
     // Group 1: QUẢN LÝ HỆ THỐNG
-    menuItems.push_back(MenuItem("QUẢN LÝ HỆ THỐNG", "", AppState::ADMIN_DASHBOARD, true, false));
-    menuItems.push_back(MenuItem("Quản lý phim", "🎬", AppState::ADMIN_MOVIES));
-    menuItems.push_back(MenuItem("Quản lý phòng chiếu", "🏠", AppState::ADMIN_ROOMS));
-    menuItems.push_back(MenuItem("Quản lý suất chiếu", "⏰", AppState::ADMIN_SHOWTIMES));
-    menuItems.push_back(MenuItem("Quản lý vé / đặt vé", "💺", AppState::ADMIN_TICKETS));
-    menuItems.push_back(MenuItem("Quản lý combo bắp nước", "🍿", AppState::ADMIN_COMBOS));
+    menuItems.push_back(MenuItem("QUẢN LÝ HỆ THỐNG", AppState::ADMIN_DASHBOARD, true, false));
+    menuItems.push_back(MenuItem("Quản lý phim", AppState::ADMIN_MOVIES));
+    menuItems.push_back(MenuItem("Quản lý phòng chiếu", AppState::ADMIN_ROOMS));
+    menuItems.push_back(MenuItem("Quản lý suất chiếu", AppState::ADMIN_SHOWTIMES));
+    menuItems.push_back(MenuItem("Quản lý vé", AppState::ADMIN_TICKETS));
+    menuItems.push_back(MenuItem("Quản lý combo bắp nước", AppState::ADMIN_COMBOS));
     
     // Group 2: THỐNG KÊ & BÁO CÁO
-    menuItems.push_back(MenuItem("THỐNG KÊ & BÁO CÁO", "", AppState::ADMIN_DASHBOARD, true, false));
-    menuItems.push_back(MenuItem("Doanh thu", "💰", AppState::ADMIN_REVENUE));
-    menuItems.push_back(MenuItem("Vé đã bán / lượng khách", "📈", AppState::ADMIN_SOLD_TICKETS));
+    menuItems.push_back(MenuItem("THỐNG KÊ & BÁO CÁO", AppState::ADMIN_DASHBOARD, true, false));
+    menuItems.push_back(MenuItem("Doanh thu", AppState::ADMIN_REVENUE));
+    menuItems.push_back(MenuItem("Vé đã bán / lượng khách", AppState::ADMIN_SOLD_TICKETS));
     
     // Group 3: TÀI KHOẢN
-    menuItems.push_back(MenuItem("TÀI KHOẢN", "", AppState::ADMIN_DASHBOARD, true, false));
-    menuItems.push_back(MenuItem("Quản lý nhân viên (Staff)", "👨‍💼", AppState::ADMIN_STAFF));
-    menuItems.push_back(MenuItem("Quản lý khách hàng (Customer)", "👤", AppState::ADMIN_CUSTOMERS));
+    menuItems.push_back(MenuItem("TÀI KHOẢN", AppState::ADMIN_DASHBOARD, true, false));
+    menuItems.push_back(MenuItem("Quản lý nhân viên", AppState::ADMIN_STAFF));
+    menuItems.push_back(MenuItem("Quản lý khách hàng", AppState::ADMIN_CUSTOMERS));
     
     // Group 4: HỆ THỐNG
-    menuItems.push_back(MenuItem("HỆ THỐNG", "", AppState::ADMIN_DASHBOARD, true, false));
-    menuItems.push_back(MenuItem("Đổi mật khẩu", "🔑", AppState::ADMIN_CHANGE_PASSWORD));
-    menuItems.push_back(MenuItem("Đăng xuất", "🚪", AppState::LOGIN, false, true));
+    menuItems.push_back(MenuItem("HỆ THỐNG", AppState::ADMIN_DASHBOARD, true, false));
+    menuItems.push_back(MenuItem("Thông tin cá nhân", AppState::ADMIN_CHANGE_PASSWORD));
 }
 
 void AdminSidebar::setupGraphics() {
@@ -60,11 +138,11 @@ void AdminSidebar::setupGraphics() {
     userNameText->setFillColor(textColor);
     userNameText->setString(String::fromUtf8(userName.begin(), userName.end()));
     
-    // Header text - SFML 3 requires font in constructor, use unique_ptr
-    headerText = make_unique<Text>(font);
-    headerText->setCharacterSize(20);
+    // Header text uses Montserrat SemiBold
+    headerText = make_unique<Text>(montserratFont);
+    headerText->setCharacterSize(24);
     headerText->setFillColor(textColor);
-    headerText->setString("CineXine - Admin Panel");
+    headerText->setString(L"CiNeXiNe - ADMIN");
     headerText->setStyle(Text::Bold);
     
     // Create item backgrounds and texts
@@ -75,7 +153,7 @@ void AdminSidebar::setupGraphics() {
     float itemHeight = 45;
     float groupHeaderHeight = 35;
     
-    for (size_t i = 0; i < menuItems.size(); i++) {
+    for (int i = 0; i < menuItems.getSize(); i++) {
         const auto& item = menuItems[i];
         
         float currentHeight = item.isGroupHeader ? groupHeaderHeight : itemHeight;
@@ -93,11 +171,12 @@ void AdminSidebar::setupGraphics() {
         itemBackgrounds.push_back(itemBg);
         
         // Text - SFML 3 requires font in constructor, use unique_ptr
-        auto itemText = make_unique<Text>(font);
-        itemText->setCharacterSize(item.isGroupHeader ? 13 : 15);
+        Font& itemFont = item.isGroupHeader ? montserratFont : font;
+        auto itemText = make_unique<Text>(itemFont);
+        itemText->setCharacterSize(item.isGroupHeader ? 19 : 21);
         itemText->setFillColor(textColor);
         
-        string displayText = item.icon.empty() ? item.label : item.icon + " " + item.label;
+        string displayText = item.label;
         itemText->setString(String::fromUtf8(displayText.begin(), displayText.end()));
         
         // SFML 3: getLocalBounds() returns FloatRect, use .size.y instead of .height
@@ -110,9 +189,14 @@ void AdminSidebar::setupGraphics() {
             itemText->setStyle(Text::Bold);
         }
         
-        itemTexts.push_back(move(itemText));
+        itemTexts.push_back(std::move(itemText));
         
         yOffset += currentHeight;
+    }
+
+    logoutButton = make_unique<RoundRectButton>(font, "Đăng xuất", Vector2f(width - 40.f, 50.f), 12.f);
+    if (logoutButton) {
+        logoutButton->setColors(Color(72, 201, 176), Color(102, 231, 206));
     }
 }
 
@@ -124,14 +208,20 @@ void AdminSidebar::setPosition(Vector2f pos) {
     if (userNameText) userNameText->setPosition(Vector2f(pos.x + 15, pos.y + 55));
     
     // Update item positions
-    for (size_t i = 0; i < itemBackgrounds.size(); i++) {
+    for (int i = 0; i < itemBackgrounds.getSize(); i++) {
         Vector2f itemPos = itemBackgrounds[i].getPosition();
         itemBackgrounds[i].setPosition(Vector2f(pos.x + itemPos.x, pos.y + itemPos.y));
         
-        if (i < itemTexts.size() && itemTexts[i]) {
+        if (i < itemTexts.getSize() && itemTexts[i]) {
             Vector2f textPos = itemTexts[i]->getPosition();
             itemTexts[i]->setPosition(Vector2f(pos.x + textPos.x, pos.y + textPos.y));
         }
+    }
+
+    if (logoutButton) {
+        float buttonHeight = logoutButton->getSize().y;
+        float bottomPadding = 20.f;
+        logoutButton->setPosition(Vector2f(pos.x + 20.f, pos.y + height - buttonHeight - bottomPadding));
     }
 }
 
@@ -144,7 +234,7 @@ void AdminSidebar::setOnLogout(function<void()> callback) {
 }
 
 void AdminSidebar::setActiveState(AppState state) {
-    for (size_t i = 0; i < menuItems.size(); i++) {
+    for (int i = 0; i < menuItems.getSize(); i++) {
         if (menuItems[i].targetState == state && !menuItems[i].isGroupHeader) {
             activeIndex = i;
             break;
@@ -153,7 +243,7 @@ void AdminSidebar::setActiveState(AppState state) {
 }
 
 int AdminSidebar::getItemAtPosition(Vector2f mousePos) {
-    for (size_t i = 0; i < itemBackgrounds.size(); i++) {
+    for (int i = 0; i < itemBackgrounds.getSize(); i++) {
         if (menuItems[i].isGroupHeader) continue;
         
         FloatRect bounds = itemBackgrounds[i].getGlobalBounds();
@@ -171,23 +261,23 @@ void AdminSidebar::handleEvent(const Event& event, const RenderWindow& window) {
             Vector2f mousePos = window.mapPixelToCoords(
                 Mouse::getPosition(window)
             );
+
+            if (logoutButton && logoutButton->contains(mousePos)) {
+                if (onLogout) {
+                    onLogout();
+                }
+                return;
+            }
             
             int clickedIndex = getItemAtPosition(mousePos);
             
             if (clickedIndex >= 0) {
                 const auto& item = menuItems[clickedIndex];
                 
-                if (item.isLogout) {
-                    // Logout
-                    if (onLogout) {
-                        onLogout();
-                    }
-                } else {
-                    // Change state
-                    activeIndex = clickedIndex;
-                    if (onStateChange) {
-                        onStateChange(item.targetState);
-                    }
+                // Change state
+                activeIndex = clickedIndex;
+                if (onStateChange) {
+                    onStateChange(item.targetState);
                 }
             }
         }
@@ -199,7 +289,7 @@ void AdminSidebar::update(const RenderWindow& window) {
     hoveredIndex = getItemAtPosition(mousePos);
     
     // Update item backgrounds based on hover/active state
-    for (size_t i = 0; i < itemBackgrounds.size(); i++) {
+    for (int i = 0; i < itemBackgrounds.getSize(); i++) {
         if (menuItems[i].isGroupHeader) {
             itemBackgrounds[i].setFillColor(groupHeaderColor);
         } else if (i == activeIndex) {
@@ -210,6 +300,10 @@ void AdminSidebar::update(const RenderWindow& window) {
             itemBackgrounds[i].setFillColor(Color::Transparent);
         }
     }
+
+    if (logoutButton) {
+        logoutButton->update(mousePos);
+    }
 }
 
 void AdminSidebar::render(RenderWindow& window) {
@@ -219,13 +313,17 @@ void AdminSidebar::render(RenderWindow& window) {
     // Draw user info section
     window.draw(userInfoBg);
     if (headerText) window.draw(*headerText);
-    if (userNameText) window.draw(*userNameText);
+    // if (userNameText) window.draw(*userNameText);
     
     // Draw menu items
-    for (size_t i = 0; i < itemBackgrounds.size(); i++) {
+    for (int i = 0; i < itemBackgrounds.getSize(); i++) {
         window.draw(itemBackgrounds[i]);
-        if (i < itemTexts.size() && itemTexts[i]) {
+        if (i < itemTexts.getSize() && itemTexts[i]) {
             window.draw(*itemTexts[i]);
         }
+    }
+
+    if (logoutButton) {
+        logoutButton->draw(window);
     }
 }
