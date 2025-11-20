@@ -3,6 +3,7 @@
 #include <string>
 #include <vector>
 #include <memory>
+#include <algorithm>
 
 using namespace std;
 using namespace sf;
@@ -32,11 +33,20 @@ private:
     Color selectedColor;
     Color borderColor;
     Color textColor;
+
+    int maxVisibleOptions;
+    int firstVisibleIndex;
+    float optionHeight;
+
+    void clampFirstVisible();
+    void updateDropdownPanel();
+    int getVisibleCount() const;
     
 public:
     DropdownBox(Font& font, const string& label, float x, float y, float width, float height);
     
     void setOptions(const vector<string>& opts);
+    void setMaxVisibleOptions(int count);
     void setSelectedIndex(int index);
     void setSelectedValue(const string& value);
     string getSelectedValue() const;

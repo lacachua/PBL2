@@ -110,7 +110,7 @@ using namespace std;
 
 HeaderBar::HeaderBar(Font& f) 
     :   headerFont("../assets/fonts/BEBAS_NEUE_ZSMALL.ttf"),
-        mainView({940.f, 600.f}), summaryBox({400.f, 300.f}),
+        mainView({940.f, 700.f}), summaryBox({400.f, 300.f}),
         back_button(f, L"←", 100.f, 50.f, 30),
         continue_button(f, L"Tiếp tục", 280.f, 50.f, 25)
 {

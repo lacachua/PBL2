@@ -8,6 +8,7 @@
 #include "UI/components/Button.h"
 #include "UI/components/AccountInfo/PersonalInfoView.h"
 #include "UI/components/AccountInfo/PurchaseHistoryView.h"
+#include "UI/components/AccountInfo/VoucherListView.h"
 using namespace sf;
 using namespace std;
 
@@ -26,6 +27,7 @@ private:
     // ✅ Component views (modular architecture)
     unique_ptr<PersonalInfoView> personalInfoView;
     unique_ptr<PurchaseHistoryView> purchaseHistoryView;
+    unique_ptr<VoucherListView> voucherListView;
     
     // User data
     AuthService* authService;

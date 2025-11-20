@@ -7,18 +7,23 @@
 #include <filesystem>
 #include <sstream>
 #include <iostream>
+#include <vector>
 
 using sf::Color;
 using sf::Event;
+using sf::FloatRect;
 using sf::RectangleShape;
 using sf::RenderWindow;
 using sf::Vector2f;
 
-RevenuePanel::RevenuePanel(Font& fontRef, float w, float h)
-        : font(fontRef), width(w), height(h), position(0.f, 0.f),
-          titleText(font, String(), 28),
-          rangeLabel(font, String(), 18) {
+RevenuePanel::RevenuePanel(Font& fontRef, float w, float h, StatsMode modeValue)
+                : font(fontRef), width(w), height(h), position(0.f, 0.f), mode(modeValue),
+                    titleText(font, String(), 28),
+                    fromLabelText(font, String(), 14),
+                    toLabelText(font, String(), 14) {
     ticketsFilePath = resolveDataPath("data/tickets.txt");
+    showtimesFilePath = resolveDataPath("data/showtimes.txt");
+    combosFilePath = resolveDataPath("data/combo.txt");
     initializeUI();
     loadData();
 }
@@ -37,70 +42,79 @@ string RevenuePanel::resolveDataPath(const string& relative) const {
 
 void RevenuePanel::initializeUI() {
     background.setSize(Vector2f(width, height));
-    background.setFillColor(Color(240, 245, 250)); // Light background
+    background.setFillColor(Color(240, 245, 250));
     background.setPosition(position);
 
-    // Title
-    titleText.setString(makeUtf8("Dashboard / Doanh thu theo phim"));
-    titleText.setFillColor(Color(100, 100, 100));
+    string heading = (mode == StatsMode::Revenue)
+        ? "Dashboard / Doanh thu theo phim"
+        : "Dashboard / Vé đã bán theo phim";
+    titleText.setString(makeUtf8(heading));
+    titleText.setFillColor(Color(95, 106, 128));
     titleText.setCharacterSize(16);
     titleText.setPosition(Vector2f(position.x + 24.f, position.y + 20.f));
 
-    // Range Selection Area
-    float rangeY = position.y + 60.f;
-    
-    // Dropdowns
+    float margin = 24.f;
+    float controlY = position.y + 72.f;
     float dropH = 36.f;
-    float dropW = 70.f;
-    float gap = 10.f;
-    float startX = position.x + 24.f;
+    float dropW = 72.f;
+    float gap = 8.f;
+    float groupGap = 36.f;
+    float startX = position.x + margin;
 
-    fromDayDropdown = make_unique<DropdownBox>(font, "", startX, rangeY, dropW, dropH);
-    fromMonthDropdown = make_unique<DropdownBox>(font, "", startX + dropW + gap, rangeY, dropW, dropH);
-    fromYearDropdown = make_unique<DropdownBox>(font, "", startX + (dropW + gap) * 2, rangeY, 90.f, dropH);
+    fromLabelText = Text(font, makeUtf8("Từ ngày"), 14);
+    fromLabelText.setFillColor(Color(90, 104, 123));
+    fromLabelText.setPosition(Vector2f(startX, controlY - 26.f));
 
-    float toX = startX + (dropW + gap) * 2 + 90.f + 30.f;
-    
-    toDayDropdown = make_unique<DropdownBox>(font, "", toX, rangeY, dropW, dropH);
-    toMonthDropdown = make_unique<DropdownBox>(font, "", toX + dropW + gap, rangeY, dropW, dropH);
-    toYearDropdown = make_unique<DropdownBox>(font, "", toX + (dropW + gap) * 2, rangeY, 90.f, dropH);
+    float toStartX = startX + (dropW + gap) * 2 + 96.f + groupGap;
+    toLabelText = Text(font, makeUtf8("Đến ngày"), 14);
+    toLabelText.setFillColor(Color(90, 104, 123));
+    toLabelText.setPosition(Vector2f(toStartX, controlY - 26.f));
 
-    float btnX = toX + (dropW + gap) * 2 + 90.f + 30.f;
-    applyButton = make_unique<Button>(font, makeUtf8("Load dữ liệu"), btnX, dropH, 14);
-    applyButton->setFillColor(accentColor); // Blue
+    fromDayDropdown = make_unique<DropdownBox>(font, "", startX, controlY, dropW, dropH);
+    fromMonthDropdown = make_unique<DropdownBox>(font, "", startX + dropW + gap, controlY, dropW, dropH);
+    fromYearDropdown = make_unique<DropdownBox>(font, "", startX + (dropW + gap) * 2, controlY, 96.f, dropH);
+
+    toDayDropdown = make_unique<DropdownBox>(font, "", toStartX, controlY, dropW, dropH);
+    toMonthDropdown = make_unique<DropdownBox>(font, "", toStartX + dropW + gap, controlY, dropW, dropH);
+    toYearDropdown = make_unique<DropdownBox>(font, "", toStartX + (dropW + gap) * 2, controlY, 96.f, dropH);
+
+    if (fromDayDropdown) fromDayDropdown->setMaxVisibleOptions(12);
+    if (toDayDropdown) toDayDropdown->setMaxVisibleOptions(12);
+
+    float buttonWidth = 170.f;
+    float buttonHeight = dropH;
+    float buttonStartX = position.x + width - margin - buttonWidth;
+
+    applyButton = make_unique<Button>(font, makeUtf8("Tải dữ liệu"), buttonWidth, buttonHeight, 14);
+    applyButton->setFillColor(accentColor);
     applyButton->setTextColor(Color::White);
-    applyButton->setPosition(Vector2f(btnX, rangeY));
+    applyButton->setPosition(Vector2f(buttonStartX, controlY));
 
-    exportButton = make_unique<Button>(font, makeUtf8("Xuất báo cáo"), btnX + 140.f, dropH, 14);
-    exportButton->setFillColor(Color(46, 204, 113)); // Green
-    exportButton->setTextColor(Color::White);
-    exportButton->setPosition(Vector2f(btnX + 140.f, rangeY));
+    float contentY = controlY + dropH + 32.f;
+    float availableHeight = height - (contentY - position.y) - 24.f;
+    if (availableHeight < 260.f) {
+        availableHeight = 260.f;
+    }
+    float columnGap = 24.f;
+    float contentWidth = width - margin * 2.f;
+    float columnWidth = (contentWidth - columnGap) / 2.f;
 
-    // Charts
-    float chartY = rangeY + 60.f;
-    float chartH = (height - chartY - 250.f); // Leave 250 for table
-    if (chartH < 200.f) chartH = 200.f;
-    float chartW = (width - 48.f - 20.f) / 2.f;
+    chartCard.setSize(Vector2f(columnWidth, availableHeight));
+    chartCard.setPosition(Vector2f(position.x + margin, contentY));
+    chartCard.setFillColor(cardColor);
+    chartCard.setOutlineThickness(1.f);
+    chartCard.setOutlineColor(Color(225, 228, 236));
 
-    leftChartArea.setSize(Vector2f(chartW, chartH));
-    leftChartArea.setPosition(Vector2f(position.x + 24.f, chartY));
-    leftChartArea.setFillColor(Color::White);
-    
-    rightChartArea.setSize(Vector2f(chartW, chartH));
-    rightChartArea.setPosition(Vector2f(position.x + 24.f + chartW + 20.f, chartY));
-    rightChartArea.setFillColor(Color::White);
+    tableCard.setSize(Vector2f(columnWidth, availableHeight));
+    tableCard.setPosition(Vector2f(chartCard.getPosition().x + columnWidth + columnGap, contentY));
+    tableCard.setFillColor(cardColor);
+    tableCard.setOutlineThickness(1.f);
+    tableCard.setOutlineColor(Color(225, 228, 236));
 
-    // Table
-    float tableY = chartY + chartH + 20.f;
-    tableHeader.setSize(Vector2f(width - 48.f, 40.f));
-    tableHeader.setPosition(Vector2f(position.x + 24.f, tableY));
-    tableHeader.setFillColor(Color(250, 250, 250));
-    tableHeader.setOutlineThickness(1.f);
-    tableHeader.setOutlineColor(Color(230, 230, 230));
-
-    tableBackground.setSize(Vector2f(width - 48.f, height - tableY - 20.f));
-    tableBackground.setPosition(Vector2f(position.x + 24.f, tableY));
-    tableBackground.setFillColor(Color::White);
+    tableHeader.setSize(Vector2f(columnWidth, 56.f));
+    tableHeader.setPosition(tableCard.getPosition());
+    tableHeader.setFillColor(Color(247, 249, 252));
+    tableHeader.setOutlineThickness(0.f);
 }
 
 void RevenuePanel::setPosition(Vector2f pos) {
@@ -146,7 +160,106 @@ String RevenuePanel::makeUtf8(const string& text) const {
     return String::fromUtf8(text.begin(), text.end());
 }
 
+string RevenuePanel::ellipsize(const string& text, size_t maxChars) const {
+    if (text.length() <= maxChars) return text;
+    if (maxChars <= 3) return text.substr(0, maxChars);
+    return text.substr(0, maxChars - 3) + "...";
+}
+
+string RevenuePanel::trim(const string& text) const {
+    size_t first = text.find_first_not_of(" \t\n\r");
+    if (first == string::npos) return "";
+    size_t last = text.find_last_not_of(" \t\n\r");
+    return text.substr(first, last - first + 1);
+}
+
+int RevenuePanel::countSeats(const string& seatList) const {
+    if (seatList.empty()) return 0;
+
+    int count = 0;
+    size_t start = 0;
+    while (start < seatList.length()) {
+        size_t end = seatList.find(',', start);
+        string token = (end == string::npos)
+            ? seatList.substr(start)
+            : seatList.substr(start, end - start);
+
+        if (!trim(token).empty()) {
+            count++;
+        }
+
+        if (end == string::npos) break;
+        start = end + 1;
+    }
+    return count;
+}
+
+int RevenuePanel::parseComboQuantity(const string& item) const {
+    size_t xPos = item.rfind('x');
+    if (xPos == string::npos) return 1;
+
+    string quantityPart = trim(item.substr(xPos + 1));
+    if (quantityPart.empty()) return 1;
+
+    try {
+        int value = stoi(quantityPart);
+        return (value > 0) ? value : 1;
+    } catch (...) {
+        return 1;
+    }
+}
+
+long long RevenuePanel::computeComboCost(const string& comboList) const {
+    if (comboList.empty()) return 0;
+
+    string trimmed = trim(comboList);
+    if (trimmed.empty()) return 0;
+
+    long long total = 0;
+    size_t start = 0;
+    while (start < trimmed.length()) {
+        size_t end = trimmed.find(',', start);
+        string item = (end == string::npos)
+            ? trimmed.substr(start)
+            : trimmed.substr(start, end - start);
+        item = trim(item);
+        if (!item.empty()) {
+            int quantity = parseComboQuantity(item);
+            size_t xPos = item.rfind('x');
+            string name = (xPos == string::npos) ? item : trim(item.substr(0, xPos));
+
+            auto comboIt = comboPrices.find(name);
+            if (comboIt != comboPrices.end()) {
+                total += static_cast<long long>(comboIt->second) * quantity;
+            }
+        }
+
+        if (end == string::npos) break;
+        start = (end == string::npos) ? trimmed.length() : end + 1;
+    }
+
+    return total;
+}
+
+long long RevenuePanel::computeTicketRevenue(const Ticket& ticket) const {
+    int seatCount = countSeats(ticket.booked);
+    if (seatCount <= 0) return 0;
+
+    auto it = showtimeSeatPrices.find(ticket.showtimeId);
+    long long seatPrice = (it != showtimeSeatPrices.end()) ? it->second : 0;
+    if (seatPrice > 0) {
+        return seatPrice * seatCount;
+    }
+
+    long long baseAmount = static_cast<long long>(ticket.price) - computeComboCost(ticket.comboName);
+    if (baseAmount <= 0) return 0;
+
+    return baseAmount;
+}
+
 void RevenuePanel::loadData() {
+    loadShowtimePrices();
+    loadComboPrices();
     ticketTree.clear();
     filteredTickets.clear();
     availableKeys.clear();
@@ -189,9 +302,38 @@ void RevenuePanel::refreshData() {
     loadData();
 }
 
+void RevenuePanel::loadShowtimePrices() {
+    showtimeSeatPrices.clear();
+    if (showtimesFilePath.empty()) return;
+
+    ShowtimeRepository repository;
+    DLL<Showtime> showtimes = repository.loadFromFile(makeUtf8(showtimesFilePath));
+
+    Node<Showtime>* node = showtimes.getHead();
+    while (node) {
+        string showtimeId = node->data.showtime_id.toAnsiString();
+        showtimeSeatPrices[showtimeId] = node->data.price;
+        node = node->next;
+    }
+}
+
+void RevenuePanel::loadComboPrices() {
+    comboPrices.clear();
+    if (combosFilePath.empty()) return;
+
+    ComboRepository repository;
+    DLL<Combo> combos = repository.loadFromFile(makeUtf8(combosFilePath));
+
+    Node<Combo>* node = combos.getHead();
+    while (node) {
+        comboPrices[node->data.name.toAnsiString()] = node->data.price;
+        node = node->next;
+    }
+}
+
 void RevenuePanel::populateDateDropdowns() {
     // Days: 01-31
-    vector<string> dayOpts;
+    std::vector<string> dayOpts;
     for (int i = 1; i <= 31; ++i) {
         char buf[4]; snprintf(buf, sizeof(buf), "%02d", i);
         dayOpts.push_back(buf);
@@ -200,7 +342,7 @@ void RevenuePanel::populateDateDropdowns() {
     toDayDropdown->setOptions(dayOpts);
 
     // Months: 01-12
-    vector<string> monthOpts;
+    std::vector<string> monthOpts;
     for (int i = 1; i <= 12; ++i) {
         char buf[4]; snprintf(buf, sizeof(buf), "%02d", i);
         monthOpts.push_back(buf);
@@ -209,7 +351,7 @@ void RevenuePanel::populateDateDropdowns() {
     toMonthDropdown->setOptions(monthOpts);
 
     // Years: Extract from availableKeys
-    vector<string> yearOpts;
+    std::vector<string> yearOpts;
     DLL<int> uniqueYears;
     Node<long long>* kNode = availableKeys.getHead();
     while (kNode) {
@@ -226,13 +368,13 @@ void RevenuePanel::populateDateDropdowns() {
 
     // Sort years (simple bubble sort on DLL or just copy to vector since UI is not "algorithm")
     // I'll just copy to vector and sort for dropdown
-    vector<int> sortedYears;
+    std::vector<int> sortedYears;
     Node<int>* yNode = uniqueYears.getHead();
     while (yNode) {
         sortedYears.push_back(yNode->data);
         yNode = yNode->next;
     }
-    sort(sortedYears.begin(), sortedYears.end());
+    std::sort(sortedYears.begin(), sortedYears.end());
     if (sortedYears.empty()) sortedYears.push_back(2025); // Default
 
     for (int y : sortedYears) {
@@ -265,7 +407,7 @@ void RevenuePanel::applySelection() {
     long long k1 = stoll(y1) * 10000 + stoll(m1) * 100 + stoll(d1);
     long long k2 = stoll(y2) * 10000 + stoll(m2) * 100 + stoll(d2);
 
-    if (k1 > k2) swap(k1, k2);
+    if (k1 > k2) std::swap(k1, k2);
 
     startKey = k1;
     endKey = k2;
@@ -290,9 +432,6 @@ void RevenuePanel::handleEvent(const Event& event, const RenderWindow& window) {
             if (applyButton && applyButton->isClicked(mousePos, true)) {
                 applySelection();
             }
-            if (exportButton && exportButton->isClicked(mousePos, true)) {
-                // Export logic placeholder
-            }
         }
     }
 }
@@ -300,9 +439,6 @@ void RevenuePanel::handleEvent(const Event& event, const RenderWindow& window) {
 void RevenuePanel::update(Vector2f mousePos, bool mousePressed) {
     if (applyButton) {
         applyButton->update(mousePos, mousePressed, Color(30, 140, 200), accentColor);
-    }
-    if (exportButton) {
-        exportButton->update(mousePos, mousePressed, Color(39, 174, 96), Color(46, 204, 113));
     }
 }
 
@@ -312,13 +448,13 @@ void RevenuePanel::updateSummary() {
     Node<Ticket>* curr = filteredTickets.getHead();
     while (curr) {
         string title = curr->data.title;
-        long long price = curr->data.price;
+        long long revenue = computeTicketRevenue(curr->data);
         
         bool found = false;
         Node<MovieStats>* mNode = movieStats.getHead();
         while (mNode) {
             if (mNode->data.title == title) {
-                mNode->data.revenue += price;
+                mNode->data.revenue += revenue;
                 mNode->data.ticketCount++;
                 found = true;
                 break;
@@ -327,178 +463,234 @@ void RevenuePanel::updateSummary() {
         }
         
         if (!found) {
-            movieStats.push_back({title, price, 1});
+            movieStats.push_back({title, revenue, 1});
         }
         curr = curr->next;
     }
+
+    sortMovieStats();
 }
 
-void RevenuePanel::drawLeftChart(RenderWindow& window) {
-    // Ticket Count Chart
-    if (movieStats.isEmpty()) return;
+void RevenuePanel::sortMovieStats() {
+    if (movieStats.getSize() < 2) return;
 
-    // Find max count
-    int maxCount = 0;
-    Node<MovieStats>* mNode = movieStats.getHead();
-    while (mNode) {
-        if (mNode->data.ticketCount > maxCount) maxCount = mNode->data.ticketCount;
-        mNode = mNode->next;
+    Node<MovieStats>* outer = movieStats.getHead();
+    while (outer) {
+        Node<MovieStats>* inner = outer->next;
+        while (inner) {
+            bool shouldSwap = false;
+            if (mode == StatsMode::Revenue) {
+                shouldSwap = inner->data.revenue > outer->data.revenue;
+            } else {
+                shouldSwap = inner->data.ticketCount > outer->data.ticketCount;
+            }
+            if (shouldSwap) {
+                MovieStats temp = outer->data;
+                outer->data = inner->data;
+                inner->data = temp;
+            }
+            inner = inner->next;
+        }
+        outer = outer->next;
     }
-    if (maxCount == 0) maxCount = 1;
-
-    float chartW = leftChartArea.getSize().x - 60.f;
-    float chartH = leftChartArea.getSize().y - 60.f;
-    float startX = leftChartArea.getPosition().x + 40.f;
-    float startY = leftChartArea.getPosition().y + leftChartArea.getSize().y - 30.f;
-
-    int count = movieStats.getSize();
-    float barWidth = min(40.f, chartW / count - 10.f);
-    
-    int idx = 0;
-    mNode = movieStats.getHead();
-    while (mNode) {
-        float h = (float)mNode->data.ticketCount / maxCount * chartH;
-        RectangleShape bar(Vector2f(barWidth, h));
-        bar.setFillColor(Color(135, 206, 250)); // Light Blue
-        bar.setPosition(Vector2f(startX + idx * (barWidth + 10.f), startY - h));
-        window.draw(bar);
-
-        // Truncated Label
-        string title = mNode->data.title;
-        if (title.length() > 8) title = title.substr(0, 6) + "..";
-        Text lbl(font, makeUtf8(title), 10);
-        lbl.setFillColor(Color::Black);
-        lbl.setPosition(Vector2f(bar.getPosition().x, startY + 5.f));
-        window.draw(lbl);
-
-        // Value
-        Text val(font, to_string(mNode->data.ticketCount), 10);
-        val.setFillColor(Color::Black);
-        val.setPosition(Vector2f(bar.getPosition().x + (barWidth - val.getLocalBounds().size.x)/2.f, bar.getPosition().y - 15.f));
-        window.draw(val);
-
-        mNode = mNode->next;
-        idx++;
-    }
-
-    Text title(font, makeUtf8("Số vé bán ra theo phim"), 14);
-    title.setFillColor(Color::Black);
-    title.setPosition(Vector2f(leftChartArea.getPosition().x + leftChartArea.getSize().x/2.f - 60.f, leftChartArea.getPosition().y + 10.f));
-    window.draw(title);
 }
 
-void RevenuePanel::drawRightChart(RenderWindow& window) {
-    // Revenue Chart
-    if (movieStats.isEmpty()) return;
+void RevenuePanel::drawChart(RenderWindow& window) {
+    Text heading(font, makeUtf8(mode == StatsMode::Revenue ? "Doanh thu theo phim" : "Số vé bán ra theo phim"), 18);
+    heading.setFillColor(Color(45, 62, 80));
+    heading.setStyle(Text::Bold);
+    heading.setPosition(Vector2f(chartCard.getPosition().x + 20.f, chartCard.getPosition().y + 16.f));
+    window.draw(heading);
 
-    // Find max revenue
-    long long maxRev = 0;
-    Node<MovieStats>* mNode = movieStats.getHead();
-    while (mNode) {
-        if (mNode->data.revenue > maxRev) maxRev = mNode->data.revenue;
-        mNode = mNode->next;
+    if (movieStats.isEmpty()) {
+        Text empty(font, makeUtf8("Không có dữ liệu trong khoảng thời gian đã chọn."), 14);
+        empty.setFillColor(Color(130, 140, 150));
+        empty.setPosition(Vector2f(chartCard.getPosition().x + 20.f, chartCard.getPosition().y + 70.f));
+        window.draw(empty);
+        return;
     }
-    if (maxRev == 0) maxRev = 1;
 
-    float chartW = rightChartArea.getSize().x - 60.f;
-    float chartH = rightChartArea.getSize().y - 60.f;
-    float startX = rightChartArea.getPosition().x + 40.f;
-    float startY = rightChartArea.getPosition().y + rightChartArea.getSize().y - 30.f;
+    const int maxBars = 7;
+    int count = std::min(movieStats.getSize(), maxBars);
 
-    int count = movieStats.getSize();
-    float barWidth = min(40.f, chartW / count - 10.f);
-    
-    int idx = 0;
-    mNode = movieStats.getHead();
-    while (mNode) {
-        float h = (float)mNode->data.revenue / maxRev * chartH;
-        RectangleShape bar(Vector2f(barWidth, h));
-        bar.setFillColor(Color(255, 182, 193)); // Light Pink
-        bar.setPosition(Vector2f(startX + idx * (barWidth + 10.f), startY - h));
+    long long maxRevenue = 0;
+    int maxTickets = 0;
+    Node<MovieStats>* node = movieStats.getHead();
+    int processed = 0;
+    while (node && processed < count) {
+        if (mode == StatsMode::Revenue) {
+            if (node->data.revenue > maxRevenue) maxRevenue = node->data.revenue;
+        } else {
+            if (node->data.ticketCount > maxTickets) maxTickets = node->data.ticketCount;
+        }
+        node = node->next;
+        processed++;
+    }
+    if (mode == StatsMode::Revenue && maxRevenue == 0) maxRevenue = 1;
+    if (mode == StatsMode::Tickets && maxTickets == 0) maxTickets = 1;
+
+    float padding = 32.f;
+    float chartWidth = chartCard.getSize().x - padding * 2.f;
+    float chartHeight = chartCard.getSize().y - padding * 2.f - 40.f;
+    float originX = chartCard.getPosition().x + padding;
+    float originY = chartCard.getPosition().y + chartCard.getSize().y - padding;
+
+    float gap = 16.f;
+    float barWidth = (chartWidth - gap * (count + 1)) / count;
+    if (barWidth < 22.f) {
+        gap = 10.f;
+        barWidth = (chartWidth - gap * (count + 1)) / count;
+    }
+    if (barWidth < 16.f) {
+        barWidth = chartWidth / (count * 1.2f);
+        gap = 8.f;
+    }
+    float startX = originX + gap;
+
+    RectangleShape axis(Vector2f(chartWidth + 4.f, 1.5f));
+    axis.setFillColor(Color(210, 213, 220));
+    axis.setPosition(Vector2f(originX - 2.f, originY));
+    window.draw(axis);
+
+    node = movieStats.getHead();
+    processed = 0;
+    Color barColor = (mode == StatsMode::Revenue) ? secondaryColor : accentColor;
+
+    while (node && processed < count) {
+        float ratio = (mode == StatsMode::Revenue)
+            ? static_cast<float>(node->data.revenue) / static_cast<float>(maxRevenue)
+            : static_cast<float>(node->data.ticketCount) / static_cast<float>(maxTickets);
+        float barHeight = ratio * chartHeight;
+        if (barHeight < 4.f) barHeight = 4.f;
+
+        float barX = startX + processed * (barWidth + gap);
+        float barY = originY - barHeight;
+
+        RectangleShape bar(Vector2f(barWidth, barHeight));
+        bar.setFillColor(barColor);
+        bar.setPosition(Vector2f(barX, barY));
         window.draw(bar);
 
-        // Truncated Label
-        string title = mNode->data.title;
-        if (title.length() > 8) title = title.substr(0, 6) + "..";
-        Text lbl(font, makeUtf8(title), 10);
-        lbl.setFillColor(Color::Black);
-        lbl.setPosition(Vector2f(bar.getPosition().x, startY + 5.f));
-        window.draw(lbl);
+        string valueText = (mode == StatsMode::Revenue)
+            ? formatCurrency(node->data.revenue)
+            : to_string(node->data.ticketCount);
+        Text value(font, makeUtf8(valueText), 12);
+        value.setFillColor(Color(60, 60, 60));
+        FloatRect valueBounds = value.getLocalBounds();
+        value.setPosition(Vector2f(barX + (barWidth - valueBounds.size.x) / 2.f - valueBounds.position.x,
+                                   barY - valueBounds.size.y - 6.f));
+        window.draw(value);
 
-        mNode = mNode->next;
-        idx++;
+        string title = ellipsize(node->data.title, 14);
+        Text label(font, makeUtf8(title), 11);
+        label.setFillColor(Color(95, 100, 110));
+        FloatRect labelBounds = label.getLocalBounds();
+        label.setPosition(Vector2f(barX + (barWidth - labelBounds.size.x) / 2.f - labelBounds.position.x,
+                                   originY + 4.f));
+        window.draw(label);
+
+        node = node->next;
+        processed++;
     }
-
-    Text title(font, makeUtf8("Doanh thu theo phim"), 14);
-    title.setFillColor(Color::Black);
-    title.setPosition(Vector2f(rightChartArea.getPosition().x + rightChartArea.getSize().x/2.f - 60.f, rightChartArea.getPosition().y + 10.f));
-    window.draw(title);
 }
 
 void RevenuePanel::drawTable(RenderWindow& window) {
-    // Headers
-    float y = tableHeader.getPosition().y + 10.f;
-    float x1 = tableHeader.getPosition().x + 20.f;
-    float x2 = x1 + 400.f;
-    float x3 = x2 + 200.f;
+    Text title(font, makeUtf8(mode == StatsMode::Revenue ? "Bảng doanh thu" : "Bảng số vé bán"), 16);
+    title.setFillColor(Color(45, 62, 80));
+    title.setStyle(Text::Bold);
+    title.setPosition(Vector2f(tableHeader.getPosition().x + 20.f, tableHeader.getPosition().y + 12.f));
+    window.draw(title);
 
-    Text h1(font, makeUtf8("Tên phim"), 14); h1.setFillColor(Color::Black); h1.setPosition(Vector2f(x1, y));
-    Text h2(font, makeUtf8("Tổng vé bán ra"), 14); h2.setFillColor(Color::Black); h2.setPosition(Vector2f(x2, y));
-    Text h3(font, makeUtf8("Tổng doanh thu"), 14); h3.setFillColor(Color::Black); h3.setPosition(Vector2f(x3, y));
-    
-    window.draw(h1); window.draw(h2); window.draw(h3);
+    float colNameX = tableCard.getPosition().x + 20.f;
+    float colSecondX = tableCard.getPosition().x + tableCard.getSize().x * 0.55f;
+    float colThirdX = tableCard.getPosition().x + tableCard.getSize().x * 0.82f;
 
-    // Rows
-    float rowY = tableHeader.getPosition().y + 40.f;
-    Node<MovieStats>* mNode = movieStats.getHead();
-    int i = 0;
-    while (mNode && i < 10) { // Limit rows for view
-        Text t1(font, makeUtf8(mNode->data.title), 14); 
-        t1.setFillColor(accentColor); 
-        t1.setPosition(Vector2f(x1, rowY));
-        
-        Text t2(font, to_string(mNode->data.ticketCount), 14); 
-        t2.setFillColor(Color::Black); 
-        t2.setPosition(Vector2f(x2, rowY));
-        
-        Text t3(font, formatCurrency(mNode->data.revenue), 14); 
-        t3.setFillColor(Color::Black); 
-        t3.setPosition(Vector2f(x3, rowY));
+    string secondLabel = (mode == StatsMode::Revenue) ? "Doanh thu" : "Số vé";
+    string thirdLabel = (mode == StatsMode::Revenue) ? "Số vé" : "Doanh thu";
 
-        window.draw(t1); window.draw(t2); window.draw(t3);
-        
-        // Separator line
-        RectangleShape line(Vector2f(tableHeader.getSize().x, 1.f));
-        line.setFillColor(Color(240, 240, 240));
-        line.setPosition(Vector2f(tableHeader.getPosition().x, rowY + 30.f));
-        window.draw(line);
+    Text headerSecond(font, makeUtf8(secondLabel), 14);
+    headerSecond.setFillColor(Color(120, 128, 139));
+    headerSecond.setPosition(Vector2f(colSecondX, tableHeader.getPosition().y + 32.f));
 
-        rowY += 40.f;
-        mNode = mNode->next;
-        i++;
+    Text headerThird(font, makeUtf8(thirdLabel), 14);
+    headerThird.setFillColor(Color(120, 128, 139));
+    headerThird.setPosition(Vector2f(colThirdX, tableHeader.getPosition().y + 32.f));
+
+    Text headerName(font, makeUtf8("Tên phim"), 14);
+    headerName.setFillColor(Color(120, 128, 139));
+    headerName.setPosition(Vector2f(colNameX, tableHeader.getPosition().y + 32.f));
+
+    window.draw(headerName);
+    window.draw(headerSecond);
+    window.draw(headerThird);
+
+    float rowY = tableHeader.getPosition().y + tableHeader.getSize().y + 16.f;
+    float rowHeight = 54.f;
+    float rowSpacing = 8.f;
+    float textOffset = 6.f;
+    int maxRows = 12;
+    int rowIndex = 0;
+    Node<MovieStats>* node = movieStats.getHead();
+
+    if (!node) {
+        Text empty(font, makeUtf8("Không có dữ liệu để hiển thị."), 14);
+        empty.setFillColor(Color(130, 140, 150));
+        empty.setPosition(Vector2f(colNameX, rowY + 10.f));
+        window.draw(empty);
+        return;
+    }
+
+    while (node && rowIndex < maxRows) {
+        RectangleShape rowBg(Vector2f(tableCard.getSize().x - 2.f, rowHeight - rowSpacing));
+        rowBg.setFillColor((rowIndex % 2 == 0) ? Color(248, 250, 252) : Color(255, 255, 255));
+        rowBg.setPosition(Vector2f(tableCard.getPosition().x + 1.f, rowY - 4.f));
+        rowBg.setOutlineThickness(0.f);
+        window.draw(rowBg);
+
+        string movieName = ellipsize(node->data.title, 28);
+        Text movie(font, makeUtf8(movieName), 14);
+        movie.setFillColor(Color(45, 62, 80));
+        movie.setPosition(Vector2f(colNameX, rowY + textOffset));
+        window.draw(movie);
+
+        string secondValue = (mode == StatsMode::Revenue)
+            ? formatCurrency(node->data.revenue)
+            : to_string(node->data.ticketCount);
+        string thirdValue = (mode == StatsMode::Revenue)
+            ? to_string(node->data.ticketCount)
+            : formatCurrency(node->data.revenue);
+
+        Text second(font, makeUtf8(secondValue), 14);
+        second.setFillColor(Color(52, 73, 94));
+        second.setPosition(Vector2f(colSecondX, rowY + textOffset));
+        window.draw(second);
+
+        Text third(font, makeUtf8(thirdValue), 14);
+        third.setFillColor(Color(52, 73, 94));
+        third.setPosition(Vector2f(colThirdX, rowY + textOffset));
+        window.draw(third);
+
+        rowY += rowHeight;
+        node = node->next;
+        rowIndex++;
     }
 }
 
 void RevenuePanel::render(RenderWindow& window) {
     window.draw(background);
     window.draw(titleText);
+    window.draw(fromLabelText);
+    window.draw(toLabelText);
     
-    // Draw Charts Background
-    window.draw(leftChartArea);
-    window.draw(rightChartArea);
-    
-    // Draw Table Background
-    window.draw(tableBackground);
+    window.draw(chartCard);
+    window.draw(tableCard);
     window.draw(tableHeader);
 
-    // Draw Content
-    drawLeftChart(window);
-    drawRightChart(window);
+    drawChart(window);
     drawTable(window);
 
     // Draw Buttons
     if (applyButton) applyButton->draw(window);
-    if (exportButton) exportButton->draw(window);
 
     // Draw Dropdowns LAST to ensure they are on top
     if (fromDayDropdown) fromDayDropdown->draw(window);

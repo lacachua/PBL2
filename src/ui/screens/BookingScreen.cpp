@@ -1,10 +1,18 @@
 #include "UI/screens/BookingScreen.h"
 #include "models/MovieRepository.h"
+#include "UI/components/TicketBooking/VoucherDisplayState.h"
 #include <fstream>
 #include <sstream>
 #include <vector>
+#include <algorithm>
+#include <cctype>
+#include <cmath>
 using namespace std;
 using namespace sf;
+
+namespace {
+    constexpr size_t kMaxVoucherLength = 16;
+}
 
 static string toUtf8String(const String& str) {
     auto buffer = str.toUtf8();
@@ -137,6 +145,20 @@ void BookingScreen::update(Vector2f mousePos, bool mousePressed, AppState& state
             }
             return;  // Không xử lý phần còn lại khi popup hiển thị
         }
+
+        if (voucherLoginPopup) {
+            voucherLoginPopup->update(mousePos, mousePressed);
+            int voucherAction = voucherLoginPopup->handleClick(mousePos, mousePressed);
+            if (voucherAction == 1) {
+                voucherLoginPopup.reset();
+            }
+            else if (voucherAction == 2) {
+                voucherLoginPopup.reset();
+                state = AppState::LOGIN;
+                return;
+            }
+            return;
+        }
         
         // Khởi tạo OrderSummary 1 lần
         if (!orderSummary)
@@ -147,6 +169,34 @@ void BookingScreen::update(Vector2f mousePos, bool mousePressed, AppState& state
             seatSelection ? seatSelection.get() : nullptr,
             comboSelection ? comboSelection.get() : nullptr
         );
+
+        int currentSubtotal = orderSummary->getTotal();
+
+        if (!BaseScreen::isUserLoggedIn()) {
+            if (voucherApplied) {
+                clearVoucherPreview();
+            }
+        }
+
+        if (voucherApplied && currentSubtotal != voucherSubtotalSnapshot) {
+            string email = BaseScreen::getLoggedInUserEmail();
+            double refreshed = email.empty() ? 0.0 : voucherManager.applyVoucher(email, appliedVoucherCode, currentSubtotal, false);
+            if (refreshed <= 0.0) {
+                voucherStatusMessage = "Voucher không còn hợp lệ cho đơn hàng hiện tại.";
+                voucherStatusIsError = true;
+                clearVoucherPreview();
+            } else {
+                voucherDiscountValue = static_cast<int>(round(refreshed));
+                voucherSubtotalSnapshot = currentSubtotal;
+            }
+        }
+
+        if (voucherCaretClock.getElapsedTime().asSeconds() >= 0.5f) {
+            voucherCaretVisible = !voucherCaretVisible;
+            voucherCaretClock.restart();
+        }
+
+        handleVoucherInteractions(mousePos, mousePressed, currentSubtotal);
 
         // ✅ KIỂM TRA: Nếu chưa đăng nhập và nhấn "Tiếp tục"
         bool canProceed = true;
@@ -175,6 +225,8 @@ void BookingScreen::update(Vector2f mousePos, bool mousePressed, AppState& state
             }
             
             try {
+                int subtotalBeforeDiscount = orderSummary->getTotal();
+
                 // ====== THU THẬP DỮ LIỆU VÀO bookingData ======
                 
                 // (1) Thông tin user
@@ -223,8 +275,15 @@ void BookingScreen::update(Vector2f mousePos, bool mousePressed, AppState& state
                     }
                 }
                 
-                // (5) Tổng tiền
-                bookingData.totalPrice = orderSummary->getTotal();
+                // (5) Tổng tiền + voucher
+                int appliedDiscount = voucherApplied ? min(voucherDiscountValue, subtotalBeforeDiscount) : 0;
+                bookingData.voucherCode = voucherApplied ? appliedVoucherCode : "";
+                bookingData.voucherDiscount = appliedDiscount;
+                bookingData.totalPrice = max(0, subtotalBeforeDiscount - appliedDiscount);
+
+                if (voucherApplied && !bookingData.voucherCode.empty()) {
+                    voucherManager.applyVoucher(bookingData.customerEmail, bookingData.voucherCode, subtotalBeforeDiscount, true);
+                }
                 
                 // ====== TẠO VÉ VÀ LƯU VÀO DATABASE ======
                 
@@ -288,6 +347,7 @@ void BookingScreen::update(Vector2f mousePos, bool mousePressed, AppState& state
             comboSelection.reset();
             orderSummary.reset();
             confirmationView.reset();
+            resetVoucherState();
         }
     }
 }
@@ -339,14 +399,27 @@ void BookingScreen::draw(RenderWindow& window) {
             comboSelection ? comboSelection.get() : nullptr
         );
 
-        orderSummary->draw(window);
+        int subtotal = orderSummary->getTotal();
+        int discountValue = voucherApplied ? min(voucherDiscountValue, subtotal) : 0;
+        VoucherDisplayState voucherState;
+        voucherState.inputText = voucherInput;
+        voucherState.appliedCode = appliedVoucherCode;
+        voucherState.statusMessage = voucherStatusMessage;
+        voucherState.inputActive = voucherInputActive;
+        voucherState.caretVisible = voucherCaretVisible;
+        voucherState.userLoggedIn = BaseScreen::isUserLoggedIn();
+        voucherState.statusIsError = voucherStatusIsError;
+
+        orderSummary->draw(window, voucherState, discountValue);
+
+        int finalTotal = max(0, subtotal - discountValue);
 
         summary.drawPayment(window,
             showtimeSection.getSelectedMovieName(),
             showtimeSection.getSelectedRoomName(),
             showtimeSection.getSelectedDate(),
             showtimeSection.getSelectedTime(),
-            orderSummary->getTotal()
+            finalTotal
         );
     }
     else if (currentState == BookingState::xacnhan && confirmationView) {
@@ -358,4 +431,140 @@ void BookingScreen::draw(RenderWindow& window) {
     if (loginPopup) {
         loginPopup->draw(window);
     }
+    if (voucherLoginPopup) {
+        voucherLoginPopup->draw(window);
+    }
+}
+
+void BookingScreen::handleEvent(const Event& event) {
+    BaseScreen::handleEvent(event);
+
+    if (currentState != BookingState::thanhtoan)
+        return;
+
+    if (voucherLoginPopup)
+        return;
+
+    if (voucherInputActive && event.is<Event::TextEntered>()) {
+        auto unicode = event.getIf<Event::TextEntered>()->unicode;
+        if (unicode >= 32 && unicode < 128 && voucherInput.size() < kMaxVoucherLength) {
+            char ch = static_cast<char>(unicode);
+            if (isalnum(static_cast<unsigned char>(ch)) || ch == '-' || ch == '_') {
+                voucherInput.push_back(static_cast<char>(toupper(static_cast<unsigned char>(ch))));
+                clearVoucherPreview();
+            }
+        }
+    }
+
+    if (voucherInputActive && event.is<Event::KeyPressed>()) {
+        auto key = event.getIf<Event::KeyPressed>()->code;
+        if (key == Keyboard::Key::Backspace) {
+            if (!voucherInput.empty()) {
+                voucherInput.pop_back();
+                clearVoucherPreview();
+            }
+        }
+        else if (key == Keyboard::Key::Enter) {
+            int subtotal = orderSummary ? orderSummary->getTotal() : 0;
+            applyVoucherCode(subtotal);
+        }
+    }
+}
+
+FloatRect BookingScreen::getVoucherInputBounds() const {
+    return FloatRect(
+        Vector2f(OrderSummaryLayout::VoucherLabelX, OrderSummaryLayout::VoucherSectionY),
+        Vector2f(OrderSummaryLayout::VoucherInputWidth, OrderSummaryLayout::VoucherInputHeight)
+    );
+}
+
+FloatRect BookingScreen::getVoucherButtonBounds() const {
+    float x = OrderSummaryLayout::VoucherLabelX
+            + OrderSummaryLayout::VoucherInputWidth + OrderSummaryLayout::VoucherButtonSpacing;
+    float y = OrderSummaryLayout::VoucherSectionY;
+    return FloatRect(Vector2f(x, y),
+                     Vector2f(OrderSummaryLayout::VoucherButtonWidth, OrderSummaryLayout::VoucherButtonHeight));
+}
+
+void BookingScreen::handleVoucherInteractions(Vector2f mousePos, bool mousePressed, int currentSubtotal) {
+    if (!mousePressed || voucherLoginPopup) return;
+
+    FloatRect inputBounds = getVoucherInputBounds();
+    FloatRect buttonBounds = getVoucherButtonBounds();
+
+    if (inputBounds.contains(mousePos)) {
+        voucherInputActive = true;
+        return;
+    }
+
+    if (buttonBounds.contains(mousePos)) {
+        applyVoucherCode(currentSubtotal);
+        return;
+    }
+
+    if (!inputBounds.contains(mousePos)) {
+        voucherInputActive = false;
+    }
+}
+
+void BookingScreen::applyVoucherCode(int currentSubtotal) {
+    if (currentSubtotal <= 0) {
+        voucherStatusMessage = "Bạn cần chọn ghế hoặc combo trước khi áp dụng.";
+        voucherStatusIsError = true;
+        return;
+    }
+
+    string code = voucherInput;
+    code.erase(remove_if(code.begin(), code.end(), [](unsigned char ch) { return isspace(ch); }), code.end());
+    for (auto& ch : code) {
+        ch = static_cast<char>(toupper(static_cast<unsigned char>(ch)));
+    }
+    voucherInput = code;
+
+    if (code.empty()) {
+        voucherStatusMessage = "Vui lòng nhập mã voucher.";
+        voucherStatusIsError = true;
+        return;
+    }
+
+    if (!BaseScreen::isUserLoggedIn()) {
+        voucherLoginPopup = make_unique<LoginRequiredPopup>(font, String(L"Bạn cần đăng nhập để sử dụng voucher."));
+        voucherInputActive = false;
+        return;
+    }
+
+    string email = BaseScreen::getLoggedInUserEmail();
+    clearVoucherPreview();
+
+    double discount = voucherManager.applyVoucher(email, code, currentSubtotal, false);
+    if (discount <= 0.0) {
+        voucherStatusMessage = "Voucher không hợp lệ hoặc chưa đáp ứng điều kiện.";
+        voucherStatusIsError = true;
+        return;
+    }
+
+    voucherApplied = true;
+    appliedVoucherCode = code;
+    voucherDiscountValue = static_cast<int>(round(discount));
+    voucherSubtotalSnapshot = currentSubtotal;
+    voucherStatusMessage = "Đã áp dụng mã " + code + ".";
+    voucherStatusIsError = false;
+}
+
+void BookingScreen::clearVoucherPreview() {
+    appliedVoucherCode.clear();
+    voucherApplied = false;
+    voucherDiscountValue = 0;
+    voucherSubtotalSnapshot = 0;
+    voucherStatusMessage.clear();
+    voucherStatusIsError = false;
+}
+
+void BookingScreen::resetVoucherState() {
+    voucherInput.clear();
+    voucherInputActive = false;
+    voucherCaretVisible = true;
+    voucherCaretClock.restart();
+    clearVoucherPreview();
+    voucherLoginPopup.reset();
 }

@@ -37,6 +37,10 @@ struct BookingData {
     std::vector<ComboItem> selectedCombos;
     std::string combosDisplay;  // "Combo A (x2), Combo B (x1)"
     int comboTotalPrice = 0;
+
+    // Voucher data
+    std::string voucherCode;
+    int voucherDiscount = 0;
     
     // User data
     std::string customerName;
@@ -108,6 +112,9 @@ struct BookingData {
         selectedCombos.clear();
         combosDisplay.clear();
         comboTotalPrice = 0;
+
+        voucherCode.clear();
+        voucherDiscount = 0;
         
         customerName.clear();
         customerEmail.clear();

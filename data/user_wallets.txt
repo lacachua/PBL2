@@ -1,0 +1,3 @@
+email|code|status|expiry_date
+vanvu41ht1@gmail.com|WELCOME|0|20251231
+vanvu41ht1@gmail.com|FREESHIP|0|20240101

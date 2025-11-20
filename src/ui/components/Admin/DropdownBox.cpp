@@ -1,12 +1,13 @@
 #include "UI/components/Admin/DropdownBox.h"
+#include <algorithm>
 #include <iostream>
 
 DropdownBox::DropdownBox(Font& font, const string& label, float x, float y, float width, float height)
-    : font(font), x(x), y(y), width(width), height(height), label(label),
-      selectedIndex(0), isOpen(false),
-      bgColor(255, 255, 255), hoverColor(230, 230, 230), 
-      selectedColor(100, 149, 237), borderColor(200, 200, 200),
-      textColor(50, 50, 50) {
+        : font(font), x(x), y(y), width(width), height(height), label(label),
+            selectedIndex(0), isOpen(false),
+            bgColor(255, 255, 255), hoverColor(230, 230, 230), 
+            selectedColor(100, 149, 237), borderColor(200, 200, 200),
+            textColor(50, 50, 50), maxVisibleOptions(0), firstVisibleIndex(0), optionHeight(40.f) {
     
     // Label text
     labelText = make_unique<Text>(font, String::fromUtf8(label.begin(), label.end()), 14);
@@ -37,8 +38,6 @@ void DropdownBox::setOptions(const vector<string>& opts) {
     optionBackgrounds.clear();
     
     // Create dropdown panel
-    float panelHeight = opts.size() * 40.f;
-    dropdownPanel.setSize(Vector2f(width, panelHeight));
     dropdownPanel.setPosition(Vector2f(x, y + height));
     dropdownPanel.setFillColor(Color::White);
     dropdownPanel.setOutlineThickness(1.f);
@@ -48,15 +47,13 @@ void DropdownBox::setOptions(const vector<string>& opts) {
     for (size_t i = 0; i < opts.size(); i++) {
         // Background
         RectangleShape optBg;
-        optBg.setSize(Vector2f(width, 40.f));
-        optBg.setPosition(Vector2f(x, y + height + i * 40.f));
+        optBg.setSize(Vector2f(width, optionHeight));
         optBg.setFillColor(bgColor);
         optionBackgrounds.push_back(optBg);
         
         // Text
         auto text = make_unique<Text>(font, String::fromUtf8(opts[i].begin(), opts[i].end()), 16);
         text->setFillColor(textColor);
-        text->setPosition(Vector2f(x + 10, y + height + i * 40.f + 10));
         optionTexts.push_back(move(text));
     }
     
@@ -64,12 +61,25 @@ void DropdownBox::setOptions(const vector<string>& opts) {
     if (!options.empty()) {
         selectedText->setString(String::fromUtf8(options[0].begin(), options[0].end()));
     }
+
+    firstVisibleIndex = 0;
+    updateDropdownPanel();
 }
 
 void DropdownBox::setSelectedIndex(int index) {
     if (index >= 0 && index < (int)options.size()) {
         selectedIndex = index;
         selectedText->setString(String::fromUtf8(options[index].begin(), options[index].end()));
+        if (maxVisibleOptions > 0) {
+            int visible = getVisibleCount();
+            if (selectedIndex < firstVisibleIndex) {
+                firstVisibleIndex = selectedIndex;
+            } else if (selectedIndex >= firstVisibleIndex + visible) {
+                firstVisibleIndex = selectedIndex - visible + 1;
+            }
+            clampFirstVisible();
+        }
+        updateDropdownPanel();
     }
 }
 
@@ -98,7 +108,60 @@ bool DropdownBox::isMouseOver(const Vector2f& mousePos) const {
     return bounds.contains(mousePos);
 }
 
+void DropdownBox::setMaxVisibleOptions(int count) {
+    maxVisibleOptions = count;
+    clampFirstVisible();
+    updateDropdownPanel();
+}
+
+void DropdownBox::clampFirstVisible() {
+    int visible = getVisibleCount();
+    if (maxVisibleOptions <= 0 || options.empty()) {
+        firstVisibleIndex = 0;
+        return;
+    }
+    int maxOffset = std::max(0, static_cast<int>(options.size()) - visible);
+    if (firstVisibleIndex > maxOffset) firstVisibleIndex = maxOffset;
+    if (firstVisibleIndex < 0) firstVisibleIndex = 0;
+}
+
+int DropdownBox::getVisibleCount() const {
+    if (maxVisibleOptions <= 0 || maxVisibleOptions > static_cast<int>(options.size())) {
+        return static_cast<int>(options.size());
+    }
+    return maxVisibleOptions;
+}
+
+void DropdownBox::updateDropdownPanel() {
+    int visible = getVisibleCount();
+    dropdownPanel.setSize(Vector2f(width, visible * optionHeight));
+    dropdownPanel.setPosition(Vector2f(x, y + height));
+}
+
 void DropdownBox::handleEvent(const Event& event, const Vector2f& mousePos) {
+    if (const auto* wheelEvent = event.getIf<Event::MouseWheelScrolled>()) {
+        FloatRect baseBounds(Vector2f(x, y), Vector2f(width, height));
+        FloatRect dropBounds(Vector2f(x, y + height), dropdownPanel.getSize());
+        bool withinBase = baseBounds.contains(mousePos);
+        bool withinDrop = isOpen && dropBounds.contains(mousePos);
+
+        if (withinBase || withinDrop) {
+            if (maxVisibleOptions > 0 && static_cast<int>(options.size()) > maxVisibleOptions) {
+                int direction = (wheelEvent->delta > 0) ? -1 : 1;
+                firstVisibleIndex += direction;
+                clampFirstVisible();
+                updateDropdownPanel();
+            } else if (!options.empty()) {
+                int delta = (wheelEvent->delta > 0) ? -1 : 1;
+                int newIndex = selectedIndex + delta;
+                if (newIndex < 0) newIndex = 0;
+                if (newIndex >= static_cast<int>(options.size())) newIndex = static_cast<int>(options.size()) - 1;
+                setSelectedIndex(newIndex);
+            }
+        }
+        return;
+    }
+
     if (auto* mouseButtonPressed = event.getIf<Event::MouseButtonPressed>()) {
         if (mouseButtonPressed->button == Mouse::Button::Left) {
             // Click on main box - toggle dropdown
@@ -109,9 +172,12 @@ void DropdownBox::handleEvent(const Event& event, const Vector2f& mousePos) {
             
             // Click on option in dropdown
             if (isOpen) {
-                for (size_t i = 0; i < optionBackgrounds.size(); i++) {
-                    if (optionBackgrounds[i].getGlobalBounds().contains(mousePos)) {
-                        setSelectedIndex(i);
+                int visible = getVisibleCount();
+                for (int i = 0; i < visible; ++i) {
+                    FloatRect optBounds(Vector2f(x, y + height + i * optionHeight), Vector2f(width, optionHeight));
+                    if (optBounds.contains(mousePos)) {
+                        int optionIndex = firstVisibleIndex + i;
+                        setSelectedIndex(optionIndex);
                         isOpen = false;
                         return;
                     }
@@ -150,26 +216,34 @@ void DropdownBox::draw(RenderWindow& window) {
     
     // Draw dropdown panel if open
     if (isOpen) {
+        updateDropdownPanel();
         window.draw(dropdownPanel);
         
-        // Draw options
-        for (size_t i = 0; i < optionBackgrounds.size(); i++) {
-            // Highlight hovered option
-            Vector2i mousePos = Mouse::getPosition(window);
-            Vector2f worldPos = window.mapPixelToCoords(mousePos);
-            
-            if (optionBackgrounds[i].getGlobalBounds().contains(worldPos)) {
-                optionBackgrounds[i].setFillColor(hoverColor);
-            } else if ((int)i == selectedIndex) {
-                optionBackgrounds[i].setFillColor(Color(220, 235, 255)); // Light blue for selected
+        int visible = getVisibleCount();
+        Vector2i mousePixel = Mouse::getPosition(window);
+        Vector2f mouseWorld = window.mapPixelToCoords(mousePixel);
+
+        for (int i = 0; i < visible; ++i) {
+            int optionIndex = firstVisibleIndex + i;
+            if (optionIndex < 0 || optionIndex >= static_cast<int>(optionBackgrounds.size())) continue;
+
+            RectangleShape& optBg = optionBackgrounds[optionIndex];
+            optBg.setPosition(Vector2f(x, y + height + i * optionHeight));
+            optBg.setSize(Vector2f(width, optionHeight));
+
+            if (optBg.getGlobalBounds().contains(mouseWorld)) {
+                optBg.setFillColor(hoverColor);
+            } else if (optionIndex == selectedIndex) {
+                optBg.setFillColor(Color(220, 235, 255));
             } else {
-                optionBackgrounds[i].setFillColor(bgColor);
+                optBg.setFillColor(bgColor);
             }
-            
-            window.draw(optionBackgrounds[i]);
-            
-            if (optionTexts[i]) {
-                window.draw(*optionTexts[i]);
+
+            window.draw(optBg);
+
+            if (optionTexts[optionIndex]) {
+                optionTexts[optionIndex]->setPosition(Vector2f(x + 10.f, y + height + i * optionHeight + optionHeight / 2.f - 10.f));
+                window.draw(*optionTexts[optionIndex]);
             }
         }
     }

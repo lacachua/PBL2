@@ -13,6 +13,7 @@ AccountScreen::AccountScreen(Font& f, AuthService& auth)
 {
     personalInfoView = make_unique<PersonalInfoView>(f, auth);
     purchaseHistoryView = make_unique<PurchaseHistoryView>(f);
+    voucherListView = make_unique<VoucherListView>(f);
     
     // ✅ Initialize global search bar with movie data
     MovieRepository repo("../data/movies.txt");
@@ -49,6 +50,7 @@ void AccountScreen::setCurrentUser(const string& email) {
     personalInfoView->setUser(email);
     purchaseHistoryView->setUserEmail(email);
     purchaseHistoryView->loadTickets();
+    voucherListView->setUser(email);
 }
 
 void AccountScreen::updatePositions(Vector2u windowSize) {
@@ -154,6 +156,9 @@ void AccountScreen::update(Vector2f mousePos, bool mousePressed, const Event* ev
     else if (currentTab == AccountTab::PURCHASE_HISTORY) {
         purchaseHistoryView->update(mousePos, mouseJustPressed, cardPos);
     }
+    else if (currentTab == AccountTab::MY_GIFTS && voucherListView) {
+        voucherListView->update(mousePos, mousePressed, event, cardPos, mainCardBg.getSize());
+    }
 }
 
 void AccountScreen::draw(RenderWindow& window) {
@@ -174,10 +179,7 @@ void AccountScreen::draw(RenderWindow& window) {
     else if (currentTab == AccountTab::PURCHASE_HISTORY) {
         purchaseHistoryView->draw(window, mainCardBg.getPosition());
     }
-    else if (currentTab == AccountTab::MY_GIFTS) {
-        Text placeholder(font, L"Voucher - Chưa triển khai", 24);
-        placeholder.setPosition({600.f, 200.f});
-        placeholder.setFillColor(Color::White);
-        window.draw(placeholder);
+    else if (currentTab == AccountTab::MY_GIFTS && voucherListView) {
+        voucherListView->draw(window, mainCardBg.getPosition(), mainCardBg.getSize());
     }
 }

@@ -1,12 +1,12 @@
 #include "UI/components/TicketBooking/LoginRequiredPopup.h"
 
-LoginRequiredPopup::LoginRequiredPopup(Font& f) 
-    : font(f),
-      overlay({1728.f, 972.f}),
-      popup({600.f, 300.f}),
-      messageText(font, L"Bạn cần đăng nhập để có thể đặt vé!", 24),
-      backButton(font, L"Quay lại", 200.f, 60.f, 22),
-      loginButton(font, L"Đăng nhập", 200.f, 60.f, 22)
+LoginRequiredPopup::LoginRequiredPopup(Font& f, const String& customMessage) 
+        : font(f),
+            overlay({1728.f, 972.f}),
+            popup({600.f, 300.f}),
+            messageText(font, customMessage, 24),
+            backButton(font, L"Quay lại", 200.f, 60.f, 22),
+            loginButton(font, L"Đăng nhập", 200.f, 60.f, 22)
 {
     // Overlay mờ
     overlay.setFillColor(Color(0, 0, 0, 180));

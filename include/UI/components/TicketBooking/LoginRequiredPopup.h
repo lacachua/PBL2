@@ -14,7 +14,7 @@ private:
     Button loginButton;
     
 public:
-    LoginRequiredPopup(Font&);
+    LoginRequiredPopup(Font&, const String& customMessage = String(L"Bạn cần đăng nhập để có thể đặt vé!"));
     
     // Trả về: 0 = không click gì, 1 = click "Quay lại", 2 = click "Đăng nhập"
     int handleClick(Vector2f mousePos, bool mousePressed);

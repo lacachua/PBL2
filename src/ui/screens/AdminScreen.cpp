@@ -62,14 +62,17 @@ void AdminScreen::switchPanel(AppState newState) {
             ticketPanel->setPosition(Vector2f(280, 20));
             break;
         case AppState::ADMIN_REVENUE:
-            revenuePanel = make_unique<RevenuePanel>(font, panelWidth, panelHeight);
+            revenuePanel = make_unique<RevenuePanel>(font, panelWidth, panelHeight, StatsMode::Revenue);
+            revenuePanel->setPosition(Vector2f(280, 20));
+            break;
+        case AppState::ADMIN_SOLD_TICKETS:
+            revenuePanel = make_unique<RevenuePanel>(font, panelWidth, panelHeight, StatsMode::Tickets);
             revenuePanel->setPosition(Vector2f(280, 20));
             break;
             
         case AppState::ADMIN_SHOWTIMES:
         case AppState::ADMIN_STAFF:
         case AppState::ADMIN_CUSTOMERS:
-        case AppState::ADMIN_SOLD_TICKETS:
         case AppState::ADMIN_CHANGE_PASSWORD:
             cout << "[AdminScreen] Panel not implemented yet\n";
             break;

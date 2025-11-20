@@ -179,6 +179,7 @@
 #include "UI/components/TicketBooking/LoginRequiredPopup.h"
 #include "UI/components/TicketBooking/ConfirmationView.h"
 #include "UI/components/TicketBooking/TicketRepository.h"
+#include "services/VoucherManager.h"
 #include "core/AppState.h"
 
 using namespace sf;
@@ -209,19 +210,40 @@ private:
     
     // ✅ Popup yêu cầu đăng nhập (unique_ptr để quản lý lifecycle)
     unique_ptr<LoginRequiredPopup> loginPopup;
+    unique_ptr<LoginRequiredPopup> voucherLoginPopup;
     
     // ✅ Confirmation view cho state xacnhan
     unique_ptr<ConfirmationView> confirmationView;
     
     // ✅ Repository để tạo và lưu vé
     TicketRepository ticketRepo;
+    VoucherManager voucherManager;
+
+    // Voucher UI state
+    std::string voucherInput;
+    std::string appliedVoucherCode;
+    std::string voucherStatusMessage;
+    bool voucherStatusIsError = false;
+    bool voucherInputActive = false;
+    bool voucherApplied = false;
+    int voucherDiscountValue = 0;
+    int voucherSubtotalSnapshot = 0;
+    sf::Clock voucherCaretClock;
+    bool voucherCaretVisible = true;
     
     // Helper để lấy thông tin user từ TXT
     void getUserInfo(const string& email, string& fullName, string& phone);
+    void handleVoucherInteractions(Vector2f mousePos, bool mousePressed, int currentSubtotal);
+    void applyVoucherCode(int currentSubtotal);
+    void clearVoucherPreview();
+    void resetVoucherState();
+    FloatRect getVoucherInputBounds() const;
+    FloatRect getVoucherButtonBounds() const;
 
 public:
     BookingScreen(Font& f, const String& movieId);
 
     void update(Vector2f mousePos, bool mousePressed, AppState& state) override;
     void draw(RenderWindow& window) override;
+    void handleEvent(const Event& event) override;
 };

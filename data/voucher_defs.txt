@@ -1,0 +1,3 @@
+code|type|value|min_bill|description
+WELCOME|2|20|0|Giam 20% cho thanh vien moi
+FREESHIP|1|30000|100000|Giam 30k cho don tren 100k
