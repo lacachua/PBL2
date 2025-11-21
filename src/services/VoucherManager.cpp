@@ -41,7 +41,7 @@ void VoucherManager::loadData() {
     }
 }
 
-void VoucherManager::giveVoucher(const string& email, const string& code, int daysToExpire) {
+void VoucherManager::giveVoucher(const string& email, const string& code, int daysToExpire, int quantity) {
     string expiry = buildExpiryDate(daysToExpire);
 
     bool needHeader = false;
@@ -55,17 +55,22 @@ void VoucherManager::giveVoucher(const string& email, const string& code, int da
     ofstream file(walletPath, ios::app);
     if (!file.is_open()) return;
     if (needHeader) {
-        file << "email|code|status|expiry_date\n";
+        file << "email|code|status|expiry_date|quantity\n";
     }
-    file << email << '|' << code << "|1|" << expiry << '\n';
+    file << email << '|' << code << "|1|" << expiry << '|' << quantity << '\n';
 }
 
 vector<VoucherDisplay> VoucherManager::getVouchersByUser(const string& email) {
     vector<VoucherDisplay> result;
     vector<UserVoucher> wallet = loadWallet();
+    int today = todayAsNumber();
 
     for (const auto& voucher : wallet) {
         if (voucher.email != email) continue;
+        
+        // Bỏ qua voucher hết hạn hoặc hết số lượng
+        if (dateStringToNumber(voucher.expiry) < today || voucher.quantity <= 0) continue;
+        
         auto it = voucherLookup.find(voucher.code);
         if (it == voucherLookup.end()) continue;
 
@@ -76,6 +81,7 @@ vector<VoucherDisplay> VoucherManager::getVouchersByUser(const string& email) {
         display.type = it->second.type;
         display.status = voucher.status;
         display.expiry = voucher.expiry;
+        display.quantity = voucher.quantity;
         result.push_back(display);
     }
 
@@ -92,6 +98,7 @@ double VoucherManager::applyVoucher(const string& email, const string& code, dou
         if (voucher.email != email || voucher.code != code) continue;
         if (voucher.status != 1) break;
         if (dateStringToNumber(voucher.expiry) < today) break;
+        if (voucher.quantity <= 0) break;
 
         auto defIt = voucherLookup.find(code);
         if (defIt == voucherLookup.end()) break;
@@ -105,7 +112,7 @@ double VoucherManager::applyVoucher(const string& email, const string& code, dou
         }
 
         if (discount > 0.0 && consume) {
-            voucher.status = 0;
+            voucher.quantity--;
             updated = true;
         }
         break;
@@ -139,7 +146,7 @@ string VoucherManager::trim(const string& input) const {
 string VoucherManager::buildExpiryDate(int daysToExpire) const {
     using namespace chrono;
     auto now = system_clock::now();
-    auto future = now + days(daysToExpire);
+    auto future = now + chrono::hours(24 * daysToExpire);
     time_t futureTime = system_clock::to_time_t(future);
     tm tmValue;
 #if defined(_WIN32)
@@ -173,9 +180,9 @@ int VoucherManager::dateStringToNumber(const string& date) const {
 void VoucherManager::persistWallet(const vector<UserVoucher>& wallet) const {
     ofstream file(walletPath, ios::trunc);
     if (!file.is_open()) return;
-    file << "email|code|status|expiry_date\n";
+    file << "email|code|status|expiry_date|quantity\n";
     for (const auto& voucher : wallet) {
-        file << voucher.email << '|' << voucher.code << '|' << voucher.status << '|' << voucher.expiry << '\n';
+        file << voucher.email << '|' << voucher.code << '|' << voucher.status << '|' << voucher.expiry << '|' << voucher.quantity << '\n';
     }
 }
 
@@ -197,6 +204,7 @@ vector<UserVoucher> VoucherManager::loadWallet() const {
         voucher.code = trim(cols[1]);
         voucher.status = stoi(cols[2]);
         voucher.expiry = trim(cols[3]);
+        voucher.quantity = (cols.size() >= 5) ? stoi(cols[4]) : 1;
         wallet.push_back(voucher);
     }
 
@@ -214,4 +222,22 @@ bool VoucherManager::isHeaderRow(const vector<string>& cols, const string& expec
         return static_cast<char>(tolower(ch));
     });
     return cell == expected;
+}
+
+void VoucherManager::cleanupExpiredVouchers() {
+    vector<UserVoucher> wallet = loadWallet();
+    int today = todayAsNumber();
+    vector<UserVoucher> validVouchers;
+
+    for (const auto& voucher : wallet) {
+        // Chỉ giữ lại voucher còn hạn và còn số lượng
+        if (dateStringToNumber(voucher.expiry) >= today && voucher.quantity > 0) {
+            validVouchers.push_back(voucher);
+        }
+    }
+
+    // Chỉ persist nếu có thay đổi
+    if (validVouchers.size() != wallet.size()) {
+        persistWallet(validVouchers);
+    }
 }

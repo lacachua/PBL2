@@ -11,7 +11,7 @@ public:
 
     void setUser(const std::string& email);
     void refresh();
-    void update(sf::Vector2f mousePos, bool mousePressed, const sf::Event* event,
+    void update(sf::Vector2f mousePos, bool mousePressed,
                 sf::Vector2f cardPos, sf::Vector2f cardSize);
     void draw(sf::RenderWindow& window, sf::Vector2f cardPos, sf::Vector2f cardSize);
 
@@ -21,13 +21,20 @@ private:
     std::string currentUser;
     std::vector<VoucherDisplay> vouchers;
 
-    float scrollOffset = 0.f;
-    float maxScroll = 0.f;
-    sf::FloatRect listArea;
+    // UI Components
+    sf::Text titleText;
+    sf::RectangleShape scrollableArea;
+    
+    // Pagination
+    int currentPage = 0;
+    int itemsPerPage = 5;
+    sf::RectangleShape prevButton, nextButton;
+    sf::Text prevButtonText, nextButtonText, pageInfoText;
 
     std::string formatValue(const VoucherDisplay& voucher) const;
     std::string formatDate(const std::string& raw) const;
     std::string formatCurrency(double amount) const;
-    sf::Color statusColor(int status) const;
-    void clampScroll();
+    std::string formatMinBill(const VoucherDisplay& voucher) const;
+    int getTotalPages() const;
+    std::vector<VoucherDisplay> getCurrentPageVouchers() const;
 };

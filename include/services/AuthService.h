@@ -4,6 +4,7 @@
 #include <memory>
 #include "models/User.h"
 #include "services/UserRepository.h"
+#include "services/VoucherManager.h"
 #include "utils/PasswordHasher.h"
 #include "utils/Validator.h"
 #include "core/AppRole.h"
@@ -164,6 +165,7 @@ public:
 
 private:
     unique_ptr<UserRepository> repository;
+    unique_ptr<VoucherManager> voucherManager;
     
     // Current session
     string currentUserEmail;

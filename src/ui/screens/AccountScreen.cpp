@@ -136,6 +136,11 @@ void AccountScreen::update(Vector2f mousePos, bool mousePressed, const Event* ev
             menuItem2.setTextColor(Color::White);
             menuItem3.setFillColor(Color(35, 55, 85, 220));
             menuItem3.setTextColor(Color(180, 195, 215));
+            
+            // Refresh purchase history khi chuyển sang tab này
+            if (purchaseHistoryView) {
+                purchaseHistoryView->loadTickets(true);
+            }
         }
         else if (menuItem3.isClicked(mousePos, true)) {
             currentTab = AccountTab::MY_GIFTS;
@@ -145,6 +150,11 @@ void AccountScreen::update(Vector2f mousePos, bool mousePressed, const Event* ev
             menuItem2.setTextColor(Color(180, 195, 215));
             menuItem3.setFillColor(Color(65, 135, 220, 255));
             menuItem3.setTextColor(Color::White);
+            
+            // Refresh voucher list khi chuyển sang tab này
+            if (voucherListView) {
+                voucherListView->refresh();
+            }
         }
     }
     
@@ -157,7 +167,7 @@ void AccountScreen::update(Vector2f mousePos, bool mousePressed, const Event* ev
         purchaseHistoryView->update(mousePos, mouseJustPressed, cardPos);
     }
     else if (currentTab == AccountTab::MY_GIFTS && voucherListView) {
-        voucherListView->update(mousePos, mousePressed, event, cardPos, mainCardBg.getSize());
+        voucherListView->update(mousePos, mouseJustPressed, cardPos, mainCardBg.getSize());
     }
 }
 

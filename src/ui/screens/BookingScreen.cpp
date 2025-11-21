@@ -473,7 +473,7 @@ void BookingScreen::handleEvent(const Event& event) {
 
 FloatRect BookingScreen::getVoucherInputBounds() const {
     return FloatRect(
-        Vector2f(OrderSummaryLayout::VoucherLabelX, OrderSummaryLayout::VoucherSectionY),
+        Vector2f(OrderSummaryLayout::VoucherLabelX, OrderSummaryLayout::VoucherSectionY + 25.f),
         Vector2f(OrderSummaryLayout::VoucherInputWidth, OrderSummaryLayout::VoucherInputHeight)
     );
 }
@@ -481,7 +481,7 @@ FloatRect BookingScreen::getVoucherInputBounds() const {
 FloatRect BookingScreen::getVoucherButtonBounds() const {
     float x = OrderSummaryLayout::VoucherLabelX
             + OrderSummaryLayout::VoucherInputWidth + OrderSummaryLayout::VoucherButtonSpacing;
-    float y = OrderSummaryLayout::VoucherSectionY;
+    float y = OrderSummaryLayout::VoucherSectionY + 25.f;
     return FloatRect(Vector2f(x, y),
                      Vector2f(OrderSummaryLayout::VoucherButtonWidth, OrderSummaryLayout::VoucherButtonHeight));
 }

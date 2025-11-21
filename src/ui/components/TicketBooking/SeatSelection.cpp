@@ -1,6 +1,7 @@
 #include "UI/components/TicketBooking/SeatSelection.h"
 #include <sstream>
 #include <iomanip>
+#include <algorithm>
 
 SeatSelection::SeatSelection(Font& f) 
     : font(f), ticketPrice(0) {
@@ -168,6 +169,21 @@ void SeatSelection::draw(RenderWindow& window) {
                 startY + row * (kSeatSize + kSeatSpacing)
             });
             window.draw(seat.shape);
+
+            if (seat.status == SeatStatus::OCCUPIED) {
+                Vector2f pos = seat.shape.getPosition();
+                Vector2f size = seat.shape.getSize();
+                
+                VertexArray lines(sf::PrimitiveType::Lines, 4);
+                lines[0].position = pos;
+                lines[1].position = pos + size;
+                lines[2].position = Vector2f(pos.x + size.x, pos.y);
+                lines[3].position = Vector2f(pos.x, pos.y + size.y);
+                
+                for(int i=0; i<4; ++i) lines[i].color = Color(150, 150, 150);
+                
+                window.draw(lines);
+            }
         }
     }
     
@@ -205,6 +221,19 @@ void SeatSelection::draw(RenderWindow& window) {
     occupiedBox.setOutlineThickness(1.f);
     occupiedBox.setOutlineColor(Color::White);
     window.draw(occupiedBox);
+
+    {
+        Vector2f pos = occupiedBox.getPosition();
+        Vector2f size = occupiedBox.getSize();
+        VertexArray lines(sf::PrimitiveType::Lines, 4);
+        lines[0].position = pos;
+        lines[1].position = pos + size;
+        lines[2].position = Vector2f(pos.x + size.x, pos.y);
+        lines[3].position = Vector2f(pos.x, pos.y + size.y);
+        for(int i=0; i<4; ++i) lines[i].color = Color(150, 150, 150);
+        window.draw(lines);
+    }
+
     Text occupiedText(font, L"Đã đặt", 16);
     occupiedText.setFillColor(Color::White);
     occupiedText.setPosition({kViewX + 615.f, legendY + 3.f});

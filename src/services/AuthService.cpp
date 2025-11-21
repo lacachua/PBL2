@@ -6,6 +6,7 @@ using namespace std;
 AuthService::AuthService(const string& filePath) 
     : currentUserEmail(""), loggedIn(false) {
     repository = make_unique<UserRepository>(filePath);
+    voucherManager = make_unique<VoucherManager>();
     ensureDefaultAdminAndStaff();
 }
 
@@ -48,7 +49,14 @@ bool AuthService::registerUser(const string& email,
         UserStatus::Active
     );
     
-    return repository->addUser(newUser);
+    bool success = repository->addUser(newUser);
+    
+    // Tự động tặng voucher WELCOME cho user mới (chỉ áp dụng cho Customer)
+    if (success && role == AppRole::Customer && voucherManager) {
+        voucherManager->giveVoucher(email, "WELCOME", 365, 1); // Hạn 1 năm, 1 lượt dùng
+    }
+    
+    return success;
 }
 
 bool AuthService::verify(const string& email, const string& password) {
