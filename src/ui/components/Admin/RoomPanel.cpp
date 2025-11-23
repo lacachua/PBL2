@@ -21,7 +21,9 @@ sf::String utf8(const string& text) {
 }
 
 RoomPanel::RoomPanel(Font& f, float w, float h)
-    : font(f), width(w), height(h) {
+    :   font(f), width(w), height(h), 
+        reloadTexture("../assets/elements/reload.png") 
+{
     setupUI();
     loadData();
 }
@@ -41,17 +43,10 @@ void RoomPanel::setupUI() {
 
     reloadButtonBg.setSize(Vector2f(44.f, 44.f));
     reloadButtonBg.setFillColor(Color(20, 118, 172));
-    reloadTextureLoaded = reloadTexture.loadFromFile("../assets/elements/reload.png");
-    if (reloadTextureLoaded) {
-        reloadTexture.setSmooth(true);
-        reloadSprite = make_unique<Sprite>(reloadTexture);
-        float maxDim = static_cast<float>(max(reloadTexture.getSize().x, reloadTexture.getSize().y));
-        float target = 34.f;
-        float scale = target / maxDim;
-        reloadSprite->setScale(Vector2f(scale, scale));
-    } else {
-        reloadSprite.reset();
-    }
+
+    reloadTexture.setSmooth(true);
+    reloadSprite = make_unique<Sprite>(reloadTexture);
+    reloadSprite->setScale({0.1f, 0.1f});
 }
 
 void RoomPanel::setPosition(Vector2f pos) {
@@ -588,23 +583,17 @@ void RoomPanel::renderTable(RenderWindow& window) {
 
 void RoomPanel::render(RenderWindow& window) {
     window.draw(background);
-    if (titleText) {
+    if (titleText) 
         window.draw(*titleText);
-    }
 
     renderTable(window);
 
     drawRoundedRect(window, reloadButtonBg.getPosition(), reloadButtonBg.getSize(), 6.f, reloadButtonBg.getFillColor());
-    if (reloadTextureLoaded && reloadSprite) {
-        FloatRect spriteBounds = reloadSprite->getLocalBounds();
-        Vector2f scale = reloadSprite->getScale();
-        float spriteWidth = spriteBounds.size.x * scale.x;
-        float spriteHeight = spriteBounds.size.y * scale.y;
-        reloadSprite->setPosition(Vector2f(
-            reloadButtonBg.getPosition().x + (reloadButtonBg.getSize().x - spriteWidth) / 2.f,
-            reloadButtonBg.getPosition().y + (reloadButtonBg.getSize().y - spriteHeight) / 2.f
-        ));
-        reloadSprite->setColor(Color::White);
-        window.draw(*reloadSprite);
-    }
+    FloatRect spriteBounds = reloadSprite->getLocalBounds();
+    Vector2f scale = reloadSprite->getScale();
+    float spriteWidth = spriteBounds.size.x * scale.x;
+    float spriteHeight = spriteBounds.size.y * scale.y;
+    reloadSprite->setPosition(Vector2f(reloadButtonBg.getPosition().x + (reloadButtonBg.getSize().x - spriteWidth) / 2.f, reloadButtonBg.getPosition().y + (reloadButtonBg.getSize().y - spriteHeight) / 2.f));
+    reloadSprite->setColor(Color::White);
+    window.draw(*reloadSprite);
 }

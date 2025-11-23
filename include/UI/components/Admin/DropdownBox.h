@@ -24,6 +24,7 @@ private:
     vector<string> options;
     int selectedIndex;
     bool isOpen;
+    bool enabled; // Added
     
     float x, y, width, height;
     string label;
@@ -45,6 +46,9 @@ private:
 public:
     DropdownBox(Font& font, const string& label, float x, float y, float width, float height);
     
+    void setEnabled(bool enabled); // Added
+    bool isEnabled() const { return enabled; } // Added
+
     void setOptions(const vector<string>& opts);
     void setMaxVisibleOptions(int count);
     void setSelectedIndex(int index);
@@ -52,6 +56,8 @@ public:
     string getSelectedValue() const;
     int getSelectedIndex() const;
     
+    void setPosition(Vector2f pos);
+
     void handleEvent(const Event& event, const Vector2f& mousePos);
     void update();
     void draw(RenderWindow& window);

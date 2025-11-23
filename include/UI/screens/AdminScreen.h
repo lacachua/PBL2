@@ -4,6 +4,7 @@
 #include "UI/screens/BaseScreen.h"
 #include "UI/components/Admin/AdminSidebar.h"
 #include "UI/components/Admin/MoviePanel.h"
+#include "UI/components/Admin/UserPanel.h"
 #include "UI/components/Admin/ComboPanel.h"
 #include "UI/components/Admin/RoomPanel.h"
 #include "UI/components/Admin/TicketPanel.h"
@@ -27,6 +28,7 @@ private:
     // Current panel
     AppState currentPanelState;
     unique_ptr<MoviePanel> moviePanel;
+    unique_ptr<UserPanel> userPanel;
     unique_ptr<ComboPanel> comboPanel;
     unique_ptr<RoomPanel> roomPanel;
     unique_ptr<TicketPanel> ticketPanel;

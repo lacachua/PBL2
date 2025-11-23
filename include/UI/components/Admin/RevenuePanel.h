@@ -88,6 +88,12 @@ private:
     void loadShowtimePrices();
     void loadComboPrices();
     void populateDateDropdowns();
+    
+    void updateMonthDropdown(DropdownBox* yearBox, DropdownBox* monthBox);
+    void updateDayDropdown(DropdownBox* yearBox, DropdownBox* monthBox, DropdownBox* dayBox);
+    bool isLeapYear(int year) const;
+    int getDaysInMonth(int month, int year) const;
+
     void applySelection();
     long long dateToKey(const string& date) const;
     string keyToDisplay(long long key) const;

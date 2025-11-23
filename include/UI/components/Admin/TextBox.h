@@ -44,6 +44,8 @@ public:
     void setValue(const string& text);
     string getValue() const { return value; }
     
+    void setPosition(Vector2f pos);
+    
     void handleEvent(const Event& event);
     void update(Vector2f mousePos, bool mousePressed);
     void render(RenderWindow& window);

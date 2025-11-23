@@ -7,7 +7,7 @@ DropdownBox::DropdownBox(Font& font, const string& label, float x, float y, floa
             selectedIndex(0), isOpen(false),
             bgColor(255, 255, 255), hoverColor(230, 230, 230), 
             selectedColor(100, 149, 237), borderColor(200, 200, 200),
-            textColor(50, 50, 50), maxVisibleOptions(0), firstVisibleIndex(0), optionHeight(40.f) {
+            textColor(50, 50, 50), maxVisibleOptions(0), firstVisibleIndex(0), optionHeight(40.f), enabled(true) {
     
     // Label text
     labelText = make_unique<Text>(font, String::fromUtf8(label.begin(), label.end()), 14);
@@ -30,6 +30,18 @@ DropdownBox::DropdownBox(Font& font, const string& label, float x, float y, floa
     arrow.setSize(Vector2f(8, 8));
     arrow.setFillColor(Color(100, 100, 100));
     arrow.setPosition(Vector2f(x + width - 20, y + height / 2 - 4));
+}
+
+void DropdownBox::setEnabled(bool e) {
+    enabled = e;
+    if (!enabled) {
+        isOpen = false;
+        background.setFillColor(Color(240, 240, 240)); // Gray out
+        if (selectedText) selectedText->setFillColor(Color(150, 150, 150));
+    } else {
+        background.setFillColor(bgColor);
+        if (selectedText) selectedText->setFillColor(textColor);
+    }
 }
 
 void DropdownBox::setOptions(const vector<string>& opts) {
@@ -103,6 +115,18 @@ int DropdownBox::getSelectedIndex() const {
     return selectedIndex;
 }
 
+void DropdownBox::setPosition(Vector2f pos) {
+    x = pos.x;
+    y = pos.y;
+    
+    if (labelText) labelText->setPosition(Vector2f(x, y - 22));
+    background.setPosition(Vector2f(x, y));
+    if (selectedText) selectedText->setPosition(Vector2f(x + 10, y + (height - 20) / 2));
+    arrow.setPosition(Vector2f(x + width - 20, y + height / 2 - 4));
+    
+    updateDropdownPanel();
+}
+
 bool DropdownBox::isMouseOver(const Vector2f& mousePos) const {
     FloatRect bounds({x, y}, {width, height});
     return bounds.contains(mousePos);
@@ -139,6 +163,8 @@ void DropdownBox::updateDropdownPanel() {
 }
 
 void DropdownBox::handleEvent(const Event& event, const Vector2f& mousePos) {
+    if (!enabled) return;
+
     if (const auto* wheelEvent = event.getIf<Event::MouseWheelScrolled>()) {
         FloatRect baseBounds(Vector2f(x, y), Vector2f(width, height));
         FloatRect dropBounds(Vector2f(x, y + height), dropdownPanel.getSize());

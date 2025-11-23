@@ -43,6 +43,15 @@ void TextBox::setValue(const string& text) {
     value = text;
 }
 
+void TextBox::setPosition(Vector2f pos) {
+    x = pos.x;
+    y = pos.y;
+    background.setPosition({x, y});
+    border.setPosition({x, y});
+    if (labelText) labelText->setPosition({x, y - 22});
+    // displayText position is updated in render()
+}
+
 void TextBox::setFocus(bool focus) {
     isFocused = focus;
     if (isFocused) {

@@ -49,7 +49,6 @@ private:
     Texture reloadTexture;
     unique_ptr<Sprite> reloadSprite;
     RectangleShape reloadButtonBg;
-    bool reloadTextureLoaded = false;
     bool reloadHovered = false;
     bool reloadPressed = false;
 

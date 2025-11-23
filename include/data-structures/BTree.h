@@ -146,9 +146,8 @@ public:
             }
             insertNonFull(newRoot->children[i], key, value);
             root = newRoot;
-        } else {
-            insertNonFull(root, key, value);
-        }
+        } 
+        else insertNonFull(root, key, value);
     }
 
     DLL<Value> rangeQuery(const Key& start, const Key& end) const {

@@ -331,27 +331,82 @@ void RevenuePanel::loadComboPrices() {
     }
 }
 
+bool RevenuePanel::isLeapYear(int year) const {
+    return (year % 4 == 0 && year % 100 != 0) || (year % 400 == 0);
+}
+
+int RevenuePanel::getDaysInMonth(int month, int year) const {
+    switch (month) {
+        case 2: return isLeapYear(year) ? 29 : 28;
+        case 4: case 6: case 9: case 11: return 30;
+        default: return 31;
+    }
+}
+
+void RevenuePanel::updateMonthDropdown(DropdownBox* yearBox, DropdownBox* monthBox) {
+    string yStr = yearBox->getSelectedValue();
+    if (yStr == "Năm" || yStr.empty()) {
+        monthBox->setOptions({"Tháng"});
+        monthBox->setSelectedIndex(0);
+        monthBox->setEnabled(false);
+    } else {
+        if (!monthBox->isEnabled() || monthBox->getSelectedValue() == "Tháng") {
+             vector<string> opts = {"Tháng"};
+             for(int i=1; i<=12; ++i) {
+                 char buf[4]; snprintf(buf, sizeof(buf), "%02d", i);
+                 opts.push_back(buf);
+             }
+             monthBox->setOptions(opts);
+             monthBox->setEnabled(true);
+        }
+    }
+}
+
+void RevenuePanel::updateDayDropdown(DropdownBox* yearBox, DropdownBox* monthBox, DropdownBox* dayBox) {
+    string yStr = yearBox->getSelectedValue();
+    string mStr = monthBox->getSelectedValue();
+    
+    if (yStr == "Năm" || mStr == "Tháng" || yStr.empty() || mStr.empty()) {
+        dayBox->setOptions({"Ngày"});
+        dayBox->setSelectedIndex(0);
+        dayBox->setEnabled(false);
+        return;
+    }
+
+    int year = stoi(yStr);
+    int month = stoi(mStr);
+    int days = getDaysInMonth(month, year);
+    
+    string currentDay = dayBox->getSelectedValue();
+    
+    vector<string> opts = {"Ngày"};
+    for(int i=1; i<=days; ++i) {
+        char buf[4]; snprintf(buf, sizeof(buf), "%02d", i);
+        opts.push_back(buf);
+    }
+    
+    dayBox->setOptions(opts);
+    dayBox->setEnabled(true);
+    
+    if (currentDay != "Ngày" && !currentDay.empty()) {
+        try {
+            int d = stoi(currentDay);
+            if (d <= days) {
+                dayBox->setSelectedValue(currentDay);
+            } else {
+                dayBox->setSelectedIndex(0);
+            }
+        } catch (...) {
+            dayBox->setSelectedIndex(0);
+        }
+    } else {
+        dayBox->setSelectedIndex(0);
+    }
+}
+
 void RevenuePanel::populateDateDropdowns() {
-    // Days: 01-31
-    std::vector<string> dayOpts;
-    for (int i = 1; i <= 31; ++i) {
-        char buf[4]; snprintf(buf, sizeof(buf), "%02d", i);
-        dayOpts.push_back(buf);
-    }
-    fromDayDropdown->setOptions(dayOpts);
-    toDayDropdown->setOptions(dayOpts);
-
-    // Months: 01-12
-    std::vector<string> monthOpts;
-    for (int i = 1; i <= 12; ++i) {
-        char buf[4]; snprintf(buf, sizeof(buf), "%02d", i);
-        monthOpts.push_back(buf);
-    }
-    fromMonthDropdown->setOptions(monthOpts);
-    toMonthDropdown->setOptions(monthOpts);
-
-    // Years: Extract from availableKeys
-    std::vector<string> yearOpts;
+    // Years
+    std::vector<string> yearOpts = {"Năm"};
     DLL<int> uniqueYears;
     Node<long long>* kNode = availableKeys.getHead();
     while (kNode) {
@@ -366,8 +421,6 @@ void RevenuePanel::populateDateDropdowns() {
         kNode = kNode->next;
     }
 
-    // Sort years (simple bubble sort on DLL or just copy to vector since UI is not "algorithm")
-    // I'll just copy to vector and sort for dropdown
     std::vector<int> sortedYears;
     Node<int>* yNode = uniqueYears.getHead();
     while (yNode) {
@@ -375,22 +428,24 @@ void RevenuePanel::populateDateDropdowns() {
         yNode = yNode->next;
     }
     std::sort(sortedYears.begin(), sortedYears.end());
-    if (sortedYears.empty()) sortedYears.push_back(2025); // Default
+    if (sortedYears.empty()) sortedYears.push_back(2025);
 
     for (int y : sortedYears) {
         yearOpts.push_back(to_string(y));
     }
+    
     fromYearDropdown->setOptions(yearOpts);
     toYearDropdown->setOptions(yearOpts);
-
-    // Set defaults
-    fromDayDropdown->setSelectedIndex(0);
-    fromMonthDropdown->setSelectedIndex(0);
+    
+    // Initial state
     fromYearDropdown->setSelectedIndex(0);
-
-    toDayDropdown->setSelectedIndex(dayOpts.size() - 1);
-    toMonthDropdown->setSelectedIndex(monthOpts.size() - 1);
-    toYearDropdown->setSelectedIndex(yearOpts.size() - 1);
+    toYearDropdown->setSelectedIndex(0);
+    
+    updateMonthDropdown(fromYearDropdown.get(), fromMonthDropdown.get());
+    updateDayDropdown(fromYearDropdown.get(), fromMonthDropdown.get(), fromDayDropdown.get());
+    
+    updateMonthDropdown(toYearDropdown.get(), toMonthDropdown.get());
+    updateDayDropdown(toYearDropdown.get(), toMonthDropdown.get(), toDayDropdown.get());
 }
 
 void RevenuePanel::applySelection() {
@@ -402,7 +457,10 @@ void RevenuePanel::applySelection() {
     string m2 = toMonthDropdown->getSelectedValue();
     string y2 = toYearDropdown->getSelectedValue();
 
-    if (d1.empty() || m1.empty() || y1.empty() || d2.empty() || m2.empty() || y2.empty()) return;
+    if (d1 == "Ngày" || m1 == "Tháng" || y1 == "Năm" || 
+        d2 == "Ngày" || m2 == "Tháng" || y2 == "Năm" ||
+        d1.empty() || m1.empty() || y1.empty() || 
+        d2.empty() || m2.empty() || y2.empty()) return;
 
     long long k1 = stoll(y1) * 10000 + stoll(m1) * 100 + stoll(d1);
     long long k2 = stoll(y2) * 10000 + stoll(m2) * 100 + stoll(d2);
@@ -419,13 +477,35 @@ void RevenuePanel::applySelection() {
 void RevenuePanel::handleEvent(const Event& event, const RenderWindow& window) {
     Vector2f mousePos = window.mapPixelToCoords(Mouse::getPosition(window));
     
+    int oldFromYear = fromYearDropdown->getSelectedIndex();
+    int oldFromMonth = fromMonthDropdown->getSelectedIndex();
+
     fromDayDropdown->handleEvent(event, mousePos);
     fromMonthDropdown->handleEvent(event, mousePos);
     fromYearDropdown->handleEvent(event, mousePos);
     
+    if (fromYearDropdown->getSelectedIndex() != oldFromYear) {
+        updateMonthDropdown(fromYearDropdown.get(), fromMonthDropdown.get());
+        updateDayDropdown(fromYearDropdown.get(), fromMonthDropdown.get(), fromDayDropdown.get());
+    }
+    if (fromMonthDropdown->getSelectedIndex() != oldFromMonth) {
+        updateDayDropdown(fromYearDropdown.get(), fromMonthDropdown.get(), fromDayDropdown.get());
+    }
+
+    int oldToYear = toYearDropdown->getSelectedIndex();
+    int oldToMonth = toMonthDropdown->getSelectedIndex();
+
     toDayDropdown->handleEvent(event, mousePos);
     toMonthDropdown->handleEvent(event, mousePos);
     toYearDropdown->handleEvent(event, mousePos);
+
+    if (toYearDropdown->getSelectedIndex() != oldToYear) {
+        updateMonthDropdown(toYearDropdown.get(), toMonthDropdown.get());
+        updateDayDropdown(toYearDropdown.get(), toMonthDropdown.get(), toDayDropdown.get());
+    }
+    if (toMonthDropdown->getSelectedIndex() != oldToMonth) {
+        updateDayDropdown(toYearDropdown.get(), toMonthDropdown.get(), toDayDropdown.get());
+    }
 
     if (const auto* mousePressed = event.getIf<Event::MouseButtonPressed>()) {
         if (mousePressed->button == Mouse::Button::Left) {
