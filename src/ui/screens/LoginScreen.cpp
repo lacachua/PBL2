@@ -18,6 +18,7 @@ LoginScreen::LoginScreen(const Font& font, AuthService& authRef)
       emailBox({360.f, 44.f}),
       passBox({360.f, 44.f}),
       btn({360.f, 44.f}),
+      eyeToggleArea({40.f, 44.f}),
       emailPH(font, L"Nhập email của bạn", 18),
       passPH(font, L"Nhập mật khẩu", 18),
       btnText(font, L"Tiếp tục", 20),
@@ -58,6 +59,18 @@ LoginScreen::LoginScreen(const Font& font, AuthService& authRef)
     // caret setup: thin vertical bar similar to a native text cursor
     caret.setSize({2.f, 24.f});
     caret.setFillColor(Color::Black);
+
+    // Eye toggle setup - load textures
+    eyeToggleArea.setFillColor(Color::Transparent);
+    if (!eyeOpenTexture.loadFromFile("../assets/elements/eye-open.png")) {
+        // Fallback if texture not found
+    }
+    if (!eyeClosedTexture.loadFromFile("../assets/elements/eye-close.png")) {
+        // Fallback if texture not found
+    }
+    eyeOpenTexture.setSmooth(true);
+    eyeClosedTexture.setSmooth(true);
+    eyeSprite = make_unique<Sprite>(eyeClosedTexture);  // Default: password hidden
 }
 
 wstring LoginScreen::bullets(size_t n) { 
@@ -83,6 +96,11 @@ bool LoginScreen::update(Vector2f mouse, bool mousePressed, const Event& event, 
 
     // chọn ô active
     if (mousePressed) {
+        // Toggle password visibility
+        if (eyeToggleArea.getGlobalBounds().contains(mouse)) {
+            showPassword = !showPassword;
+        }
+        
         emailActive = emailBox.getGlobalBounds().contains(mouse);
         passActive  = passBox.getGlobalBounds().contains(mouse);
 
@@ -214,6 +232,33 @@ void LoginScreen::draw(RenderWindow& window) {
     passBox.setPosition({center.x - 180.f, center.y - 42.f});
     passPH.setPosition({passBox.getPosition().x + 12.f, passBox.getPosition().y + 10.f});
 
+    // Eye toggle - show/hide password icon
+    const float eyeIconSize = 20.f;
+    const float eyePadding = 12.f;  // Padding from right edge
+    
+    eyeToggleArea.setSize({eyeIconSize + eyePadding * 2.f, passBox.getSize().y});
+    eyeToggleArea.setPosition({
+        passBox.getPosition().x + passBox.getSize().x - eyeToggleArea.getSize().x,
+        passBox.getPosition().y
+    });
+    
+    if (eyeSprite) {
+        eyeSprite->setTexture(showPassword ? eyeOpenTexture : eyeClosedTexture);
+        
+        // Scale to target size
+        auto texSize = eyeSprite->getTexture().getSize();
+        float scale = eyeIconSize / static_cast<float>(std::max(texSize.x, texSize.y));
+        eyeSprite->setScale({scale, scale});
+        
+        // Position icon with padding from right edge of passBox
+        float scaledW = texSize.x * scale;
+        float scaledH = texSize.y * scale;
+        eyeSprite->setPosition({
+            passBox.getPosition().x + passBox.getSize().x - scaledW - eyePadding,
+            passBox.getPosition().y + (passBox.getSize().y - scaledH) / 2.f
+        });
+    }
+
     btn.setPosition({center.x - 181.f, center.y + 14.f});
     btnText.setPosition({btn.getPosition().x + 125.f, btn.getPosition().y + 6.f});
 
@@ -243,12 +288,23 @@ void LoginScreen::draw(RenderWindow& window) {
     emailDisplay.setString(emailInput);
     emailDisplay.setPosition({emailBox.getPosition().x + 12.f, emailBox.getPosition().y + 10.f});
 
-    passDisplay.setString(bullets(passInput.size()));
+    // Show password as text or bullets based on toggle
+    if (showPassword) {
+        passDisplay.setString(passInput);
+    } else {
+        passDisplay.setString(bullets(passInput.size()));
+    }
     passDisplay.setPosition({passBox.getPosition().x + 12.f, passBox.getPosition().y + 10.f});
 
     // placeholder / text thật
     if (emailInput.empty()) window.draw(emailPH); else window.draw(emailDisplay);
     if (passInput.empty()) window.draw(passPH); else window.draw(passDisplay);
+
+    // Draw eye toggle icon
+    window.draw(eyeToggleArea);
+    if (eyeSprite) {
+        window.draw(*eyeSprite);
+    }
 
     // Draw a thin rectangle caret instead of a '|' text glyph
     if (caretVisible) {
