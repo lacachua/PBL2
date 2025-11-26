@@ -7,6 +7,7 @@
 #include "data-structures/DLL.h"
 #include "UI/components/Admin/AdminTicketRepository.h"
 #include "UI/components/Admin/AdminSidebar.h"
+#include "UI/components/Admin/RoundRectButton.h"
 
 class TicketPanel {
 private:
@@ -27,9 +28,9 @@ private:
     RectangleShape tableHeaderBg;
     std::unique_ptr<Text> titleText;
 
-    std::unique_ptr<RoundRectButton> btnView;
-    std::unique_ptr<RoundRectButton> btnDelete;
-    std::unique_ptr<RoundRectButton> btnReload;
+    std::unique_ptr<SidebarRoundRectButton> btnView;
+    std::unique_ptr<SidebarRoundRectButton> btnDelete;
+    std::unique_ptr<SidebarRoundRectButton> btnReload;
     Texture reloadTexture;
     Sprite reloadSprite;
 

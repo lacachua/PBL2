@@ -1,4 +1,5 @@
 #include "UI/components/Admin/MoviePanel.h"
+#include "UI/components/Admin/RoundedRectRenderer.h"
 #include <algorithm>
 #include <iostream>
 #include <stdexcept>
@@ -15,36 +16,6 @@ MoviePanel::MoviePanel(Font& font, float width, float height)
     
     // Setup UI
     setupUI();
-}
-
-void MoviePanel::drawRoundedRect(RenderWindow& window, const Vector2f& pos, const Vector2f& size, float radius, const Color& color) {
-    // Draw a rounded rectangle using small shapes
-    // Center rect
-    RectangleShape center(Vector2f(size.x - 2*radius, size.y));
-    center.setPosition(Vector2f(pos.x + radius, pos.y));
-    center.setFillColor(color);
-    window.draw(center);
-    
-    // Top/bottom rects
-    RectangleShape top(Vector2f(size.x, size.y - 2*radius));
-    top.setPosition(Vector2f(pos.x, pos.y + radius));
-    top.setFillColor(color);
-    window.draw(top);
-    
-    // 4 corner circles
-    CircleShape corner(radius);
-    corner.setFillColor(color);
-    corner.setPosition(pos);
-    window.draw(corner);
-
-    corner.setPosition(Vector2f(pos.x + size.x - 2*radius, pos.y)); // top-right
-    window.draw(corner);
-    
-    corner.setPosition(Vector2f(pos.x, pos.y + size.y - 2*radius)); // bottom-left
-    window.draw(corner);
-    
-    corner.setPosition(Vector2f(pos.x + size.x - 2*radius, pos.y + size.y - 2*radius)); // bottom-right
-    window.draw(corner);
 }
 
 void MoviePanel::setupUI() {
@@ -933,7 +904,7 @@ void MoviePanel::render(RenderWindow& window) {
     
     // Draw CRUD buttons (custom with rounded corners 6px)
     // Add button
-    drawRoundedRect(window, btnAddBg.getPosition(), btnAddBg.getSize(), 6.f, btnAddBg.getFillColor());
+    RoundedRectRenderer::draw(window, btnAddBg.getPosition(), btnAddBg.getSize(), 6.f, btnAddBg.getFillColor());
     if (btnAddText) {
         FloatRect tb = btnAddText->getLocalBounds();
         Vector2f pos = btnAddBg.getPosition();
@@ -945,7 +916,7 @@ void MoviePanel::render(RenderWindow& window) {
     }
 
     // Edit button
-    drawRoundedRect(window, btnEditBg.getPosition(), btnEditBg.getSize(), 6.f, btnEditBg.getFillColor());
+    RoundedRectRenderer::draw(window, btnEditBg.getPosition(), btnEditBg.getSize(), 6.f, btnEditBg.getFillColor());
     if (btnEditText) {
         FloatRect tb = btnEditText->getLocalBounds();
         Vector2f pos = btnEditBg.getPosition();
@@ -957,7 +928,7 @@ void MoviePanel::render(RenderWindow& window) {
     }
 
     // Delete button
-    drawRoundedRect(window, btnDeleteBg.getPosition(), btnDeleteBg.getSize(), 6.f, btnDeleteBg.getFillColor());
+    RoundedRectRenderer::draw(window, btnDeleteBg.getPosition(), btnDeleteBg.getSize(), 6.f, btnDeleteBg.getFillColor());
     if (btnDeleteText) {
         FloatRect tb = btnDeleteText->getLocalBounds();
         Vector2f pos = btnDeleteBg.getPosition();
@@ -969,7 +940,7 @@ void MoviePanel::render(RenderWindow& window) {
     }
 
     // Reload button (icon centered inside rounded background)
-    drawRoundedRect(window, reloadButtonBg.getPosition(), reloadButtonBg.getSize(), 6.f, reloadButtonBg.getFillColor());
+    RoundedRectRenderer::draw(window, reloadButtonBg.getPosition(), reloadButtonBg.getSize(), 6.f, reloadButtonBg.getFillColor());
         FloatRect localBounds = reloadSprite.getLocalBounds();
         Vector2f spriteScale = reloadSprite.getScale();
         float scaledW = localBounds.size.x * spriteScale.x;

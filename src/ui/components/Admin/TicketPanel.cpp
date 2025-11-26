@@ -170,15 +170,15 @@ void TicketPanel::setupUI() {
     tableHeaderBg.setSize(Vector2f(TABLE_WIDTH, HEADER_HEIGHT));
     tableHeaderBg.setFillColor(HEADER_COLOR);
 
-    btnView = make_unique<RoundRectButton>(font, "Xem thông tin", Vector2f(160.f, 44.f), 8.f);
+    btnView = make_unique<SidebarRoundRectButton>(font, "Xem thông tin", Vector2f(160.f, 44.f), 8.f);
     btnView->setTextSize(16);
     btnView->setColors(Color(142, 169, 204), Color(17, 98, 144));
 
-    btnDelete = make_unique<RoundRectButton>(font, "Xóa vé", Vector2f(160.f, 44.f), 8.f);
+    btnDelete = make_unique<SidebarRoundRectButton>(font, "Xóa vé", Vector2f(160.f, 44.f), 8.f);
     btnDelete->setTextSize(16);
     btnDelete->setColors(Color(189, 99, 99), Color(171, 36, 36));
 
-    btnReload = make_unique<RoundRectButton>(font, "", Vector2f(44.f, 44.f), 8.f);
+    btnReload = make_unique<SidebarRoundRectButton>(font, "", Vector2f(44.f, 44.f), 8.f);
     btnReload->setTextSize(16);
     btnReload->setColors(Color(20, 118, 172), Color(15, 90, 135));
 

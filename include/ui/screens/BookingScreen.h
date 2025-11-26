@@ -179,7 +179,7 @@
 #include "UI/components/TicketBooking/LoginRequiredPopup.h"
 #include "UI/components/TicketBooking/ConfirmationView.h"
 #include "UI/components/TicketBooking/TicketRepository.h"
-#include "services/VoucherManager.h"
+#include "services/BookingService.h"
 #include "core/AppState.h"
 
 using namespace sf;
@@ -208,6 +208,9 @@ private:
 
     ShowtimeSeatRepository seatRepo;
     
+    // ✅ Business logic service (SOLID: Dependency Inversion)
+    std::unique_ptr<BookingService> bookingService;
+    
     // ✅ Popup yêu cầu đăng nhập (unique_ptr để quản lý lifecycle)
     unique_ptr<LoginRequiredPopup> loginPopup;
     unique_ptr<LoginRequiredPopup> voucherLoginPopup;
@@ -217,7 +220,6 @@ private:
     
     // ✅ Repository để tạo và lưu vé
     TicketRepository ticketRepo;
-    VoucherManager voucherManager;
 
     // Voucher UI state
     std::string voucherInput;

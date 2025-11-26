@@ -1,35 +1,7 @@
 #include "UI/components/Admin/AdminSidebar.h"
 #include <iostream>
 
-namespace {
-    void drawRoundedRect(RenderWindow& window, Vector2f pos, Vector2f size, float radius, const Color& color) {
-        RectangleShape center(Vector2f(size.x - 2 * radius, size.y));
-        center.setPosition(Vector2f(pos.x + radius, pos.y));
-        center.setFillColor(color);
-        window.draw(center);
-
-        RectangleShape mid(Vector2f(size.x, size.y - 2 * radius));
-        mid.setPosition(Vector2f(pos.x, pos.y + radius));
-        mid.setFillColor(color);
-        window.draw(mid);
-
-        CircleShape corner(radius);
-        corner.setFillColor(color);
-        corner.setPosition(pos);
-        window.draw(corner);
-
-        corner.setPosition(Vector2f(pos.x + size.x - 2 * radius, pos.y));
-        window.draw(corner);
-
-        corner.setPosition(Vector2f(pos.x, pos.y + size.y - 2 * radius));
-        window.draw(corner);
-
-        corner.setPosition(Vector2f(pos.x + size.x - 2 * radius, pos.y + size.y - 2 * radius));
-        window.draw(corner);
-    }
-}
-
-RoundRectButton::RoundRectButton(Font& f, const string& text, Vector2f sz, float r)
+SidebarRoundRectButton::SidebarRoundRectButton(Font& f, const string& text, Vector2f sz, float r)
     : font(f), size(sz), position(Vector2f()), radius(r), baseColor(Color::White),
       hoverColor(Color::White), hovered(false) {
     label = make_unique<Text>(font);
@@ -38,7 +10,7 @@ RoundRectButton::RoundRectButton(Font& f, const string& text, Vector2f sz, float
     label->setString(String::fromUtf8(text.begin(), text.end()));
 }
 
-void RoundRectButton::setPosition(Vector2f pos) {
+void SidebarRoundRectButton::setPosition(Vector2f pos) {
     position = pos;
     if (label) {
         FloatRect bounds = label->getLocalBounds();
@@ -49,31 +21,31 @@ void RoundRectButton::setPosition(Vector2f pos) {
     }
 }
 
-void RoundRectButton::setColors(const Color& base, const Color& hover) {
+void SidebarRoundRectButton::setColors(const Color& base, const Color& hover) {
     baseColor = base;
     hoverColor = hover;
 }
 
-void RoundRectButton::setTextSize(unsigned int size) {
+void SidebarRoundRectButton::setTextSize(unsigned int size) {
     if (label) {
         label->setCharacterSize(size);
         setPosition(position);
     }
 }
 
-void RoundRectButton::update(Vector2f mousePos) {
+void SidebarRoundRectButton::update(Vector2f mousePos) {
     FloatRect bounds(position, size);
     hovered = bounds.contains(mousePos);
 }
 
-bool RoundRectButton::contains(Vector2f point) const {
+bool SidebarRoundRectButton::contains(Vector2f point) const {
     FloatRect bounds(position, size);
     return bounds.contains(point);
 }
 
-void RoundRectButton::draw(RenderWindow& window) const {
+void SidebarRoundRectButton::draw(RenderWindow& window) const {
     const Color& color = hovered ? hoverColor : baseColor;
-    drawRoundedRect(window, position, size, radius, color);
+    RoundedRectRenderer::draw(window, position, size, radius, color);
     if (label) {
         window.draw(*label);
     }
@@ -110,8 +82,8 @@ void AdminSidebar::initializeMenuItems() {
     
     // Group 2: THỐNG KÊ & BÁO CÁO
     menuItems.push_back(MenuItem("THỐNG KÊ & BÁO CÁO", AppState::ADMIN_DASHBOARD, true, false));
-    menuItems.push_back(MenuItem("Doanh thu", AppState::ADMIN_REVENUE));
-    menuItems.push_back(MenuItem("Vé đã bán / lượng khách", AppState::ADMIN_SOLD_TICKETS));
+    menuItems.push_back(MenuItem("Tổng quan", AppState::ADMIN_REVENUE));
+    menuItems.push_back(MenuItem("Doanh thu", AppState::ADMIN_SOLD_TICKETS));
     
     // Group 3: TÀI KHOẢN
     menuItems.push_back(MenuItem("TÀI KHOẢN", AppState::ADMIN_DASHBOARD, true, false));
@@ -194,7 +166,7 @@ void AdminSidebar::setupGraphics() {
         yOffset += currentHeight;
     }
 
-    logoutButton = make_unique<RoundRectButton>(font, "Đăng xuất", Vector2f(width - 40.f, 50.f), 12.f);
+    logoutButton = make_unique<SidebarRoundRectButton>(font, "Đăng xuất", Vector2f(width - 40.f, 50.f), 12.f);
     if (logoutButton) {
         logoutButton->setColors(Color(72, 201, 176), Color(102, 231, 206));
     }

@@ -83,7 +83,6 @@ private:
     void setupButton(ActionButton& button, const string& labelUtf8, const Color& base, const Color& hover, Vector2f size);
     void updateButton(ActionButton& button, Vector2f mousePos);
 
-    void drawRoundedRect(RenderWindow& window, const Vector2f& pos, const Vector2f& size, float radius, const Color& color);
     void refreshData();
     void renderTable(RenderWindow& window);
     void renderButtons(RenderWindow& window);

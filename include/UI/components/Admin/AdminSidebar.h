@@ -5,11 +5,12 @@
 #include <memory>
 #include "core/AppState.h"
 #include "data-structures/DLL.h"
+#include "UI/components/Admin/RoundedRectRenderer.h"
 
 using namespace sf;
 using namespace std;
 
-class RoundRectButton {
+class SidebarRoundRectButton {
 private:
     Font& font;
     Vector2f size;
@@ -21,7 +22,7 @@ private:
     unique_ptr<Text> label;
 
 public:
-    RoundRectButton(Font& font, const string& text, Vector2f size, float radius);
+    SidebarRoundRectButton(Font& font, const string& text, Vector2f size, float radius);
 
     void setPosition(Vector2f pos);
     void setColors(const Color& base, const Color& hover);
@@ -78,7 +79,7 @@ private:
     // User info
     string userName;
     RectangleShape userInfoBg;
-    unique_ptr<RoundRectButton> logoutButton;
+    unique_ptr<SidebarRoundRectButton> logoutButton;
     
     void initializeMenuItems();
     void setupGraphics();

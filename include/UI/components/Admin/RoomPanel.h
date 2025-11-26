@@ -86,7 +86,6 @@ private:
     static bool pruneSchedules(unordered_map<string, vector<ShowtimeSlot>>& schedules,
                                chrono::system_clock::time_point now);
     void updateRoomStatuses();
-    void drawRoundedRect(RenderWindow& window, const Vector2f& pos, const Vector2f& size, float radius, const Color& color);
     void renderTable(RenderWindow& window);
 
     Color bgColor = Color(244, 246, 250);

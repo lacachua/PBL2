@@ -119,7 +119,6 @@ private:
     Color textColor = Color(34, 34, 34);       // #222222
     
     // Helper to draw rounded rectangle
-    void drawRoundedRect(RenderWindow& window, const Vector2f& pos, const Vector2f& size, float radius, const Color& color);
     
     void setupUI();
     void renderTable(RenderWindow& window);

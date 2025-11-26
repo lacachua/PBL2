@@ -1,4 +1,5 @@
 #include "UI/components/Admin/ComboPanel.h"
+#include "UI/components/Admin/RoundedRectRenderer.h"
 #include <algorithm>
 #include <sstream>
 #include <array>
@@ -132,32 +133,6 @@ void ComboPanel::setPosition(Vector2f pos) {
     centerText(btnAddText, btnAddBg);
     centerText(btnEditText, btnEditBg);
     centerText(btnDeleteText, btnDeleteBg);
-}
-
-void ComboPanel::drawRoundedRect(RenderWindow& window, const Vector2f& pos, const Vector2f& size, float radius, const Color& color) {
-    RectangleShape center(Vector2f(size.x - 2 * radius, size.y));
-    center.setPosition(Vector2f(pos.x + radius, pos.y));
-    center.setFillColor(color);
-    window.draw(center);
-
-    RectangleShape mid(Vector2f(size.x, size.y - 2 * radius));
-    mid.setPosition(Vector2f(pos.x, pos.y + radius));
-    mid.setFillColor(color);
-    window.draw(mid);
-
-    CircleShape corner(radius);
-    corner.setFillColor(color);
-    corner.setPosition(pos);
-    window.draw(corner);
-
-    corner.setPosition(Vector2f(pos.x + size.x - 2 * radius, pos.y));
-    window.draw(corner);
-
-    corner.setPosition(Vector2f(pos.x, pos.y + size.y - 2 * radius));
-    window.draw(corner);
-
-    corner.setPosition(Vector2f(pos.x + size.x - 2 * radius, pos.y + size.y - 2 * radius));
-    window.draw(corner);
 }
 
 void ComboPanel::renderTable(RenderWindow& window) {
@@ -647,16 +622,16 @@ void ComboPanel::render(RenderWindow& window) {
 
     renderTable(window);
 
-    drawRoundedRect(window, btnAddBg.getPosition(), btnAddBg.getSize(), 6.f, btnAddBg.getFillColor());
+    RoundedRectRenderer::draw(window, btnAddBg.getPosition(), btnAddBg.getSize(), 6.f, btnAddBg.getFillColor());
     if (btnAddText) window.draw(*btnAddText);
 
-    drawRoundedRect(window, btnEditBg.getPosition(), btnEditBg.getSize(), 6.f, btnEditBg.getFillColor());
+    RoundedRectRenderer::draw(window, btnEditBg.getPosition(), btnEditBg.getSize(), 6.f, btnEditBg.getFillColor());
     if (btnEditText) window.draw(*btnEditText);
 
-    drawRoundedRect(window, btnDeleteBg.getPosition(), btnDeleteBg.getSize(), 6.f, btnDeleteBg.getFillColor());
+    RoundedRectRenderer::draw(window, btnDeleteBg.getPosition(), btnDeleteBg.getSize(), 6.f, btnDeleteBg.getFillColor());
     if (btnDeleteText) window.draw(*btnDeleteText);
 
-    drawRoundedRect(window, reloadButtonBg.getPosition(), reloadButtonBg.getSize(), 6.f, reloadButtonBg.getFillColor());
+    RoundedRectRenderer::draw(window, reloadButtonBg.getPosition(), reloadButtonBg.getSize(), 6.f, reloadButtonBg.getFillColor());
     FloatRect spriteBounds = reloadSprite.getLocalBounds();
     Vector2f scale = reloadSprite.getScale();
     float scaledW = spriteBounds.size.x * scale.x;

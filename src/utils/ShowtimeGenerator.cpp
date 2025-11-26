@@ -7,20 +7,17 @@
 void ShowtimeGenerator::generateShowtimesFile(const string& outputPath, int numDays) {
     ofstream file(outputPath);
     if (!file.is_open()) return;
-    
-    // Write header
+
     file << "showtime_id|movie_id|room_id|date|time|price\n";
-    
+
     time_t now = time(nullptr);
     int showtimeCounter = 0;
     
-    // For each day
     for (int day = 0; day < numDays; day++) {
         time_t futureTime = now + (day * 24 * 60 * 60);
         tm* futureDate = localtime(&futureTime);
         string dateStr = formatDate(futureDate);
         
-        // For each of 10 movies (F0001 to F0010)
         for (int movieIdx = 0; movieIdx < 10; movieIdx++) {
             string movieId = "F000" + to_string(movieIdx + 1);
             if (movieIdx >= 9) movieId = "F00" + to_string(movieIdx + 1);

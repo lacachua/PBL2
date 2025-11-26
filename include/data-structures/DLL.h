@@ -10,7 +10,7 @@ public:
     Node* prev;
     Node* next;
     Node(const T& value) : data(value), prev(nullptr), next(nullptr) {}
-    Node(T&& value) : data(std::move(value)), prev(nullptr), next(nullptr) {}
+    Node(T&& value) : data(move(value)), prev(nullptr), next(nullptr) {}
 };
 
 template <typename T>
@@ -74,7 +74,7 @@ public:
     }
 
     void push_back(T&& value) {
-        link_back(new Node<T>(std::move(value)));
+        link_back(new Node<T>(move(value)));
     }
 
     void push_front(const T& value) {
@@ -82,7 +82,7 @@ public:
     }
 
     void push_front(T&& value) {
-        link_front(new Node<T>(std::move(value)));
+        link_front(new Node<T>(move(value)));
     }
 
     void pop_front() {

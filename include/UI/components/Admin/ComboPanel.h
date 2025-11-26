@@ -79,7 +79,6 @@ private:
     Color textColor = Color(34, 34, 34);
 
     void setupUI();
-    void drawRoundedRect(RenderWindow& window, const Vector2f& pos, const Vector2f& size, float radius, const Color& color);
     void renderTable(RenderWindow& window);
     void renderPopup(RenderWindow& window);
     void renderNotification(RenderWindow& window);

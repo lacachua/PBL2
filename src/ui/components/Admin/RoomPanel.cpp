@@ -1,4 +1,5 @@
 #include "UI/components/Admin/RoomPanel.h"
+#include "UI/components/Admin/RoundedRectRenderer.h"
 #include <fstream>
 #include <sstream>
 #include <algorithm>
@@ -470,32 +471,6 @@ void RoomPanel::update(Vector2f mousePos, bool mousePressed) {
     }
 }
 
-void RoomPanel::drawRoundedRect(RenderWindow& window, const Vector2f& pos, const Vector2f& size, float radius, const Color& color) {
-    RectangleShape center(Vector2f(size.x - 2 * radius, size.y));
-    center.setPosition(Vector2f(pos.x + radius, pos.y));
-    center.setFillColor(color);
-    window.draw(center);
-
-    RectangleShape mid(Vector2f(size.x, size.y - 2 * radius));
-    mid.setPosition(Vector2f(pos.x, pos.y + radius));
-    mid.setFillColor(color);
-    window.draw(mid);
-
-    CircleShape corner(radius);
-    corner.setFillColor(color);
-    corner.setPosition(pos);
-    window.draw(corner);
-
-    corner.setPosition(Vector2f(pos.x + size.x - 2 * radius, pos.y));
-    window.draw(corner);
-
-    corner.setPosition(Vector2f(pos.x, pos.y + size.y - 2 * radius));
-    window.draw(corner);
-
-    corner.setPosition(Vector2f(pos.x + size.x - 2 * radius, pos.y + size.y - 2 * radius));
-    window.draw(corner);
-}
-
 void RoomPanel::renderTable(RenderWindow& window) {
     window.draw(tableHeaderBg);
 
@@ -588,7 +563,7 @@ void RoomPanel::render(RenderWindow& window) {
 
     renderTable(window);
 
-    drawRoundedRect(window, reloadButtonBg.getPosition(), reloadButtonBg.getSize(), 6.f, reloadButtonBg.getFillColor());
+    RoundedRectRenderer::draw(window, reloadButtonBg.getPosition(), reloadButtonBg.getSize(), 6.f, reloadButtonBg.getFillColor());
     FloatRect spriteBounds = reloadSprite->getLocalBounds();
     Vector2f scale = reloadSprite->getScale();
     float spriteWidth = spriteBounds.size.x * scale.x;

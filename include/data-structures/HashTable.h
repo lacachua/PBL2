@@ -1,6 +1,4 @@
-#ifndef HASHTABLE_H
-#define HASHTABLE_H
-
+#pragma once
 #include <string>
 #include <functional>
 using namespace std;
@@ -174,5 +172,3 @@ public:
         }
     }
 };
-
-#endif

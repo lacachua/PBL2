@@ -91,7 +91,8 @@ void App::run() {
                     if (loginCompleted && state != AppState::LOGIN) {
                         BaseScreen::setLoggedInUser(currentUser, currentUserEmail);
                         homeScreen->setLoggedUser(currentUser);
-                    } else if (oldState != state && state == AppState::HOME) {
+                    } 
+                    else if (oldState != state && state == AppState::HOME) {
                         currentUser.clear();
                         currentUserEmail.clear();
                     }

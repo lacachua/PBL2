@@ -1,4 +1,5 @@
 #include "UI/components/Admin/UserPanel.h"
+#include "UI/components/Admin/RoundedRectRenderer.h"
 
 #include <algorithm>
 #include <array>
@@ -150,33 +151,6 @@ void UserPanel::updateButton(ActionButton& button, Vector2f mousePos) {
     button.box.setFillColor(button.hovered ? button.hoverColor : button.baseColor);
 }
 
-void UserPanel::drawRoundedRect(RenderWindow& window, const Vector2f& pos, const Vector2f& size, float radius, const Color& color) {
-    RectangleShape center(Vector2f(size.x - 2 * radius, size.y));
-    center.setPosition(Vector2f(pos.x + radius, pos.y));
-    center.setFillColor(color);
-    window.draw(center);
-
-    RectangleShape middle(Vector2f(size.x, size.y - 2 * radius));
-    middle.setPosition(Vector2f(pos.x, pos.y + radius));
-    middle.setFillColor(color);
-    window.draw(middle);
-
-    CircleShape corner(radius);
-    corner.setFillColor(color);
-
-    corner.setPosition(pos);
-    window.draw(corner);
-
-    corner.setPosition(Vector2f(pos.x + size.x - 2 * radius, pos.y));
-    window.draw(corner);
-
-    corner.setPosition(Vector2f(pos.x, pos.y + size.y - 2 * radius));
-    window.draw(corner);
-
-    corner.setPosition(Vector2f(pos.x + size.x - 2 * radius, pos.y + size.y - 2 * radius));
-    window.draw(corner);
-}
-
 string UserPanel::formatDate(time_t timestamp) const {
     if (timestamp <= 0) return "-";
 
@@ -292,7 +266,7 @@ void UserPanel::renderTable(RenderWindow& window) {
 
 void UserPanel::renderButtons(RenderWindow& window) {
     auto drawButton = [&](ActionButton& button) {
-        drawRoundedRect(window, button.box.getPosition(), button.box.getSize(), BUTTON_RADIUS, button.box.getFillColor());
+        RoundedRectRenderer::draw(window, button.box.getPosition(), button.box.getSize(), BUTTON_RADIUS, button.box.getFillColor());
         if (button.label) {
             window.draw(*button.label);
         }
@@ -302,7 +276,7 @@ void UserPanel::renderButtons(RenderWindow& window) {
     drawButton(btnLock);
     drawButton(btnDelete);
 
-    drawRoundedRect(window, btnRefresh.box.getPosition(), btnRefresh.box.getSize(), BUTTON_RADIUS, btnRefresh.box.getFillColor());
+    RoundedRectRenderer::draw(window, btnRefresh.box.getPosition(), btnRefresh.box.getSize(), BUTTON_RADIUS, btnRefresh.box.getFillColor());
     if (reloadSprite) {
         window.draw(*reloadSprite);
     } else if (btnRefresh.label) {

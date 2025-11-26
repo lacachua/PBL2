@@ -27,7 +27,8 @@ BookingScreen::BookingScreen(Font& f, const String& movieId)
       currentState(BookingState::suatchieu),
       showtimeSection(f, movieId, ShowtimeRepository().loadFromFile("../data/showtimes.txt")),
       seatRepo("../data/RoomStatusAtShowtime.txt"),
-      ticketRepo("../data/tickets.txt")
+      ticketRepo("../data/tickets.txt"),
+      bookingService(make_unique<BookingService>())
 {
     // Khởi tạo seatSelection lần đầu
     seatSelection = make_unique<SeatSelection>(font);
@@ -39,41 +40,13 @@ BookingScreen::BookingScreen(Font& f, const String& movieId)
 }
 
 void BookingScreen::getUserInfo(const string& email, string& fullName, string& phone) {
-    ifstream file("../data/users.txt");
-    if (!file.is_open()) {
+    // ✅ SOLID: Delegate to BookingService instead of reading file directly
+    if (bookingService) {
+        bookingService->getUserInfo(email, fullName, phone);
+    } else {
         fullName = "Khách hàng";
         phone = "";
-        return;
     }
-    
-    string line;
-    getline(file, line); // Bỏ header
-    
-    while (getline(file, line)) {
-        if (line.empty()) continue;
-        
-        stringstream ss(line);
-        string fileEmail, passwordHash, fileName, birthDate, filePhone, registeredAt;
-        
-        // Format: email|passwordHash|fullName|birthDate|phone|registeredAt
-        getline(ss, fileEmail, '|');
-        getline(ss, passwordHash, '|');
-        getline(ss, fileName, '|');
-        getline(ss, birthDate, '|');
-        getline(ss, filePhone, '|');
-        getline(ss, registeredAt, '|');
-        
-        if (fileEmail == email) {
-            fullName = fileName;
-            phone = filePhone;
-            file.close();
-            return;
-        }
-    }
-    
-    file.close();
-    fullName = "Khách hàng";
-    phone = "";
 }
 
 void BookingScreen::update(Vector2f mousePos, bool mousePressed, AppState& state) {
@@ -180,7 +153,7 @@ void BookingScreen::update(Vector2f mousePos, bool mousePressed, AppState& state
 
         if (voucherApplied && currentSubtotal != voucherSubtotalSnapshot) {
             string email = BaseScreen::getLoggedInUserEmail();
-            double refreshed = email.empty() ? 0.0 : voucherManager.applyVoucher(email, appliedVoucherCode, currentSubtotal, false);
+            double refreshed = email.empty() ? 0.0 : bookingService->applyVoucher(email, appliedVoucherCode, currentSubtotal, false);
             if (refreshed <= 0.0) {
                 voucherStatusMessage = "Voucher không còn hợp lệ cho đơn hàng hiện tại.";
                 voucherStatusIsError = true;
@@ -282,7 +255,7 @@ void BookingScreen::update(Vector2f mousePos, bool mousePressed, AppState& state
                 bookingData.totalPrice = max(0, subtotalBeforeDiscount - appliedDiscount);
 
                 if (voucherApplied && !bookingData.voucherCode.empty()) {
-                    voucherManager.applyVoucher(bookingData.customerEmail, bookingData.voucherCode, subtotalBeforeDiscount, true);
+                    bookingService->applyVoucher(bookingData.customerEmail, bookingData.voucherCode, subtotalBeforeDiscount, true);
                 }
                 
                 // ====== TẠO VÉ VÀ LƯU VÀO DATABASE ======
@@ -536,7 +509,7 @@ void BookingScreen::applyVoucherCode(int currentSubtotal) {
     string email = BaseScreen::getLoggedInUserEmail();
     clearVoucherPreview();
 
-    double discount = voucherManager.applyVoucher(email, code, currentSubtotal, false);
+    double discount = bookingService->applyVoucher(email, code, currentSubtotal, false);
     if (discount <= 0.0) {
         voucherStatusMessage = "Voucher không hợp lệ hoặc chưa đáp ứng điều kiện.";
         voucherStatusIsError = true;

@@ -14,9 +14,8 @@ class Button {
     public:
         Button(const Font&, const String&, float, float, int);
         
-        // Custom copy constructor (deep copy text)
-        Button(const Button& other);
-        Button& operator=(const Button& other);
+        Button(const Button&);
+        Button& operator=(const Button&);
         Button(Button&&) = default;
         Button& operator=(Button&&) = default;
 

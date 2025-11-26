@@ -11,7 +11,6 @@ AuthService::AuthService(const string& filePath)
 }
 
 AuthService::~AuthService() {
-    // UserRepository will auto-save in its destructor
 }
 
 bool AuthService::registerUser(const string& email, 
