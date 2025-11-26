@@ -432,60 +432,74 @@ void ShowtimePanel::updateSummaryText() {
     const string dateLabel = activeDateFilter.empty() ? "Chưa chọn ngày" : activeDateFilter;
     const string roomLabel = activeRoomFilterLabel.empty() ? "Tất cả phòng" : activeRoomFilterLabel;
 
-    const string countLabel = to_string(count);
-    const string leftCaption = "suất chiếu";
+    // Left column: count (bold white) + "SUẤT CHIẾU" (muted)
+    const string countStr = to_string(count);
+    const string captionStr = "SUẤT CHIẾU";
     const string dateLine = "Ngày: " + dateLabel;
     const string roomLine = "Phòng: " + roomLabel;
 
-    summaryPrimaryText->setString(sf::String::fromUtf8(countLabel.begin(), countLabel.end()));
-    summaryTitleText->setString(sf::String::fromUtf8(leftCaption.begin(), leftCaption.end()));
+    summaryPrimaryText->setString(sf::String::fromUtf8(countStr.begin(), countStr.end()));
+    summaryPrimaryText->setCharacterSize(28);
+    summaryPrimaryText->setStyle(sf::Text::Bold);
+    
+    summaryTitleText->setString(sf::String::fromUtf8(captionStr.begin(), captionStr.end()));
+    summaryTitleText->setCharacterSize(13);
+    summaryTitleText->setStyle(sf::Text::Bold);
+    
     summaryMetaDateText->setString(sf::String::fromUtf8(dateLine.begin(), dateLine.end()));
     summaryMetaRoomText->setString(sf::String::fromUtf8(roomLine.begin(), roomLine.end()));
 
-    const float padding = 20.f;
-    const float topPadding = 10.f;
-    const float columnGapDefault = 32.f;
-    const float minGap = 12.f;
-    const float maxGap = 48.f;
-    const float lineSpacing = 6.f;
+    // Layout
+    const float paddingH = 14.f;
+    const float columnGap = 16.f;
+    const float lineSpacing = 2.f;
+    const float countToLabelGap = -2.f;  // Negative to pull closer
+    
     sf::Vector2f cardPos = summaryCard.getPosition();
     sf::Vector2f cardSize = summaryCard.getSize();
 
     sf::FloatRect countBounds = summaryPrimaryText->getLocalBounds();
-    sf::FloatRect titleBounds = summaryTitleText->getLocalBounds();
+    sf::FloatRect captionBounds = summaryTitleText->getLocalBounds();
     sf::FloatRect dateBounds = summaryMetaDateText->getLocalBounds();
     sf::FloatRect roomBounds = summaryMetaRoomText->getLocalBounds();
 
-    float leftColumnWidth = max(countBounds.size.x, titleBounds.size.x);
-    float rightColumnWidth = max(dateBounds.size.x, roomBounds.size.x);
-    float availableWidth = max(0.f, cardSize.x - 2.f * padding);
-    float desiredGap = columnGapDefault;
-    if (leftColumnWidth + rightColumnWidth + desiredGap > availableWidth) {
-        desiredGap = max(minGap, availableWidth - (leftColumnWidth + rightColumnWidth));
-    }
-    desiredGap = std::clamp(desiredGap, minGap, maxGap);
+    // Left column: vertically center count + caption as a group
+    float leftColumnHeight = countBounds.size.y + countToLabelGap + captionBounds.size.y;
+    float leftX = cardPos.x + paddingH;
+    float leftTopY = cardPos.y + (cardSize.y - leftColumnHeight) / 2.f;
 
-    float leftX = cardPos.x + padding;
-    float rightX = min(cardPos.x + cardSize.x - padding - rightColumnWidth,
-                       leftX + leftColumnWidth + desiredGap);
-    rightX = max(rightX, leftX + leftColumnWidth + minGap);
-
-    float topY = cardPos.y + topPadding;
     summaryPrimaryText->setPosition(sf::Vector2f(
         leftX - countBounds.position.x,
-        topY - countBounds.position.y));
+        leftTopY - countBounds.position.y
+    ));
 
     summaryTitleText->setPosition(sf::Vector2f(
-        leftX - titleBounds.position.x,
-        summaryPrimaryText->getPosition().y + countBounds.size.y + 2.f - titleBounds.position.y));
+        leftX - captionBounds.position.x,
+        leftTopY + countBounds.size.y + countToLabelGap - captionBounds.position.y
+    ));
+
+    // Right column: date + room, vertically centered
+    float rightColumnWidth = max(dateBounds.size.x, roomBounds.size.x);
+    float rightX = cardPos.x + cardSize.x - paddingH - rightColumnWidth;
+    
+    // Ensure minimum gap
+    float leftColumnEnd = leftX + max(countBounds.size.x, captionBounds.size.x);
+    if (rightX < leftColumnEnd + columnGap) {
+        rightX = leftColumnEnd + columnGap;
+    }
+
+    float rightColumnHeight = dateBounds.size.y + lineSpacing + roomBounds.size.y;
+    float rightTopY = cardPos.y + (cardSize.y - rightColumnHeight) / 2.f;
 
     summaryMetaDateText->setPosition(sf::Vector2f(
         rightX - dateBounds.position.x,
-        topY - dateBounds.position.y));
+        rightTopY - dateBounds.position.y
+    ));
 
     summaryMetaRoomText->setPosition(sf::Vector2f(
         rightX - roomBounds.position.x,
-        summaryMetaDateText->getPosition().y + dateBounds.size.y + lineSpacing - roomBounds.position.y));
+        rightTopY + dateBounds.size.y + lineSpacing - roomBounds.position.y
+    ));
 }
 
 void ShowtimePanel::updateHoveredRow(sf::Vector2f mousePos) {

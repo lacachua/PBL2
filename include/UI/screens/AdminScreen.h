@@ -10,6 +10,7 @@
 #include "UI/components/Admin/TicketPanel.h"
 #include "UI/components/Admin/RevenuePanel.h"
 #include "UI/components/Admin/ShowtimePanel.h"
+#include "UI/components/Admin/AdminProfilePanel.h"
 #include "services/AuthService.h"
 #include <memory>
 
@@ -35,6 +36,7 @@ private:
     unique_ptr<TicketPanel> ticketPanel;
     unique_ptr<RevenuePanel> revenuePanel;
     unique_ptr<ShowtimePanel> showtimePanel;
+    unique_ptr<AdminProfilePanel> profilePanel;
     
     // Background
     RectangleShape mainPanelBg;
