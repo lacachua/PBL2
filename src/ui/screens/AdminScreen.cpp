@@ -42,6 +42,7 @@ void AdminScreen::switchPanel(AppState newState) {
     roomPanel.reset();
     ticketPanel.reset();
     revenuePanel.reset();
+    showtimePanel.reset();
     
     // Create appropriate panel based on state
     switch (newState) {
@@ -62,6 +63,10 @@ void AdminScreen::switchPanel(AppState newState) {
             roomPanel = make_unique<RoomPanel>(font, panelWidth, panelHeight);
             roomPanel->setPosition(Vector2f(280, 20));
             break;
+        case AppState::ADMIN_SHOWTIMES:
+            showtimePanel = make_unique<ShowtimePanel>(font, panelWidth, panelHeight);
+            showtimePanel->setPosition(Vector2f(280, 20));
+            break;
         case AppState::ADMIN_TICKETS:
             ticketPanel = make_unique<TicketPanel>(font, panelWidth, panelHeight);
             ticketPanel->setPosition(Vector2f(280, 20));
@@ -75,7 +80,6 @@ void AdminScreen::switchPanel(AppState newState) {
             revenuePanel->setPosition(Vector2f(280, 20));
             break;
             
-        case AppState::ADMIN_SHOWTIMES:
         case AppState::ADMIN_STAFF:
         case AppState::ADMIN_CHANGE_PASSWORD:
             cout << "[AdminScreen] Panel not implemented yet\n";
@@ -113,6 +117,9 @@ void AdminScreen::handleEvent(const Event& event) {
     if (revenuePanel) {
         revenuePanel->handleEvent(event, window);
     }
+    if (showtimePanel) {
+        showtimePanel->handleEvent(event, window);
+    }
 }
 
 void AdminScreen::update(Vector2f mousePos, bool mousePressed, AppState& state) {
@@ -138,6 +145,9 @@ void AdminScreen::update(Vector2f mousePos, bool mousePressed, AppState& state) 
     if (revenuePanel) {
         revenuePanel->update(mousePos, mousePressed);
     }
+    if (showtimePanel) {
+        showtimePanel->update(mousePos, mousePressed);
+    }
 }
 
 void AdminScreen::render() {
@@ -150,6 +160,7 @@ void AdminScreen::render() {
     if (roomPanel) roomPanel->render(window);
     if (ticketPanel) ticketPanel->render(window);
     if (revenuePanel) revenuePanel->render(window);
+    if (showtimePanel) showtimePanel->render(window);
 
     sidebar->render(window);
 }
