@@ -12,7 +12,8 @@ App::App()
 {
     window.setFramerateLimit(60);
 
-    ShowtimeCleanupService::maintainShowtimes("../data/showtimes.txt", 7);
+    // Force regenerate showtimes using Round-Robin algorithm
+    ShowtimeCleanupService::forceRegenerate("../data/showtimes.txt", 30);
 
     authService = make_unique<AuthService>("../data/users.txt");
     authService->ensureSampleUser();

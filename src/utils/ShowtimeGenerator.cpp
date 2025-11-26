@@ -3,95 +3,254 @@
 #include <sstream>
 #include <iomanip>
 #include <algorithm>
+#include <iostream>
+
+// Static members initialization
+deque<MovieInfo> ShowtimeGenerator::movieQueue;
+vector<GeneratedShowtime> ShowtimeGenerator::generatedShowtimes;
+
+// ==================== DATA LOADING ====================
+
+vector<MovieInfo> ShowtimeGenerator::loadMovies(const string& moviesPath) {
+    vector<MovieInfo> movies;
+    ifstream file(moviesPath);
+    if (!file.is_open()) {
+        cerr << "Cannot open movies file: " << moviesPath << endl;
+        return movies;
+    }
+    
+    string line;
+    getline(file, line); // Skip header
+    
+    while (getline(file, line)) {
+        stringstream ss(line);
+        string token;
+        MovieInfo movie;
+        
+        // movie_id|title|age_rating|country|language|genres|duration_min|release_date|director|cast|synopsis|poster_path|status
+        getline(ss, movie.id, '|');        // 0: movie_id
+        getline(ss, movie.title, '|');     // 1: title
+        getline(ss, token, '|');           // 2: age_rating (skip)
+        getline(ss, token, '|');           // 3: country (skip)
+        getline(ss, token, '|');           // 4: language (skip)
+        getline(ss, token, '|');           // 5: genres (skip)
+        getline(ss, token, '|');           // 6: duration_min
+        try {
+            movie.duration = stoi(token);
+        } catch (...) {
+            movie.duration = 120; // Default 2 hours
+        }
+        getline(ss, token, '|');           // 7: release_date (skip)
+        getline(ss, token, '|');           // 8: director (skip)
+        getline(ss, token, '|');           // 9: cast (skip)
+        getline(ss, token, '|');           // 10: synopsis (skip)
+        getline(ss, token, '|');           // 11: poster_path (skip)
+        getline(ss, movie.status, '|');    // 12: status
+        
+        // Chỉ lấy phim "Đang chiếu" hoặc "Sắp chiếu"
+        if (movie.status == "Đang chiếu" || movie.status == "Sắp chiếu" ||
+            movie.status == "Dang chieu" || movie.status == "Sap chieu") {
+            movies.push_back(movie);
+        }
+    }
+    
+    file.close();
+    return movies;
+}
+
+vector<string> ShowtimeGenerator::loadRooms(const string& roomsPath) {
+    vector<string> rooms;
+    ifstream file(roomsPath);
+    if (!file.is_open()) {
+        cerr << "Cannot open rooms file: " << roomsPath << endl;
+        return rooms;
+    }
+    
+    string line;
+    getline(file, line); // Skip header
+    
+    while (getline(file, line)) {
+        stringstream ss(line);
+        string roomId;
+        getline(ss, roomId, '|');
+        if (!roomId.empty()) {
+            rooms.push_back(roomId);
+        }
+    }
+    
+    file.close();
+    return rooms;
+}
+
+// ==================== SCHEDULING ALGORITHM ====================
+
+bool ShowtimeGenerator::hasConflict(const string& movieId, int startMinute, int endMinute,
+                                     const string& excludeRoom, const string& date) {
+    for (const auto& st : generatedShowtimes) {
+        // Chỉ check cùng ngày và cùng phim
+        if (st.date == date && st.movieId == movieId && st.roomId != excludeRoom) {
+            int stStart = timeToMinutes(st.time);
+            int stEnd = stStart + 120; // Assume ~2h for simplicity, actual duration varies
+            
+            // Check overlap: NOT (endA <= startB OR startA >= endB)
+            if (!(endMinute <= stStart || startMinute >= stEnd)) {
+                return true; // Có conflict
+            }
+        }
+    }
+    return false;
+}
+
+MovieInfo ShowtimeGenerator::selectNextMovie(int startMinute, int endMinute, const string& roomId) {
+    if (movieQueue.empty()) {
+        return {"", "", 120, ""};
+    }
+    
+    size_t queueSize = movieQueue.size();
+    string currentDate = generatedShowtimes.empty() ? "" : generatedShowtimes.back().date;
+    
+    // Try each movie in queue to find one without conflict
+    for (size_t attempt = 0; attempt < queueSize; attempt++) {
+        MovieInfo movie = movieQueue.front();
+        movieQueue.pop_front();
+        
+        int movieEndMinute = startMinute + movie.duration;
+        
+        if (!hasConflict(movie.id, startMinute, movieEndMinute, roomId, currentDate)) {
+            movieQueue.push_back(movie); // Đưa về cuối queue (Round-Robin)
+            return movie;
+        }
+        
+        // Có conflict, đưa về cuối và thử phim khác
+        movieQueue.push_back(movie);
+    }
+    
+    // Fallback: trả về phim đầu tiên nếu tất cả đều conflict
+    MovieInfo movie = movieQueue.front();
+    movieQueue.pop_front();
+    movieQueue.push_back(movie);
+    return movie;
+}
+
+int ShowtimeGenerator::getPriceByTime(int hour) {
+    // Giá vé theo khung giờ:
+    // - Sáng (9-12h): 65,000
+    // - Trưa/Chiều (12-17h): 70,000  
+    // - Tối sớm (17-20h): 75,000
+    // - Tối muộn (20-24h): 80,000
+    if (hour < 12) return 65000;
+    if (hour < 17) return 70000;
+    if (hour < 20) return 75000;
+    return 80000;
+}
+
+// ==================== MAIN GENERATION ====================
 
 void ShowtimeGenerator::generateShowtimesFile(const string& outputPath, int numDays) {
-    ofstream file(outputPath);
-    if (!file.is_open()) return;
-
-    file << "showtime_id|movie_id|room_id|date|time|price\n";
-
-    time_t now = time(nullptr);
-    int showtimeCounter = 0;
+    // Load data
+    vector<MovieInfo> movies = loadMovies("../data/movies.txt");
+    vector<string> rooms = loadRooms("../data/rooms.txt");
     
+    if (movies.empty()) {
+        cerr << "No movies found!" << endl;
+        return;
+    }
+    if (rooms.empty()) {
+        cerr << "No rooms found!" << endl;
+        return;
+    }
+    
+    // Initialize Round-Robin queue
+    movieQueue.clear();
+    for (const auto& movie : movies) {
+        movieQueue.push_back(movie);
+    }
+    
+    // Clear previous results
+    generatedShowtimes.clear();
+    
+    ofstream file(outputPath);
+    if (!file.is_open()) {
+        cerr << "Cannot write to file: " << outputPath << endl;
+        return;
+    }
+    
+    // Write header
+    file << "showtime_id|movie_id|room_id|date|time|price\n";
+    
+    time_t now = time(nullptr);
+    int globalCounter = 0;
+    
+    // Generate for each day
     for (int day = 0; day < numDays; day++) {
         time_t futureTime = now + (day * 24 * 60 * 60);
         tm* futureDate = localtime(&futureTime);
         string dateStr = formatDate(futureDate);
         
-        for (int movieIdx = 0; movieIdx < 10; movieIdx++) {
-            string movieId = "F000" + to_string(movieIdx + 1);
-            if (movieIdx >= 9) movieId = "F00" + to_string(movieIdx + 1);
+        int dailyCounter = 0;
+        
+        // Reset daily showtime list for conflict checking
+        vector<GeneratedShowtime> dailyShowtimes;
+        
+        // Generate showtimes for each room
+        for (size_t r = 0; r < rooms.size(); r++) {
+            string roomId = rooms[r];
             
-            vector<TimeSlot> timeSlots = getTimeSlotsForMovie(movieIdx);
+            // Offset mỗi phòng để phim khởi chiếu lệch nhau
+            // Room 1: 9:00, Room 2: 9:20, Room 3: 9:40, etc.
+            int currentMinute = START_HOUR * 60 + (static_cast<int>(r) * ROOM_OFFSET);
+            int endDayMinute = END_HOUR * 60;
             
-            // Generate showtimes for this movie
-            for (size_t slotIdx = 0; slotIdx < timeSlots.size(); slotIdx++) {
-                showtimeCounter++;
-                string showtimeId = generateShowtimeId(dateStr, showtimeCounter);
-                string roomId = getRoomForMovie(movieIdx, slotIdx);
+            // Fill room with showtimes until end of day
+            while (currentMinute < endDayMinute) {
+                // Temporarily set current date for conflict checking
+                generatedShowtimes = dailyShowtimes;
                 
-                file << showtimeId << "|"
-                     << movieId << "|"
-                     << roomId << "|"
-                     << dateStr << "|"
-                     << timeSlots[slotIdx].time << "|"
-                     << timeSlots[slotIdx].price << "\n";
+                // Select next movie using Round-Robin
+                MovieInfo movie = selectNextMovie(currentMinute, currentMinute + 180, roomId);
+                if (movie.id.empty()) break;
+                
+                int showtimeEndMinute = currentMinute + movie.duration;
+                
+                // Nếu vượt quá 24:00, dừng
+                if (showtimeEndMinute > endDayMinute) break;
+                
+                // Create showtime
+                globalCounter++;
+                dailyCounter++;
+                
+                GeneratedShowtime st;
+                st.showtimeId = generateShowtimeId(dateStr, dailyCounter);
+                st.movieId = movie.id;
+                st.roomId = roomId;
+                st.date = dateStr;
+                st.time = minutesToTime(currentMinute);
+                st.price = getPriceByTime(currentMinute / 60);
+                
+                dailyShowtimes.push_back(st);
+                
+                // Write to file
+                file << st.showtimeId << "|"
+                     << st.movieId << "|"
+                     << st.roomId << "|"
+                     << st.date << "|"
+                     << st.time << "|"
+                     << st.price << "\n";
+                
+                // Move to next slot (movie duration + buffer)
+                currentMinute = showtimeEndMinute + BUFFER_MINUTES;
             }
         }
+        
+        // Save daily showtimes for reference
+        generatedShowtimes = dailyShowtimes;
     }
     
     file.close();
+    cout << "Generated " << globalCounter << " showtimes for " << numDays << " days." << endl;
 }
 
-vector<ShowtimeGenerator::TimeSlot> ShowtimeGenerator::getTimeSlotsForMovie(int movieIndex) {
-    // Each movie gets 3 time slots per day with varying times to avoid conflicts
-    vector<vector<TimeSlot>> movieSchedules = {
-        // F0001
-        {{"09:00", 65000}, {"14:30", 75000}, {"20:00", 80000}},
-        // F0002
-        {{"10:30", 70000}, {"16:00", 75000}, {"21:30", 80000}},
-        // F0003
-        {{"13:00", 70000}, {"18:30", 80000}, {"22:00", 80000}},
-        // F0004
-        {{"11:00", 65000}, {"15:30", 75000}, {"19:00", 80000}},
-        // F0005
-        {{"09:30", 70000}, {"14:00", 75000}, {"20:30", 80000}},
-        // F0006
-        {{"10:00", 65000}, {"13:30", 70000}, {"17:00", 75000}},
-        // F0007
-        {{"11:30", 70000}, {"17:30", 80000}, {"23:00", 80000}},
-        // F0008
-        {{"09:00", 65000}, {"13:00", 70000}, {"19:30", 80000}},
-        // F0009
-        {{"10:30", 70000}, {"15:00", 75000}, {"21:00", 80000}},
-        // F0010
-        {{"09:30", 65000}, {"14:00", 75000}, {"22:30", 80000}}
-    };
-    
-    // Alternate schedules for variety across days
-    if (movieIndex % 2 == 1) {
-        // Shift times by 30 minutes for odd-indexed movies on odd days
-        vector<TimeSlot> altSchedule = {
-            {movieSchedules[movieIndex][0].time, movieSchedules[movieIndex][0].price},
-            {movieSchedules[movieIndex][1].time, movieSchedules[movieIndex][1].price},
-            {movieSchedules[movieIndex][2].time, movieSchedules[movieIndex][2].price}
-        };
-        return altSchedule;
-    }
-    
-    return movieSchedules[movieIndex];
-}
-
-string ShowtimeGenerator::getRoomForMovie(int movieIndex, int slotIndex) {
-    // Assign rooms to movies (movies rotate through rooms)
-    // F0001-F0006 get dedicated rooms, F0007-F0010 share rooms
-    int roomAssignment[] = {1, 2, 3, 4, 5, 6, 1, 2, 3, 4};
-    int roomNum = roomAssignment[movieIndex];
-    
-    stringstream ss;
-    ss << "PHONG_00" << roomNum;
-    return ss.str();
-}
+// ==================== UTILITIES ====================
 
 string ShowtimeGenerator::formatDate(tm* date) {
     stringstream ss;
@@ -102,12 +261,34 @@ string ShowtimeGenerator::formatDate(tm* date) {
 }
 
 string ShowtimeGenerator::generateShowtimeId(const string& date, int counter) {
-    // Remove dashes from date
+    // Remove dashes from date: 2025-11-26 -> 20251126
     string dateCompact = date;
     dateCompact.erase(remove(dateCompact.begin(), dateCompact.end(), '-'), dateCompact.end());
     
     stringstream ss;
     ss << "SUATCHIEU_" << dateCompact << "_" 
        << setfill('0') << setw(4) << counter;
+    return ss.str();
+}
+
+int ShowtimeGenerator::timeToMinutes(const string& timeStr) {
+    // Parse "HH:MM" to minutes since midnight
+    int hour = 0, minute = 0;
+    size_t colonPos = timeStr.find(':');
+    if (colonPos != string::npos) {
+        hour = stoi(timeStr.substr(0, colonPos));
+        minute = stoi(timeStr.substr(colonPos + 1));
+    }
+    return hour * 60 + minute;
+}
+
+string ShowtimeGenerator::minutesToTime(int minutes) {
+    // Convert minutes since midnight to "HH:MM"
+    int hour = minutes / 60;
+    int minute = minutes % 60;
+    
+    stringstream ss;
+    ss << setfill('0') << setw(2) << hour << ":"
+       << setfill('0') << setw(2) << minute;
     return ss.str();
 }

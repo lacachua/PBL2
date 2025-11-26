@@ -25,11 +25,35 @@ namespace {
             digits.insert(static_cast<std::size_t>(insertPos), ".");
             insertPos -= 3;
         }
-        return digits;
+        return digits + "đ";
     }
 
     sf::String toSfString(const std::string& text) {
         return sf::String::fromUtf8(text.begin(), text.end());
+    }
+
+    // Làm tròn lên thành số đẹp
+    long long roundUpNice(long long value) {
+        if (value <= 0) return 100;
+        if (value <= 100) return 100;
+        if (value <= 500) return 500;
+        if (value <= 1000) return 1000;
+        
+        long long magnitude = 1;
+        long long temp = value;
+        while (temp >= 10) {
+            temp /= 10;
+            magnitude *= 10;
+        }
+        
+        long long rounded = ((value + magnitude - 1) / magnitude) * magnitude;
+        long long digit = rounded / magnitude;
+        if (digit <= 1) rounded = magnitude;
+        else if (digit <= 2) rounded = 2 * magnitude;
+        else if (digit <= 5) rounded = 5 * magnitude;
+        else rounded = 10 * magnitude;
+        
+        return rounded;
     }
 }
 
@@ -588,19 +612,20 @@ void MovieRevenuePanel::drawChart(RenderTarget& target) const {
     sf::Text heading(font, toSfString(headingText), 16);
     heading.setFillColor(Color(30, 41, 59));
     heading.setStyle(sf::Text::Bold);
-    heading.setPosition(sf::Vector2f(chartCard.getPosition().x + 24.f, chartCard.getPosition().y + 18.f));
+    heading.setPosition(sf::Vector2f(chartCard.getPosition().x + 24.f, chartCard.getPosition().y + 14.f));
     target.draw(heading);
 
     if (movieStats.empty()) {
         sf::Text empty(font, toSfString("Không có dữ liệu"), 14);
         empty.setFillColor(Color(120, 130, 140));
-        empty.setPosition(sf::Vector2f(chartCard.getPosition().x + 24.f, chartCard.getPosition().y + 76.f));
+        empty.setPosition(sf::Vector2f(chartCard.getPosition().x + 24.f, chartCard.getPosition().y + 70.f));
         target.draw(empty);
         return;
     }
 
     const std::size_t barCount = std::min<std::size_t>(movieStats.size(), 12);
-    double maxValue = 0.0;
+    
+    // Tính maxValue động từ dữ liệu thực
     double actualMaxValue = 0.0;
     for (std::size_t i = 0; i < barCount; ++i) {
         double value = (currentChartMode == ChartMode::Revenue)
@@ -611,26 +636,16 @@ void MovieRevenuePanel::drawChart(RenderTarget& target) const {
         }
     }
     
-    if (currentChartMode == ChartMode::Revenue) {
-        maxValue = 10000000.0;
-    } else {
-        if (actualMaxValue <= 0.0) {
-            maxValue = 100.0;
-        } else if (actualMaxValue <= 100.0) {
-            maxValue = 100.0;
-        } else if (actualMaxValue <= 500.0) {
-            maxValue = 500.0;
-        } else if (actualMaxValue <= 1000.0) {
-            maxValue = 1000.0;
-        } else {
-            maxValue = std::ceil(actualMaxValue / 1000.0) * 1000.0;
-        }
+    // Làm tròn maxValue thành số đẹp
+    double maxValue = static_cast<double>(roundUpNice(static_cast<long long>(actualMaxValue)));
+    if (maxValue <= 0.0) {
+        maxValue = (currentChartMode == ChartMode::Revenue) ? 1000000.0 : 100.0;
     }
 
-    const float paddingLeft = 80.f;
-    const float paddingRight = 40.f;
-    const float paddingTop = 72.f;
-    const float paddingBottom = 110.f;
+    const float paddingLeft = (currentChartMode == ChartMode::Revenue) ? 100.f : 60.f;
+    const float paddingRight = 30.f;
+    const float paddingTop = 50.f;
+    const float paddingBottom = 80.f;
     const float chartWidth = std::max(60.f, chartCard.getSize().x - paddingLeft - paddingRight);
     const float chartHeight = std::max(80.f, chartCard.getSize().y - paddingTop - paddingBottom);
     const float originX = chartCard.getPosition().x + paddingLeft;
@@ -650,24 +665,16 @@ void MovieRevenuePanel::drawChart(RenderTarget& target) const {
         std::string labelStr;
         if (currentChartMode == ChartMode::Revenue) {
             long long value = static_cast<long long>(std::round(rawValue));
-            if (value == 0) {
-                labelStr = "0";
-            } else if (value >= 1000000) {
-                labelStr = std::to_string(value / 1000000) + "tr";
-            } else if (value >= 1000) {
-                labelStr = std::to_string(value / 1000) + "k";
-            } else {
-                labelStr = std::to_string(value);
-            }
+            labelStr = formatCurrency(value);
         } else {
             labelStr = std::to_string(static_cast<int>(std::round(rawValue)));
         }
 
-        sf::Text label(font, toSfString(labelStr), 12);
+        sf::Text label(font, toSfString(labelStr), 10);
         label.setFillColor(Color(120, 130, 140));
         FloatRect bounds = label.getLocalBounds();
         label.setPosition(sf::Vector2f(
-            originX - bounds.size.x - 12.f - bounds.position.x,
+            originX - bounds.size.x - 8.f - bounds.position.x,
             y - bounds.size.y / 2.f - bounds.position.y
         ));
         target.draw(label);
@@ -678,18 +685,20 @@ void MovieRevenuePanel::drawChart(RenderTarget& target) const {
     axis.setPosition(sf::Vector2f(originX, originY));
     target.draw(axis);
 
-    float gap = 20.f;
+    float gap = 16.f;
     float barWidth = (chartWidth - gap * (static_cast<float>(barCount) + 1.f)) / static_cast<float>(barCount);
-    if (barWidth < 30.f) {
-        gap = 12.f;
+    if (barWidth < 28.f) {
+        gap = 8.f;
         barWidth = (chartWidth - gap * (static_cast<float>(barCount) + 1.f)) / static_cast<float>(barCount);
     }
-    if (barWidth < 24.f) {
-        barWidth = 24.f;
-    }
+    if (barWidth > 70.f) barWidth = 70.f;
+    if (barWidth < 20.f) barWidth = 20.f;
+
+    float totalBarsWidth = barCount * barWidth + (barCount + 1) * gap;
+    float startX = originX + (chartWidth - totalBarsWidth) / 2.f + gap;
 
     for (std::size_t i = 0; i < barCount; ++i) {
-        const float x = originX + gap + static_cast<float>(i) * (barWidth + gap);
+        const float x = startX + static_cast<float>(i) * (barWidth + gap);
         const double rawValue = (currentChartMode == ChartMode::Revenue)
             ? static_cast<double>(movieStats[i].totalRevenue())
             : static_cast<double>(movieStats[i].ticketCount);
@@ -703,34 +712,29 @@ void MovieRevenuePanel::drawChart(RenderTarget& target) const {
         bar.setPosition(sf::Vector2f(x, originY - barHeight));
         target.draw(bar);
 
+        // Giá trị trên cột
         std::string valueStr;
         if (currentChartMode == ChartMode::Revenue) {
             long long val = static_cast<long long>(std::round(rawValue));
-            if (val >= 1000000) {
-                valueStr = std::to_string(val / 1000000) + "tr";
-            } else if (val >= 1000) {
-                valueStr = std::to_string(val / 1000) + "k";
-            } else {
-                valueStr = std::to_string(val);
-            }
+            valueStr = formatCurrency(val);
         } else {
             valueStr = std::to_string(static_cast<int>(std::round(rawValue)));
         }
 
-        sf::Text valueText(font, toSfString(valueStr), 11);
-        valueText.setFillColor(Color(30, 41, 59));
+        sf::Text valueText(font, toSfString(valueStr), 9);
         valueText.setStyle(sf::Text::Bold);
         FloatRect valueBounds = valueText.getLocalBounds();
         
         float valueY;
-        if (barHeight > valueBounds.size.y + 16.f) {
-            valueY = originY - barHeight + 8.f - valueBounds.position.y;
+        if (barHeight > valueBounds.size.y + 20.f) {
+            valueY = originY - barHeight + 6.f - valueBounds.position.y;
             valueText.setFillColor(Color::White);
         } else {
             valueY = originY - barHeight - valueBounds.size.y - 4.f - valueBounds.position.y;
+            valueText.setFillColor(Color(30, 41, 59));
             const float minY = chartCard.getPosition().y + paddingTop;
             if (valueY < minY) {
-                valueY = originY - barHeight + 8.f - valueBounds.position.y;
+                valueY = originY - barHeight + 6.f - valueBounds.position.y;
                 valueText.setFillColor(Color::White);
             }
         }
@@ -741,16 +745,17 @@ void MovieRevenuePanel::drawChart(RenderTarget& target) const {
         ));
         target.draw(valueText);
 
-        const std::string labelText = ellipsize(movieStats[i].title, 20);
-        sf::Text label(font, toSfString(labelText), 12);
+        // Nhãn phim
+        const std::string labelText = ellipsize(movieStats[i].title, 16);
+        sf::Text label(font, toSfString(labelText), 10);
         label.setFillColor(Color(94, 106, 123));
         FloatRect labelBounds = label.getLocalBounds();
         label.setOrigin(sf::Vector2f(
             labelBounds.position.x + labelBounds.size.x * 0.5f,
             labelBounds.position.y + labelBounds.size.y
         ));
-        label.setPosition(sf::Vector2f(x + barWidth * 0.5f, originY + 18.f));
-        label.setRotation(sf::degrees(-34.f));
+        label.setPosition(sf::Vector2f(x + barWidth * 0.5f, originY + 10.f));
+        label.setRotation(sf::degrees(-35.f));
         target.draw(label);
     }
 }

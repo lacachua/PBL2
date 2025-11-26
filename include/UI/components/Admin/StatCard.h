@@ -9,11 +9,10 @@ class StatCard {
 private:
     Font& font;
     RectangleShape box;
-    Text titleText;
-    Text valueText;
-    Text subtitleText;
+    Text titleText;      // Tiêu đề + ngày/tháng trong ngoặc
+    Text valueText;      // Giá trị số
 
-    void centerValue();
+    void positionValue();
 
 public:
     StatCard(Font& font, const Vector2f& size, const Color& outlineColor);
@@ -23,9 +22,8 @@ public:
     void setOutlineThickness(float);
     void setOutlineColor(const Color&);
 
-    void setTitle(const string& title);
+    void setTitleWithDate(const string& title, const string& dateStr);  // Tiêu đề (ngày/tháng)
     void setValue(const string& value);
-    void setSubtitle(const string& subtitle);
 
     Vector2f getPosition() const { return box.getPosition(); }
     Vector2f getSize() const { return box.getSize(); }

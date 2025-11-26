@@ -20,6 +20,7 @@ struct MonthlyRevenuePoint {
 struct MovieTicketCount {
     std::string title;
     int tickets;
+    long long revenue;  // Thêm doanh thu
 };
 
 class OverviewPanel {
@@ -36,6 +37,7 @@ private:
     // Data caches
     std::unordered_map<std::string, long long> registrationTimes;
     DLL<Ticket> ticketsCache;
+    bool dataLoaded = false;  // Đánh dấu đã load dữ liệu chưa
 
     long long dailyRevenue = 0;
     int newCustomersThisMonth = 0;
@@ -54,10 +56,12 @@ private:
 
     sf::RectangleShape ticketChartCard;
     sf::RectangleShape revenueChartCard;
+    sf::RectangleShape movieTableCard;    // Bảng phim bên phải biểu đồ cột
+    sf::RectangleShape revenueTableCard;  // Bảng doanh thu bên phải biểu đồ đường
 
     sf::Color cardOutlineCyan = sf::Color(13, 148, 136);
     sf::Color cardOutlineGreen = sf::Color(34, 197, 94);
-    sf::Color cardOutlineYellow = sf::Color(234, 179, 8);
+    sf::Color cardOutlineYellow = sf::Color(221, 180, 67);
     sf::Color cardOutlineRed = sf::Color(239, 68, 68);
 
     // Helpers
@@ -74,6 +78,7 @@ private:
 
     int countSeats(const std::string& seatList) const;
     std::string toCurrency(long long amount) const;
+    long long roundUpNice(long long value) const;
     sf::String toSfString(const std::string& text) const;
     std::string ellipsize(const std::string& text, std::size_t maxChars) const;
     void sortTopMovies();
@@ -81,6 +86,8 @@ private:
 
     void drawTicketChart(sf::RenderTarget& target) const;
     void drawRevenueChart(sf::RenderTarget& target) const;
+    void drawMovieTable(sf::RenderTarget& target) const;
+    void drawRevenueTable(sf::RenderTarget& target) const;
 
 public:
     OverviewPanel(sf::Font& font, float width, float height);

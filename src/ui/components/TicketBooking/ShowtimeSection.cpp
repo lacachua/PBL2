@@ -3,6 +3,8 @@
 #include <cstdio>
 #include <sstream>
 #include <fstream>
+#include <algorithm>
+#include <vector>
 using namespace std;
 
 // =======================
@@ -60,6 +62,18 @@ void ShowtimeSection::initializeDates() {
     }
 }
 
+// Helper function để convert time string "HH:MM" thành phút
+static int timeToMinutes(const String& timeStr) {
+    string t = timeStr.toAnsiString();
+    int hour = 0, minute = 0;
+    size_t colonPos = t.find(':');
+    if (colonPos != string::npos) {
+        hour = stoi(t.substr(0, colonPos));
+        minute = stoi(t.substr(colonPos + 1));
+    }
+    return hour * 60 + minute;
+}
+
 void ShowtimeSection::loadShowtimesForDate(int dateIndex) {
     dateButtons.clear();
     timeButtons.clear();
@@ -69,13 +83,26 @@ void ShowtimeSection::loadShowtimesForDate(int dateIndex) {
 
     // Lọc theo ngày + movieId (nếu có)
     String targetDate = availableDates[dateIndex];
+    
+    // Thu thập vào vector tạm để sort
+    vector<Showtime> tempShowtimes;
     for (int i = 0; i < allShowtimes.getSize(); ++i) {
         const auto& st = allShowtimes[i];
         if (st.date == targetDate) {
             if (filterMovieId.isEmpty() || st.movie_id == filterMovieId) {
-                filteredShowtimes.push_back(st);
+                tempShowtimes.push_back(st);
             }
         }
+    }
+    
+    // Sắp xếp theo giờ chiếu (tăng dần)
+    sort(tempShowtimes.begin(), tempShowtimes.end(), [](const Showtime& a, const Showtime& b) {
+        return timeToMinutes(a.time) < timeToMinutes(b.time);
+    });
+    
+    // Đưa vào DLL
+    for (const auto& st : tempShowtimes) {
+        filteredShowtimes.push_back(st);
     }
 
     // Tạo các nút ngày (hiển thị dd - mm - yyyy)

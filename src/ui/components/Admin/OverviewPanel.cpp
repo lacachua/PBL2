@@ -28,7 +28,9 @@ OverviewPanel::OverviewPanel(sf::Font& fontRef, float w, float h)
       ticketsCard(font, {250.f, 110.f}, cardOutlineYellow),
       totalRevenueCard(font, {250.f, 110.f}, cardOutlineRed),
       ticketChartCard(Vector2f(0.f, 0.f)),
-      revenueChartCard(Vector2f(0.f, 0.f)) {
+      revenueChartCard(Vector2f(0.f, 0.f)),
+      movieTableCard(Vector2f(0.f, 0.f)),
+      revenueTableCard(Vector2f(0.f, 0.f)) {
     initializeUI();
     loadData();
 }
@@ -49,9 +51,10 @@ void OverviewPanel::initializeUI() {
     background.setFillColor(Color(244, 247, 252));
     background.setPosition(position);
 
-    float margin = 24.f;
-    float statWidth = (width - margin * 2.f - 24.f * 3.f) / 4.f;
-    float statHeight = 120.f;
+    float margin = 16.f;
+    float cardGap = 12.f;
+    float statWidth = (width - margin * 2.f - cardGap * 3.f) / 4.f;
+    float statHeight = 70.f;
     Vector2f statSize(statWidth, statHeight);
 
     revenueTodayCard.setSize(statSize);
@@ -60,33 +63,60 @@ void OverviewPanel::initializeUI() {
     totalRevenueCard.setSize(statSize);
 
     revenueTodayCard.setPosition({position.x + margin, position.y + margin});
-    newCustomersCard.setPosition({revenueTodayCard.getPosition().x + statWidth + 24.f, position.y + margin});
-    ticketsCard.setPosition({newCustomersCard.getPosition().x + statWidth + 24.f, position.y + margin});
-    totalRevenueCard.setPosition({ticketsCard.getPosition().x + statWidth + 24.f, position.y + margin});
+    newCustomersCard.setPosition({revenueTodayCard.getPosition().x + statWidth + cardGap, position.y + margin});
+    ticketsCard.setPosition({newCustomersCard.getPosition().x + statWidth + cardGap, position.y + margin});
+    totalRevenueCard.setPosition({ticketsCard.getPosition().x + statWidth + cardGap, position.y + margin});
 
-    float chartTop = position.y + margin + statHeight + 40.f;
-    float chartHeight = height - (chartTop - position.y) - margin;
+    // Layout: Tiêu đề ngoài khung, biểu đồ + bảng
+    float chartTop = position.y + margin + statHeight + 36.f;  // Thêm space cho tiêu đề
+    float chartGap = 36.f;  // Gap giữa 2 hàng (có tiêu đề)
+    float totalChartHeight = height - chartTop - margin;
+    float singleRowHeight = (totalChartHeight - chartGap) / 2.f;
+    
+    float chartWidth = (width - margin * 2.f) * 0.5f;  // 65% cho biểu đồ
+    float tableWidth = (width - margin * 2.f) * 0.5f - 12.f;  // 35% cho bảng
 
-    ticketChartCard.setSize({(width - margin * 2.f - 32.f) / 2.f, chartHeight});
-    ticketChartCard.setPosition({position.x + margin, chartTop});
+    // Biểu đồ cột (trên) - không có tiêu đề bên trong
+    ticketChartCard.setSize({chartWidth, singleRowHeight - 20.f});
+    ticketChartCard.setPosition({position.x + margin, chartTop + 20.f});
     ticketChartCard.setFillColor(Color::White);
     ticketChartCard.setOutlineThickness(1.f);
     ticketChartCard.setOutlineColor(Color(226, 232, 240));
 
-    revenueChartCard.setSize(ticketChartCard.getSize());
-    revenueChartCard.setPosition({ticketChartCard.getPosition().x + ticketChartCard.getSize().x + 32.f, chartTop});
+    // Bảng phim (bên phải biểu đồ cột)
+    movieTableCard.setSize({tableWidth, singleRowHeight - 20.f});
+    movieTableCard.setPosition({ticketChartCard.getPosition().x + chartWidth + 12.f, chartTop + 20.f});
+    movieTableCard.setFillColor(Color::White);
+    movieTableCard.setOutlineThickness(1.f);
+    movieTableCard.setOutlineColor(Color(226, 232, 240));
+
+    // Biểu đồ đường (dưới)
+    float row2Top = chartTop + singleRowHeight + chartGap;
+    revenueChartCard.setSize({chartWidth, singleRowHeight - 20.f});
+    revenueChartCard.setPosition({position.x + margin, row2Top + 20.f});
     revenueChartCard.setFillColor(Color::White);
     revenueChartCard.setOutlineThickness(1.f);
     revenueChartCard.setOutlineColor(Color(226, 232, 240));
+
+    // Bảng doanh thu (bên phải biểu đồ đường)
+    revenueTableCard.setSize({tableWidth, singleRowHeight - 20.f});
+    revenueTableCard.setPosition({revenueChartCard.getPosition().x + chartWidth + 12.f, row2Top + 20.f});
+    revenueTableCard.setFillColor(Color::White);
+    revenueTableCard.setOutlineThickness(1.f);
+    revenueTableCard.setOutlineColor(Color(226, 232, 240));
 }
 
 void OverviewPanel::loadData() {
+    if (dataLoaded) return;  // Không load lại nếu đã có dữ liệu
+    
     loadTickets();
     loadRegistrations();
     calculateDailyRevenue();
     calculateMonthlyStats();
     calculateTopMovies();
     calculateMonthlyTrend();
+    
+    dataLoaded = true;
 }
 
 void OverviewPanel::loadTickets() {
@@ -115,7 +145,9 @@ void OverviewPanel::loadRegistrations() {
         std::getline(ss, status, '|');
 
         if (!registeredAt.empty()) {
-            registrationTimes[email] = std::stoll(registeredAt);
+            try {
+                registrationTimes[email] = std::stoll(registeredAt);
+            } catch (...) {}
         }
     }
 }
@@ -138,11 +170,10 @@ void OverviewPanel::calculateDailyRevenue() {
     }
 
     dailyRevenue = total;
-    revenueTodayCard.setTitle("Doanh thu trong ngày");
+    revenueTodayCard.setTitleWithDate("Doanh thu trong ngày", today);
     revenueTodayCard.setOutlineThickness(3.f);
-    revenueTodayCard.setOutlineColor(Color::Blue);
+    revenueTodayCard.setOutlineColor(cardOutlineCyan);
     revenueTodayCard.setValue(toCurrency(dailyRevenue));
-    revenueTodayCard.setSubtitle(today);
 }
 
 void OverviewPanel::calculateMonthlyStats() {
@@ -189,37 +220,44 @@ void OverviewPanel::calculateMonthlyStats() {
     totalTicketsThisMonth = ticketsCount;
     newCustomersThisMonth = newCustomers;
 
-    newCustomersCard.setTitle("Khách hàng mới");
+    std::string monthDisplay = "T" + currentMonth;
+
+    newCustomersCard.setTitleWithDate("Khách hàng mới", monthDisplay);
     newCustomersCard.setOutlineThickness(3.f);
-    newCustomersCard.setOutlineColor(Color::Green);
+    newCustomersCard.setOutlineColor(cardOutlineGreen);
     newCustomersCard.setValue(std::to_string(newCustomersThisMonth));
-    newCustomersCard.setSubtitle("T" + currentMonth);
 
-    ticketsCard.setTitle("Tổng vé bán ra");
+    ticketsCard.setTitleWithDate("Tổng vé bán ra", monthDisplay);
     ticketsCard.setOutlineThickness(3.f);
-    ticketsCard.setOutlineColor(Color::Yellow);
+    ticketsCard.setOutlineColor(cardOutlineYellow);
     ticketsCard.setValue(std::to_string(totalTicketsThisMonth));
-    ticketsCard.setSubtitle("T" + currentMonth);
 
-    totalRevenueCard.setTitle("Tổng doanh thu");
+    totalRevenueCard.setTitleWithDate("Tổng doanh thu", monthDisplay);
     totalRevenueCard.setOutlineThickness(3.f);
-    totalRevenueCard.setOutlineColor(Color::Red);
+    totalRevenueCard.setOutlineColor(cardOutlineRed);
     totalRevenueCard.setValue(toCurrency(totalRevenueThisMonth));
-    totalRevenueCard.setSubtitle("T" + currentMonth);
 }
 
 void OverviewPanel::calculateTopMovies() {
     topMovies.clear();
 
     std::unordered_map<std::string, int> ticketCounts;
+    std::unordered_map<std::string, long long> revenueCounts;
+    
     Node<Ticket>* node = ticketsCache.getHead();
     while (node) {
-        ticketCounts[node->data.title] += std::max(1, countSeats(node->data.booked));
+        int seats = std::max(1, countSeats(node->data.booked));
+        ticketCounts[node->data.title] += seats;
+        revenueCounts[node->data.title] += node->data.price;
         node = node->next;
     }
 
     for (const auto& entry : ticketCounts) {
-        topMovies.push_back({entry.first, entry.second});
+        MovieTicketCount item;
+        item.title = entry.first;
+        item.tickets = entry.second;
+        item.revenue = revenueCounts[entry.first];
+        topMovies.push_back(item);
     }
 
     sortTopMovies();
@@ -228,13 +266,15 @@ void OverviewPanel::calculateTopMovies() {
 void OverviewPanel::calculateMonthlyTrend() {
     monthlyTrend.clear();
 
-    std::map<std::pair<int, int>, long long> revenueByMonth; // key: {year, month}
+    std::map<std::pair<int, int>, long long> revenueByMonth;
     Node<Ticket>* node = ticketsCache.getHead();
     while (node) {
         if (node->data.bookedDate.size() >= 10) {
-            int month = std::stoi(node->data.bookedDate.substr(3, 2));
-            int year = std::stoi(node->data.bookedDate.substr(6, 4));
-            revenueByMonth[{year, month}] += node->data.price;
+            try {
+                int month = std::stoi(node->data.bookedDate.substr(3, 2));
+                int year = std::stoi(node->data.bookedDate.substr(6, 4));
+                revenueByMonth[{year, month}] += node->data.price;
+            } catch (...) {}
         }
         node = node->next;
     }
@@ -284,7 +324,35 @@ std::string OverviewPanel::toCurrency(long long amount) const {
         digits.insert(static_cast<std::size_t>(insertPosition), ".");
         insertPosition -= 3;
     }
-    return digits;
+    return digits + "đ";
+}
+
+// Làm tròn lên thành số đẹp
+long long OverviewPanel::roundUpNice(long long value) const {
+    if (value <= 0) return 100;
+    if (value <= 100) return 100;
+    if (value <= 500) return 500;
+    if (value <= 1000) return 1000;
+    
+    // Tìm bậc của số (10, 100, 1000, ...)
+    long long magnitude = 1;
+    long long temp = value;
+    while (temp >= 10) {
+        temp /= 10;
+        magnitude *= 10;
+    }
+    
+    // Làm tròn lên theo bậc
+    long long rounded = ((value + magnitude - 1) / magnitude) * magnitude;
+    
+    // Điều chỉnh cho đẹp (1, 2, 5, 10)
+    long long digit = rounded / magnitude;
+    if (digit <= 1) rounded = magnitude;
+    else if (digit <= 2) rounded = 2 * magnitude;
+    else if (digit <= 5) rounded = 5 * magnitude;
+    else rounded = 10 * magnitude;
+    
+    return rounded;
 }
 
 sf::String OverviewPanel::toSfString(const std::string& text) const {
@@ -292,13 +360,62 @@ sf::String OverviewPanel::toSfString(const std::string& text) const {
 }
 
 std::string OverviewPanel::ellipsize(const std::string& text, std::size_t maxChars) const {
-    if (text.size() <= maxChars) {
-        return text;
+    // Đếm số ký tự UTF-8 thực sự (không phải bytes)
+    std::size_t charCount = 0;
+    std::size_t bytePos = 0;
+    
+    while (bytePos < text.size()) {
+        unsigned char c = static_cast<unsigned char>(text[bytePos]);
+        if ((c & 0x80) == 0) {
+            // ASCII (1 byte)
+            bytePos += 1;
+        } else if ((c & 0xE0) == 0xC0) {
+            // 2 bytes UTF-8
+            bytePos += 2;
+        } else if ((c & 0xF0) == 0xE0) {
+            // 3 bytes UTF-8 (tiếng Việt thường dùng)
+            bytePos += 3;
+        } else if ((c & 0xF8) == 0xF0) {
+            // 4 bytes UTF-8
+            bytePos += 4;
+        } else {
+            bytePos += 1;
+        }
+        charCount++;
     }
+    
+    // Nếu số ký tự <= maxChars, trả về nguyên bản
+    if (charCount <= maxChars) return text;
     if (maxChars <= 3) {
-        return text.substr(0, maxChars);
+        // Cắt maxChars ký tự UTF-8
+        std::size_t cutBytes = 0;
+        std::size_t cutChars = 0;
+        while (cutBytes < text.size() && cutChars < maxChars) {
+            unsigned char c = static_cast<unsigned char>(text[cutBytes]);
+            if ((c & 0x80) == 0) cutBytes += 1;
+            else if ((c & 0xE0) == 0xC0) cutBytes += 2;
+            else if ((c & 0xF0) == 0xE0) cutBytes += 3;
+            else if ((c & 0xF8) == 0xF0) cutBytes += 4;
+            else cutBytes += 1;
+            cutChars++;
+        }
+        return text.substr(0, cutBytes);
     }
-    return text.substr(0, maxChars - 3) + "...";
+    
+    // Cắt (maxChars - 3) ký tự UTF-8 và thêm "..."
+    std::size_t targetChars = maxChars - 3;
+    std::size_t cutBytes = 0;
+    std::size_t cutChars = 0;
+    while (cutBytes < text.size() && cutChars < targetChars) {
+        unsigned char c = static_cast<unsigned char>(text[cutBytes]);
+        if ((c & 0x80) == 0) cutBytes += 1;
+        else if ((c & 0xE0) == 0xC0) cutBytes += 2;
+        else if ((c & 0xF0) == 0xE0) cutBytes += 3;
+        else if ((c & 0xF8) == 0xF0) cutBytes += 4;
+        else cutBytes += 1;
+        cutChars++;
+    }
+    return text.substr(0, cutBytes) + "...";
 }
 
 void OverviewPanel::sortTopMovies() {
@@ -339,16 +456,19 @@ void OverviewPanel::sortMonthlyTrend() {
 }
 
 void OverviewPanel::drawTicketChart(sf::RenderTarget& target) const {
-    sf::Text heading(font, toSfString("Phim bán chạy nhất"), 16);
+    // Tiêu đề ngoài khung
+    sf::Text heading(font, toSfString("Phim bán chạy nhất"), 17);
     heading.setFillColor(Color(30, 41, 59));
     heading.setStyle(sf::Text::Bold);
-    heading.setPosition(sf::Vector2f(ticketChartCard.getPosition().x + 20.f, ticketChartCard.getPosition().y + 16.f));
+    heading.setPosition(sf::Vector2f(ticketChartCard.getPosition().x, ticketChartCard.getPosition().y - 22.f));
     target.draw(heading);
 
+    target.draw(ticketChartCard);
+
     if (topMovies.isEmpty()) {
-        sf::Text empty(font, toSfString("Không có dữ liệu"), 14);
+        sf::Text empty(font, toSfString("Không có dữ liệu"), 13);
         empty.setFillColor(Color(120, 130, 140));
-        empty.setPosition(sf::Vector2f(ticketChartCard.getPosition().x + 20.f, ticketChartCard.getPosition().y + 70.f));
+        empty.setPosition(sf::Vector2f(ticketChartCard.getPosition().x + 20.f, ticketChartCard.getPosition().y + 40.f));
         target.draw(empty);
         return;
     }
@@ -364,14 +484,22 @@ void OverviewPanel::drawTicketChart(sf::RenderTarget& target) const {
     for (const auto& item : items) {
         maxTickets = std::max(maxTickets, item.tickets);
     }
-    if (maxTickets == 0) maxTickets = 1;
+    int roundedMax = static_cast<int>(roundUpNice(maxTickets));
+    if (roundedMax == 0) roundedMax = 10;
 
-    float padding = 40.f;
-    float chartWidth = ticketChartCard.getSize().x - padding * 2.f;
-    float chartHeight = ticketChartCard.getSize().y - padding * 2.f - 40.f;
-    float originX = ticketChartCard.getPosition().x + padding;
-    float originY = ticketChartCard.getPosition().y + ticketChartCard.getSize().y - padding;
+    // Layout: nhãn phim nằm ngang bên dưới, cột lấp đầy chiều ngang
+    float paddingLeft = 35.f;
+    float paddingRight = 10.f;
+    float paddingTop = 10.f;
+    float labelAreaHeight = 22.f;  // Chiều cao vùng nhãn phim
+    float paddingBottom = labelAreaHeight + 8.f;
+    
+    float chartWidth = ticketChartCard.getSize().x - paddingLeft - paddingRight;
+    float chartHeight = ticketChartCard.getSize().y - paddingTop - paddingBottom;
+    float originX = ticketChartCard.getPosition().x + paddingLeft;
+    float originY = ticketChartCard.getPosition().y + ticketChartCard.getSize().y - paddingBottom;
 
+    // Vẽ grid lines
     int gridLines = 5;
     for (int i = 0; i <= gridLines; ++i) {
         float y = originY - (chartHeight / gridLines) * static_cast<float>(i);
@@ -380,66 +508,94 @@ void OverviewPanel::drawTicketChart(sf::RenderTarget& target) const {
         line.setPosition(sf::Vector2f(originX, y));
         target.draw(line);
 
-        int labelValue = static_cast<int>(std::round(maxTickets * i / static_cast<float>(gridLines)));
-        sf::Text label(font, toSfString(std::to_string(labelValue)), 12);
+        int labelValue = roundedMax * i / gridLines;
+        sf::Text label(font, toSfString(std::to_string(labelValue)), 11);
         label.setFillColor(Color(120, 130, 140));
         FloatRect bounds = label.getLocalBounds();
-        label.setPosition(sf::Vector2f(originX - bounds.size.x - 8.f - bounds.position.x, y - bounds.size.y / 2.f - bounds.position.y));
+        label.setPosition(sf::Vector2f(originX - bounds.size.x - 6.f - bounds.position.x, y - bounds.size.y / 2.f - bounds.position.y));
         target.draw(label);
     }
 
-    float gap = 16.f;
-    float barWidth = (chartWidth - gap * (items.size() + 1)) / static_cast<float>(items.size());
-    if (barWidth < 28.f) {
-        gap = 10.f;
-        barWidth = (chartWidth - gap * (items.size() + 1)) / static_cast<float>(items.size());
-    }
-    float startX = originX + gap;
+    // Tính toán cột lấp đầy chiều ngang
+    std::size_t numBars = items.size();
+    float gap = 6.f;  // Khoảng cách giữa các cột
+    float totalGaps = gap * (numBars + 1);
+    float barWidth = (chartWidth - totalGaps) / static_cast<float>(numBars);
+    
+    // Giới hạn chiều rộng cột tối đa
+    if (barWidth > 80.f) barWidth = 80.f;
+    
+    // Tính lại vị trí bắt đầu để căn giữa nếu cột bị giới hạn
+    float totalBarsWidth = numBars * barWidth + totalGaps;
+    float startX = originX + (chartWidth - totalBarsWidth) / 2.f + gap;
 
-    for (std::size_t i = 0; i < items.size(); ++i) {
-        float ratio = items[i].tickets / static_cast<float>(maxTickets);
+    for (std::size_t i = 0; i < numBars; ++i) {
+        float barX = startX + i * (barWidth + gap);
+        
+        float ratio = items[i].tickets / static_cast<float>(roundedMax);
         float barHeight = ratio * chartHeight;
         if (barHeight < 4.f) barHeight = 4.f;
-
-        float barX = startX + i * (barWidth + gap);
         float barY = originY - barHeight;
 
+        // Vẽ cột
         sf::RectangleShape bar({barWidth, barHeight});
         bar.setFillColor(Color(59, 130, 246));
         bar.setPosition(sf::Vector2f(barX, barY));
         target.draw(bar);
 
-        sf::Text value(font, toSfString(std::to_string(items[i].tickets)), 12);
-        value.setFillColor(Color(30, 41, 59));
+        // Giá trị trên cột
+        sf::Text value(font, toSfString(std::to_string(items[i].tickets)), 13);
         FloatRect valueBounds = value.getLocalBounds();
+        float valueY = barY - valueBounds.size.y - 2.f - valueBounds.position.y;
+        float minY = ticketChartCard.getPosition().y + paddingTop;
+        if (valueY < minY) {
+            valueY = barY + 2.f - valueBounds.position.y;
+            value.setFillColor(Color::White);
+        } else {
+            value.setFillColor(Color(30, 41, 59));
+        }
         value.setPosition(sf::Vector2f(
             barX + (barWidth - valueBounds.size.x) / 2.f - valueBounds.position.x,
-            barY - valueBounds.size.y - 6.f - valueBounds.position.y
+            valueY
         ));
         target.draw(value);
 
-        const std::string name = ellipsize(items[i].title, 22);
-        sf::Text label(font, toSfString(name), 12);
-        label.setFillColor(Color(94, 106, 123));
-        FloatRect labelBounds = label.getLocalBounds();
-        label.setOrigin(sf::Vector2f(labelBounds.position.x, labelBounds.position.y + labelBounds.size.y));
-        label.setPosition(sf::Vector2f(barX + barWidth * 0.5f, originY + 14.f));
-        label.setRotation(sf::degrees(-38.f));
+        // Nhãn phim - nằm ngang, căn trái từ lề trái cột
+        // Tính số ký tự tối đa vừa với chiều rộng cột
+        float maxLabelWidth = barWidth - 2.f;  // Trừ margin nhỏ
+        
+        // Ước tính số ký tự (font 10, ~6px/char)
+        int maxChars = static_cast<int>(maxLabelWidth / 6.f);
+        if (maxChars < 3) maxChars = 3;
+        
+        std::string displayName = ellipsize(items[i].title, static_cast<std::size_t>(maxChars));
+        
+        // Dùng sf::String::fromUtf8 để fix lỗi font tiếng Việt
+        sf::String sfDisplayName = sf::String::fromUtf8(displayName.begin(), displayName.end());
+        sf::Text label(font, sfDisplayName, 10);
+        label.setFillColor(Color(71, 85, 105));
+        
+        // Căn trái, bắt đầu từ lề trái của cột
+        float labelY = originY + 6.f;
+        label.setPosition(sf::Vector2f(barX, labelY));
         target.draw(label);
     }
 }
 
 void OverviewPanel::drawRevenueChart(sf::RenderTarget& target) const {
-    sf::Text heading(font, toSfString("Doanh thu theo tháng"), 16);
+    // Tiêu đề ngoài khung
+    sf::Text heading(font, toSfString("Doanh thu theo tháng"), 17);
     heading.setFillColor(Color(30, 41, 59));
     heading.setStyle(sf::Text::Bold);
-    heading.setPosition(sf::Vector2f(revenueChartCard.getPosition().x + 20.f, revenueChartCard.getPosition().y + 16.f));
+    heading.setPosition(sf::Vector2f(revenueChartCard.getPosition().x, revenueChartCard.getPosition().y - 22.f));
     target.draw(heading);
 
+    target.draw(revenueChartCard);
+
     if (monthlyTrend.isEmpty()) {
-        sf::Text empty(font, toSfString("Không có dữ liệu"), 14);
+        sf::Text empty(font, toSfString("Không có dữ liệu"), 13);
         empty.setFillColor(Color(120, 130, 140));
-        empty.setPosition(sf::Vector2f(revenueChartCard.getPosition().x + 20.f, revenueChartCard.getPosition().y + 70.f));
+        empty.setPosition(sf::Vector2f(revenueChartCard.getPosition().x + 20.f, revenueChartCard.getPosition().y + 40.f));
         target.draw(empty);
         return;
     }
@@ -455,13 +611,17 @@ void OverviewPanel::drawRevenueChart(sf::RenderTarget& target) const {
     for (const auto& point : points) {
         maxRevenue = std::max(maxRevenue, point.revenue);
     }
-    if (maxRevenue == 0) maxRevenue = 1;
+    long long roundedMax = roundUpNice(maxRevenue);
+    if (roundedMax == 0) roundedMax = 1000000;
 
-    float padding = 50.f;
-    float chartWidth = revenueChartCard.getSize().x - padding * 2.f;
-    float chartHeight = revenueChartCard.getSize().y - padding * 2.f - 40.f;
-    float originX = revenueChartCard.getPosition().x + padding;
-    float originY = revenueChartCard.getPosition().y + revenueChartCard.getSize().y - padding;
+    float paddingLeft = 90.f;
+    float paddingRight = 20.f;
+    float paddingTop = 15.f;
+    float paddingBottom = 35.f;
+    float chartWidth = revenueChartCard.getSize().x - paddingLeft - paddingRight;
+    float chartHeight = revenueChartCard.getSize().y - paddingTop - paddingBottom;
+    float originX = revenueChartCard.getPosition().x + paddingLeft;
+    float originY = revenueChartCard.getPosition().y + revenueChartCard.getSize().y - paddingBottom;
 
     int gridLines = 5;
     for (int i = 0; i <= gridLines; ++i) {
@@ -471,12 +631,34 @@ void OverviewPanel::drawRevenueChart(sf::RenderTarget& target) const {
         line.setPosition(sf::Vector2f(originX, y));
         target.draw(line);
 
-        long long labelValue = static_cast<long long>(std::round(maxRevenue * i / static_cast<float>(gridLines)));
-        sf::Text label(font, toSfString(toCurrency(labelValue)), 12);
+        long long labelValue = roundedMax * i / gridLines;
+        sf::Text label(font, toSfString(toCurrency(labelValue)), 11);
         label.setFillColor(Color(120, 130, 140));
         FloatRect bounds = label.getLocalBounds();
-        label.setPosition(sf::Vector2f(originX - bounds.size.x - 8.f - bounds.position.x, y - bounds.size.y / 2.f - bounds.position.y));
+        label.setPosition(sf::Vector2f(originX - bounds.size.x - 6.f - bounds.position.x, y - bounds.size.y / 2.f - bounds.position.y));
         target.draw(label);
+    }
+
+    // Xử lý trường hợp chỉ có 1 điểm
+    if (points.size() == 1) {
+        float x = originX + chartWidth / 2.f;
+        float ratio = points[0].revenue / static_cast<float>(roundedMax);
+        float y = originY - ratio * chartHeight;
+
+        sf::CircleShape dot(5.f);
+        dot.setFillColor(Color(236, 72, 153));
+        dot.setOrigin(sf::Vector2f(5.f, 5.f));
+        dot.setPosition(sf::Vector2f(x, y));
+        target.draw(dot);
+
+        char labelBuffer[16];
+        std::snprintf(labelBuffer, sizeof(labelBuffer), "%02d/%04d", points[0].month, points[0].year);
+        sf::Text monthLabel(font, toSfString(labelBuffer), 10);
+        monthLabel.setFillColor(Color(94, 106, 123));
+        FloatRect monthBounds = monthLabel.getLocalBounds();
+        monthLabel.setPosition(sf::Vector2f(x - monthBounds.size.x / 2.f - monthBounds.position.x, originY + 6.f - monthBounds.position.y));
+        target.draw(monthLabel);
+        return;
     }
 
     sf::VertexArray lineStrip(sf::PrimitiveType::LineStrip, points.size());
@@ -485,10 +667,10 @@ void OverviewPanel::drawRevenueChart(sf::RenderTarget& target) const {
     dots.reserve(points.size());
     monthLabels.reserve(points.size());
 
-    float step = points.size() > 1 ? chartWidth / static_cast<float>(points.size() - 1) : 0.f;
+    float step = chartWidth / static_cast<float>(points.size() - 1);
     for (std::size_t i = 0; i < points.size(); ++i) {
         float x = originX + step * static_cast<float>(i);
-        float ratio = points[i].revenue / static_cast<float>(maxRevenue);
+        float ratio = points[i].revenue / static_cast<float>(roundedMax);
         float y = originY - ratio * chartHeight;
 
         lineStrip[i].position = {x, y};
@@ -500,15 +682,31 @@ void OverviewPanel::drawRevenueChart(sf::RenderTarget& target) const {
         dot.setPosition(sf::Vector2f(x, y));
         dots.push_back(dot);
 
+        // Không hiển thị giá trị trên điểm - sẽ hiển thị ở bảng bên phải
+
         char labelBuffer[16];
         std::snprintf(labelBuffer, sizeof(labelBuffer), "%02d/%04d", points[i].month, points[i].year);
-        sf::Text monthLabel(font, toSfString(labelBuffer), 12);
+        sf::Text monthLabel(font, toSfString(labelBuffer), 11);
         monthLabel.setFillColor(Color(94, 106, 123));
         FloatRect monthBounds = monthLabel.getLocalBounds();
-        monthLabel.setPosition(sf::Vector2f(
-            x - monthBounds.size.x / 2.f - monthBounds.position.x,
-            originY + 8.f - monthBounds.position.y
-        ));
+        
+        // Căn vị trí nhãn tháng:
+        // - Tháng đầu tiên: căn trái (lề trái trùng với gridLine)
+        // - Tháng cuối cùng: căn phải (lề phải trùng với gridLine)
+        // - Các tháng giữa: căn giữa
+        float labelX;
+        if (i == 0) {
+            // Căn trái - lề trái trùng với originX
+            labelX = originX - monthBounds.position.x;
+        } else if (i == points.size() - 1) {
+            // Căn phải - lề phải trùng với originX + chartWidth
+            labelX = originX + chartWidth - monthBounds.size.x - monthBounds.position.x;
+        } else {
+            // Căn giữa
+            labelX = x - monthBounds.size.x / 2.f - monthBounds.position.x;
+        }
+        
+        monthLabel.setPosition(sf::Vector2f(labelX, originY + 6.f - monthBounds.position.y));
         monthLabels.push_back(monthLabel);
     }
 
@@ -518,6 +716,155 @@ void OverviewPanel::drawRevenueChart(sf::RenderTarget& target) const {
     }
     for (const auto& label : monthLabels) {
         target.draw(label);
+    }
+}
+
+void OverviewPanel::drawMovieTable(sf::RenderTarget& target) const {
+    // Tiêu đề bảng
+    sf::Text heading(font, toSfString("Chi tiết vé & doanh thu"), 17);
+    heading.setFillColor(Color(30, 41, 59));
+    heading.setStyle(sf::Text::Bold);
+    heading.setPosition(sf::Vector2f(movieTableCard.getPosition().x, movieTableCard.getPosition().y - 26.f));
+    target.draw(heading);
+
+    target.draw(movieTableCard);
+
+    if (topMovies.isEmpty()) return;
+
+    float padding = 12.f;
+    float startX = movieTableCard.getPosition().x + padding;
+    float startY = movieTableCard.getPosition().y + padding;
+    float rowHeight = 28.f;
+    float tableWidth = movieTableCard.getSize().x - padding * 2.f;
+
+    // Header
+    sf::Text headerMovie(font, toSfString("Phim"), 15);
+    headerMovie.setFillColor(Color(71, 85, 105));
+    headerMovie.setStyle(sf::Text::Bold);
+    headerMovie.setPosition(sf::Vector2f(startX, startY));
+    target.draw(headerMovie);
+
+    sf::Text headerTickets(font, toSfString("Vé"), 15);
+    headerTickets.setFillColor(Color(71, 85, 105));
+    headerTickets.setStyle(sf::Text::Bold);
+    headerTickets.setPosition(sf::Vector2f(startX + tableWidth * 0.58f, startY));
+    target.draw(headerTickets);
+
+    sf::Text headerRevenue(font, toSfString("Doanh thu"), 15);
+    headerRevenue.setFillColor(Color(71, 85, 105));
+    headerRevenue.setStyle(sf::Text::Bold);
+    headerRevenue.setPosition(sf::Vector2f(startX + tableWidth * 0.72f, startY));
+    target.draw(headerRevenue);
+
+    // Đường kẻ header
+    sf::RectangleShape headerLine({tableWidth, 1.f});
+    headerLine.setFillColor(Color(226, 232, 240));
+    headerLine.setPosition(sf::Vector2f(startX, startY + rowHeight - 6.f));
+    target.draw(headerLine);
+
+    // Dữ liệu
+    float currentY = startY + rowHeight;
+    const Node<MovieTicketCount>* node = topMovies.getHead();
+    int count = 0;
+    int maxRows = static_cast<int>((movieTableCard.getSize().y - padding * 2.f - rowHeight) / rowHeight);
+
+    while (node && count < maxRows) {
+        // Zebra striping
+        if (count % 2 == 1) {
+            sf::RectangleShape rowBg({tableWidth, rowHeight});
+            rowBg.setFillColor(Color(248, 250, 252));
+            rowBg.setPosition(sf::Vector2f(startX, currentY));
+            target.draw(rowBg);
+        }
+
+        sf::Text movieText(font, toSfString(node->data.title), 14);
+        movieText.setFillColor(Color(51, 65, 85));
+        movieText.setPosition(sf::Vector2f(startX, currentY + 4.f));
+        target.draw(movieText);
+
+        sf::Text ticketText(font, toSfString(std::to_string(node->data.tickets)), 14);
+        ticketText.setFillColor(Color(59, 130, 246));
+        ticketText.setPosition(sf::Vector2f(startX + tableWidth * 0.58f, currentY + 4.f));
+        target.draw(ticketText);
+
+        sf::Text revenueText(font, toSfString(toCurrency(node->data.revenue)), 13);
+        revenueText.setFillColor(Color(236, 72, 153));
+        revenueText.setPosition(sf::Vector2f(startX + tableWidth * 0.72f, currentY + 4.f));
+        target.draw(revenueText);
+
+        currentY += rowHeight;
+        node = node->next;
+        count++;
+    }
+}
+
+void OverviewPanel::drawRevenueTable(sf::RenderTarget& target) const {
+    // Tiêu đề bảng
+    sf::Text heading(font, toSfString("Chi tiết doanh thu theo tháng"), 17);
+    heading.setFillColor(Color(30, 41, 59));
+    heading.setStyle(sf::Text::Bold);
+    heading.setPosition(sf::Vector2f(revenueTableCard.getPosition().x, revenueTableCard.getPosition().y - 26.f));
+    target.draw(heading);
+
+    target.draw(revenueTableCard);
+
+    if (monthlyTrend.isEmpty()) return;
+
+    float padding = 12.f;
+    float startX = revenueTableCard.getPosition().x + padding;
+    float startY = revenueTableCard.getPosition().y + padding;
+    float rowHeight = 28.f;
+    float tableWidth = revenueTableCard.getSize().x - padding * 2.f;
+
+    // Header
+    sf::Text headerMonth(font, toSfString("Tháng"), 15);
+    headerMonth.setFillColor(Color(71, 85, 105));
+    headerMonth.setStyle(sf::Text::Bold);
+    headerMonth.setPosition(sf::Vector2f(startX, startY));
+    target.draw(headerMonth);
+
+    sf::Text headerRevenue(font, toSfString("Doanh thu"), 15);
+    headerRevenue.setFillColor(Color(71, 85, 105));
+    headerRevenue.setStyle(sf::Text::Bold);
+    headerRevenue.setPosition(sf::Vector2f(startX + tableWidth * 0.4f, startY));
+    target.draw(headerRevenue);
+
+    // Đường kẻ header
+    sf::RectangleShape headerLine({tableWidth, 1.f});
+    headerLine.setFillColor(Color(226, 232, 240));
+    headerLine.setPosition(sf::Vector2f(startX, startY + rowHeight - 6.f));
+    target.draw(headerLine);
+
+    // Dữ liệu
+    float currentY = startY + rowHeight;
+    const Node<MonthlyRevenuePoint>* node = monthlyTrend.getHead();
+    int count = 0;
+    int maxRows = static_cast<int>((revenueTableCard.getSize().y - padding * 2.f - rowHeight) / rowHeight);
+
+    while (node && count < maxRows) {
+        // Zebra striping
+        if (count % 2 == 1) {
+            sf::RectangleShape rowBg({tableWidth, rowHeight});
+            rowBg.setFillColor(Color(248, 250, 252));
+            rowBg.setPosition(sf::Vector2f(startX, currentY));
+            target.draw(rowBg);
+        }
+
+        char monthBuffer[16];
+        std::snprintf(monthBuffer, sizeof(monthBuffer), "%02d/%04d", node->data.month, node->data.year);
+        sf::Text monthText(font, toSfString(monthBuffer), 14);
+        monthText.setFillColor(Color(51, 65, 85));
+        monthText.setPosition(sf::Vector2f(startX, currentY + 5.f));
+        target.draw(monthText);
+
+        sf::Text revenueText(font, toSfString(toCurrency(node->data.revenue)), 14);
+        revenueText.setFillColor(Color(236, 72, 153));
+        revenueText.setPosition(sf::Vector2f(startX + tableWidth * 0.4f, currentY + 5.f));
+        target.draw(revenueText);
+
+        currentY += rowHeight;
+        node = node->next;
+        count++;
     }
 }
 
@@ -533,13 +880,13 @@ void OverviewPanel::render(RenderTarget& target) const {
     ticketsCard.render(target);
     totalRevenueCard.render(target);
 
-    target.draw(ticketChartCard);
-    target.draw(revenueChartCard);
-
     drawTicketChart(target);
+    drawMovieTable(target);
     drawRevenueChart(target);
+    drawRevenueTable(target);
 }
 
 void OverviewPanel::refresh() {
+    dataLoaded = false;  // Reset để load lại khi cần
     loadData();
 }
