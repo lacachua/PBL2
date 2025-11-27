@@ -57,18 +57,20 @@ struct Movie {
  * 
  * Note: Đây là repository cho Admin CRUD operations.
  * Để hiển thị UI (PosterSlider, DetailScreen), sử dụng models/MovieRepository.h
+ * 
+ * REFACTORED: Sử dụng DLL thay vì std::vector cho internal storage
  */
 class MovieRepository {
 private:
     std::string filePath;
-    std::vector<Movie> movies;
+    DLL<Movie> movies;  // Changed from std::vector<Movie> to DLL<Movie>
     
     /**
      * @brief Tạo ID movie mới
      */
     std::string generateNewId() const {
         int maxId = 0;
-        for (const auto& m : movies) {
+        for (const auto& m : movies) {  // DLL now supports range-based for loop
             if (m.id.length() > 1 && m.id[0] == 'F') {
                 try {
                     int id = std::stoi(m.id.substr(1));
@@ -136,7 +138,7 @@ public:
         
         file << "movie_id|title|age_rating|country|language|genres|duration_min|release_date|director|cast|synopsis|poster_path|status\n";
         
-        for (const auto& m : movies) {
+        for (const auto& m : movies) {  // DLL iterator
             file << m.id << "|" << m.title << "|" << m.ageRating << "|"
                  << m.country << "|" << m.language << "|" << m.genres << "|"
                  << m.duration << "|" << m.releaseDate << "|" << m.director << "|"
@@ -149,21 +151,34 @@ public:
     
     // ===== READ OPERATIONS =====
     
-    const std::vector<Movie>& getAll() const { return movies; }
-    
-    DLL<Movie> getAllAsDLL() const {
-        DLL<Movie> result;
+    /**
+     * @brief Return DLL reference for iteration
+     * NOTE: Changed from std::vector to DLL
+     */
+    const DLL<Movie>& getAll() const { return movies; }
+    DLL<Movie>& getAll() { return movies; }
+
+    /**
+     * @brief Legacy support: Convert to vector when needed (e.g., for UI components)
+     */
+    std::vector<Movie> getAllAsVector() const {
+        std::vector<Movie> result;
+        result.reserve(movies.size());
         for (const auto& m : movies) {
             result.push_back(m);
         }
         return result;
     }
     
+    DLL<Movie> getAllAsDLL() const {
+        return movies;  // Copy constructor
+    }
+    
     /**
      * @brief Lấy danh sách phim active
      */
-    std::vector<Movie> getActiveMovies() const {
-        std::vector<Movie> result;
+    DLL<Movie> getActiveMovies() const {
+        DLL<Movie> result;
         for (const auto& m : movies) {
             if (m.isActive()) {
                 result.push_back(m);
@@ -175,8 +190,8 @@ public:
     /**
      * @brief Lấy phim theo thể loại
      */
-    std::vector<Movie> getByGenre(const std::string& genre) const {
-        std::vector<Movie> result;
+    DLL<Movie> getByGenre(const std::string& genre) const {
+        DLL<Movie> result;
         for (const auto& m : movies) {
             if (m.genres.find(genre) != std::string::npos) {
                 result.push_back(m);
@@ -199,18 +214,19 @@ public:
         return nullptr;
     }
     
-    int count() const { return static_cast<int>(movies.size()); }
+    int count() const { return movies.size(); }
     
     int countActive() const {
-        int count = 0;
+        int cnt = 0;
         for (const auto& m : movies) {
-            if (m.isActive()) count++;
+            if (m.isActive()) cnt++;
         }
-        return count;
+        return cnt;
     }
     
     /**
      * @brief Lấy dữ liệu dạng table cho EditableTable (13 cột)
+     * NOTE: Returns std::vector for UI compatibility
      */
     std::vector<std::vector<std::string>> getAllAsTable() const {
         std::vector<std::vector<std::string>> result;
@@ -268,17 +284,17 @@ public:
     }
     
     /**
-     * @brief Cập nhật phim
+     * @brief Cập nhật phim theo index
      */
     bool update(int index, const Movie& movie) {
-        if (index < 0 || index >= static_cast<int>(movies.size())) return false;
+        if (index < 0 || index >= movies.size()) return false;
         movies[index] = movie;
         saveToFile();
         return true;
     }
     
     bool updateFromRow(int index, const std::vector<std::string>& row) {
-        if (index < 0 || index >= static_cast<int>(movies.size())) return false;
+        if (index < 0 || index >= movies.size()) return false;
         if (row.size() < 13) return false;
         
         Movie& m = movies[index];
@@ -304,17 +320,19 @@ public:
      * @brief Xóa phim theo index
      */
     bool remove(int index) {
-        if (index < 0 || index >= static_cast<int>(movies.size())) return false;
-        movies.erase(movies.begin() + index);
+        if (index < 0 || index >= movies.size()) return false;
+        movies.removeAt(index);  // DLL method
         saveToFile();
         return true;
     }
     
     bool deleteById(const std::string& id) {
-        for (size_t i = 0; i < movies.size(); i++) {
-            if (movies[i].id == id) {
-                return remove(static_cast<int>(i));
+        int index = 0;
+        for (const auto& m : movies) {
+            if (m.id == id) {
+                return remove(index);
             }
+            index++;
         }
         return false;
     }
@@ -325,7 +343,7 @@ public:
      * @brief Toggle trạng thái phim
      */
     bool toggleStatus(int index) {
-        if (index < 0 || index >= static_cast<int>(movies.size())) return false;
+        if (index < 0 || index >= movies.size()) return false;
         Movie& m = movies[index];
         m.status = m.isActive() ? "Ngừng chiếu" : "Đang chiếu";
         saveToFile();

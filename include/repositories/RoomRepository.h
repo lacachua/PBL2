@@ -43,18 +43,19 @@ struct Room {
 
 /**
  * @brief Repository thống nhất quản lý Room
+ * REFACTORED: Sử dụng DLL thay vì std::vector cho internal storage
  */
 class RoomRepository {
 private:
     std::string filePath;
-    std::vector<Room> rooms;
+    DLL<Room> rooms;  // Changed from std::vector<Room> to DLL<Room>
     
     /**
      * @brief Tạo ID room mới
      */
     std::string generateNewId() const {
         int maxId = 0;
-        for (const auto& r : rooms) {
+        for (const auto& r : rooms) {  // DLL iterator
             // Parse PHONG_XXX format
             size_t pos = r.id.find('_');
             if (pos != std::string::npos) {
@@ -122,7 +123,7 @@ public:
         
         file << "room_id|room_name|seat_rows|seat_cols|total_seats\n";
         
-        for (const auto& r : rooms) {
+        for (const auto& r : rooms) {  // DLL iterator
             file << r.id << "|" << r.name << "|" << r.rows << "|"
                  << r.cols << "|" << r.totalSeats << "\n";
         }
@@ -133,14 +134,27 @@ public:
     
     // ===== READ OPERATIONS =====
     
-    const std::vector<Room>& getAll() const { return rooms; }
+    /**
+     * @brief Return DLL reference for iteration
+     * NOTE: Changed from std::vector to DLL
+     */
+    const DLL<Room>& getAll() const { return rooms; }
+    DLL<Room>& getAll() { return rooms; }
     
-    DLL<Room> getAllAsDLL() const {
-        DLL<Room> result;
+    /**
+     * @brief Legacy support: Convert to vector when needed
+     */
+    std::vector<Room> getAllAsVector() const {
+        std::vector<Room> result;
+        result.reserve(rooms.size());
         for (const auto& r : rooms) {
             result.push_back(r);
         }
         return result;
+    }
+    
+    DLL<Room> getAllAsDLL() const {
+        return rooms;  // Copy constructor
     }
     
     const Room* findById(const std::string& id) const {
@@ -157,10 +171,11 @@ public:
         return nullptr;
     }
     
-    int count() const { return static_cast<int>(rooms.size()); }
+    int count() const { return rooms.size(); }
     
     /**
      * @brief Lấy dữ liệu dạng table cho EditableTable
+     * NOTE: Returns std::vector for UI compatibility
      */
     std::vector<std::vector<std::string>> getAllAsTable() const {
         std::vector<std::vector<std::string>> result;
@@ -224,14 +239,14 @@ public:
      * @brief Cập nhật phòng
      */
     bool update(int index, const Room& room) {
-        if (index < 0 || index >= static_cast<int>(rooms.size())) return false;
+        if (index < 0 || index >= rooms.size()) return false;
         rooms[index] = room;
         saveToFile();
         return true;
     }
     
     bool updateFromRow(int index, const std::vector<std::string>& row) {
-        if (index < 0 || index >= static_cast<int>(rooms.size())) return false;
+        if (index < 0 || index >= rooms.size()) return false;
         if (row.size() < 4) return false;
         
         Room& r = rooms[index];
@@ -253,8 +268,8 @@ public:
      * @brief Xóa phòng theo index
      */
     bool remove(int index) {
-        if (index < 0 || index >= static_cast<int>(rooms.size())) return false;
-        rooms.erase(rooms.begin() + index);
+        if (index < 0 || index >= rooms.size()) return false;
+        rooms.removeAt(index);  // DLL method
         saveToFile();
         return true;
     }

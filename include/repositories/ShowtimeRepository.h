@@ -48,18 +48,19 @@ struct Showtime {
  * @brief Repository thống nhất quản lý Showtime
  * 
  * Design: Repository Pattern
+ * REFACTORED: Sử dụng DLL thay vì std::vector cho internal storage
  */
 class ShowtimeRepository {
 private:
     std::string filePath;
-    std::vector<Showtime> showtimes;
+    DLL<Showtime> showtimes;  // Changed from std::vector<Showtime> to DLL<Showtime>
     
     /**
      * @brief Tạo ID mới
      */
     std::string generateNewId() const {
         int maxId = 0;
-        for (const auto& st : showtimes) {
+        for (const auto& st : showtimes) {  // DLL iterator
             if (st.showtimeId.length() > 2 && st.showtimeId.substr(0, 2) == "ST") {
                 try {
                     int id = std::stoi(st.showtimeId.substr(2));
@@ -114,7 +115,7 @@ public:
         std::vector<std::string> lines;
         lines.push_back("showtime_id|movie_id|room_id|date|time|price");
         
-        for (const auto& st : showtimes) {
+        for (const auto& st : showtimes) {  // DLL iterator
             lines.push_back(st.showtimeId + "|" + st.movieId + "|" + st.roomId + "|" +
                            st.date + "|" + st.time + "|" + std::to_string(st.price));
         }
@@ -126,21 +127,34 @@ public:
     
     // ===== READ OPERATIONS =====
     
-    const std::vector<Showtime>& getAll() const { return showtimes; }
-    
-    DLL<Showtime> getAllAsDLL() const {
-        DLL<Showtime> result;
+    /**
+     * @brief Return DLL reference for iteration
+     * NOTE: Changed from std::vector to DLL
+     */
+    const DLL<Showtime>& getAll() const { return showtimes; }
+    DLL<Showtime>& getAll() { return showtimes; }
+
+    /**
+     * @brief Legacy support: Convert to vector when needed (e.g., for UI components)
+     */
+    std::vector<Showtime> getAllAsVector() const {
+        std::vector<Showtime> result;
+        result.reserve(showtimes.size());
         for (const auto& st : showtimes) {
             result.push_back(st);
         }
         return result;
     }
     
+    DLL<Showtime> getAllAsDLL() const {
+        return showtimes;  // Copy constructor
+    }
+    
     /**
      * @brief Lấy showtimes theo movie ID
      */
-    std::vector<Showtime> getByMovieId(const std::string& movieId) const {
-        std::vector<Showtime> result;
+    DLL<Showtime> getByMovieId(const std::string& movieId) const {
+        DLL<Showtime> result;
         for (const auto& st : showtimes) {
             if (st.movieId == movieId) {
                 result.push_back(st);
@@ -152,8 +166,8 @@ public:
     /**
      * @brief Lấy showtimes theo ngày
      */
-    std::vector<Showtime> getByDate(const std::string& date) const {
-        std::vector<Showtime> result;
+    DLL<Showtime> getByDate(const std::string& date) const {
+        DLL<Showtime> result;
         for (const auto& st : showtimes) {
             if (st.date == date) {
                 result.push_back(st);
@@ -172,8 +186,12 @@ public:
         return nullptr;
     }
     
-    int count() const { return static_cast<int>(showtimes.size()); }
+    int count() const { return showtimes.size(); }
     
+    /**
+     * @brief Lấy dữ liệu dạng table cho UI
+     * NOTE: Returns std::vector for UI compatibility
+     */
     std::vector<std::vector<std::string>> getAllAsTable() const {
         std::vector<std::vector<std::string>> result;
         for (const auto& st : showtimes) {
@@ -208,7 +226,7 @@ public:
     
     bool update(int index, const std::string& movieId, const std::string& roomId,
                 const std::string& date, const std::string& time, int price) {
-        if (index < 0 || index >= static_cast<int>(showtimes.size())) return false;
+        if (index < 0 || index >= showtimes.size()) return false;
         showtimes[index].movieId = movieId;
         showtimes[index].roomId = roomId;
         showtimes[index].date = date;
@@ -219,7 +237,7 @@ public:
     }
     
     void updateRecord(int index, const std::vector<std::string>& record) {
-        if (index >= 0 && index < static_cast<int>(showtimes.size()) && record.size() >= 6) {
+        if (index >= 0 && index < showtimes.size() && record.size() >= 6) {
             showtimes[index].showtimeId = record[0];
             showtimes[index].movieId = record[1];
             showtimes[index].roomId = record[2];
@@ -231,8 +249,8 @@ public:
     }
     
     bool remove(int index) {
-        if (index < 0 || index >= static_cast<int>(showtimes.size())) return false;
-        showtimes.erase(showtimes.begin() + index);
+        if (index < 0 || index >= showtimes.size()) return false;
+        showtimes.removeAt(index);  // DLL method
         saveToFile();
         return true;
     }
@@ -243,12 +261,14 @@ public:
      * @brief Xóa theo showtime ID
      */
     bool removeById(const std::string& id) {
-        for (size_t i = 0; i < showtimes.size(); i++) {
-            if (showtimes[i].showtimeId == id) {
-                showtimes.erase(showtimes.begin() + i);
+        int index = 0;
+        for (const auto& st : showtimes) {
+            if (st.showtimeId == id) {
+                showtimes.removeAt(index);
                 saveToFile();
                 return true;
             }
+            index++;
         }
         return false;
     }

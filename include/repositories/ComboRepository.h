@@ -49,18 +49,19 @@ struct Combo {
  * - UI/components/TicketBooking/ComboRepository (load cho booking)
  * 
  * Design: Repository Pattern + Single Responsibility
+ * REFACTORED: Sử dụng DLL thay vì std::vector cho internal storage
  */
 class ComboRepository {
 private:
     std::string filePath;
-    std::vector<Combo> combos;
+    DLL<Combo> combos;  // Changed from std::vector<Combo> to DLL<Combo>
     
     /**
      * @brief Tạo ID mới cho combo
      */
     std::string generateNewId() const {
         int maxId = 0;
-        for (const auto& combo : combos) {
+        for (const auto& combo : combos) {  // DLL iterator
             if (combo.id.length() > 1 && combo.id[0] == 'C') {
                 try {
                     int id = std::stoi(combo.id.substr(1));
@@ -120,7 +121,7 @@ public:
         std::vector<std::string> lines;
         lines.push_back("combo_id|combo_name|price");
         
-        for (const auto& combo : combos) {
+        for (const auto& combo : combos) {  // DLL iterator
             lines.push_back(combo.id + "|" + combo.name + "|" + 
                            std::to_string(combo.price));
         }
@@ -136,15 +137,18 @@ public:
     // ===== READ OPERATIONS =====
     
     /**
-     * @brief Lấy tất cả combos
+     * @brief Return DLL reference for iteration
+     * NOTE: Changed from std::vector to DLL
      */
-    const std::vector<Combo>& getAll() const { return combos; }
+    const DLL<Combo>& getAll() const { return combos; }
+    DLL<Combo>& getAll() { return combos; }
     
     /**
-     * @brief Lấy combos dưới dạng DLL (cho Booking UI)
+     * @brief Legacy support: Convert to vector when needed
      */
-    DLL<Combo> getAllAsDLL() const {
-        DLL<Combo> result;
+    std::vector<Combo> getAllAsVector() const {
+        std::vector<Combo> result;
+        result.reserve(combos.size());
         for (const auto& combo : combos) {
             result.push_back(combo);
         }
@@ -152,10 +156,17 @@ public:
     }
     
     /**
+     * @brief Lấy combos dưới dạng DLL (copy)
+     */
+    DLL<Combo> getAllAsDLL() const {
+        return combos;  // Copy constructor
+    }
+    
+    /**
      * @brief Lấy combo theo index
      */
     const Combo* getByIndex(int index) const {
-        if (index < 0 || index >= static_cast<int>(combos.size())) {
+        if (index < 0 || index >= combos.size()) {
             return nullptr;
         }
         return &combos[index];
@@ -174,10 +185,11 @@ public:
     /**
      * @brief Đếm số combos
      */
-    int count() const { return static_cast<int>(combos.size()); }
+    int count() const { return combos.size(); }
     
     /**
      * @brief Lấy data dạng vector<vector<string>> cho EditableTable
+     * NOTE: Returns std::vector for UI compatibility
      */
     std::vector<std::vector<std::string>> getAllAsTable() const {
         std::vector<std::vector<std::string>> result;
@@ -220,7 +232,7 @@ public:
      * @brief Cập nhật combo theo index
      */
     bool update(int index, const std::string& name, int price, const std::string& description = "") {
-        if (index < 0 || index >= static_cast<int>(combos.size())) {
+        if (index < 0 || index >= combos.size()) {
             return false;
         }
         combos[index].name = name;
@@ -234,7 +246,7 @@ public:
      * @brief Cập nhật combo từ vector (cho EditableTable)
      */
     void updateRecord(int index, const std::vector<std::string>& record) {
-        if (index >= 0 && index < static_cast<int>(combos.size()) && record.size() >= 3) {
+        if (index >= 0 && index < combos.size() && record.size() >= 3) {
             combos[index].id = record[0];
             combos[index].name = record[1];
             combos[index].price = std::stoi(record[2]);
@@ -247,10 +259,10 @@ public:
      * @brief Xóa combo theo index
      */
     bool remove(int index) {
-        if (index < 0 || index >= static_cast<int>(combos.size())) {
+        if (index < 0 || index >= combos.size()) {
             return false;
         }
-        combos.erase(combos.begin() + index);
+        combos.removeAt(index);  // DLL method
         saveToFile();
         return true;
     }
