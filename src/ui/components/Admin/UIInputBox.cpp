@@ -1,0 +1,283 @@
+#include "UI/components/Admin/UIInputBox.h"
+
+UIInputBox::UIInputBox(sf::Font& font, const Config& config)
+    : font_(font)
+    , config_(config)
+    , textObj_(std::make_unique<sf::Text>(font))
+    , placeholderObj_(std::make_unique<sf::Text>(font))
+    , searchIcon_(std::make_unique<sf::Text>(font))
+{
+    // Background
+    background_.setSize({config_.width, config_.height});
+    background_.setFillColor(config_.backgroundColor);
+    
+    // Border
+    border_.setSize({config_.width, config_.height});
+    border_.setFillColor(sf::Color::Transparent);
+    border_.setOutlineThickness(1.f);
+    border_.setOutlineColor(config_.borderColor);
+    
+    // Text
+    textObj_->setCharacterSize(config_.fontSize);
+    textObj_->setFillColor(config_.textColor);
+    
+    // Placeholder
+    placeholderObj_->setCharacterSize(config_.fontSize);
+    placeholderObj_->setFillColor(config_.placeholderColor);
+    
+    // Cursor
+    cursor_.setSize({1.5f, config_.height - 12.f});
+    cursor_.setFillColor(config_.textColor);
+    
+    // Search icon
+    searchIcon_->setString(L"🔍");
+    searchIcon_->setCharacterSize(config_.fontSize);
+    searchIcon_->setFillColor(config_.placeholderColor);
+    
+    updateVisuals();
+}
+
+void UIInputBox::setText(const std::string& text) {
+    if (text_ != text) {
+        text_ = text;
+        textObj_->setString(toUtf8(text_));
+        updateVisuals();
+        if (onTextChange_) {
+            onTextChange_(text_);
+        }
+    }
+}
+
+void UIInputBox::clear() {
+    setText("");
+}
+
+void UIInputBox::setPlaceholder(const std::string& placeholder) {
+    placeholder_ = placeholder;
+    placeholderObj_->setString(toUtf8(placeholder));
+    updateVisuals();
+}
+
+void UIInputBox::setEnabled(bool enabled) {
+    enabled_ = enabled;
+    updateVisuals();
+}
+
+void UIInputBox::setFocus(bool focus) {
+    if (enabled_ && focused_ != focus) {
+        focused_ = focus;
+        cursorClock_.restart();
+        cursorVisible_ = true;
+        updateVisuals();
+    }
+}
+
+void UIInputBox::setPosition(sf::Vector2f pos) {
+    position_ = pos;
+    updateVisuals();
+}
+
+sf::FloatRect UIInputBox::getBounds() const {
+    return sf::FloatRect(position_, {config_.width, config_.height});
+}
+
+void UIInputBox::setWidth(float width) {
+    config_.width = width;
+    background_.setSize({config_.width, config_.height});
+    border_.setSize({config_.width, config_.height});
+    updateVisuals();
+}
+
+void UIInputBox::handleEvent(const sf::Event& event) {
+    if (!enabled_) return;
+    
+    // Handle text entered
+    if (focused_ && event.is<sf::Event::TextEntered>()) {
+        const auto* textEvent = event.getIf<sf::Event::TextEntered>();
+        if (textEvent) {
+            processTextInput(textEvent->unicode);
+        }
+    }
+    
+    // Handle key pressed (backspace, etc.)
+    if (focused_ && event.is<sf::Event::KeyPressed>()) {
+        const auto* keyEvent = event.getIf<sf::Event::KeyPressed>();
+        if (keyEvent) {
+            if (keyEvent->code == sf::Keyboard::Key::Backspace && !text_.empty()) {
+                // Handle UTF-8 backspace properly
+                size_t len = text_.size();
+                if (len > 0) {
+                    // Find the start of the last UTF-8 character
+                    size_t pos = len - 1;
+                    while (pos > 0 && (static_cast<unsigned char>(text_[pos]) & 0xC0) == 0x80) {
+                        --pos;
+                    }
+                    text_.erase(pos);
+                    textObj_->setString(toUtf8(text_));
+                    updateVisuals();
+                    if (onTextChange_) {
+                        onTextChange_(text_);
+                    }
+                }
+            }
+        }
+    }
+}
+
+void UIInputBox::update(sf::Vector2f mousePos, bool mousePressed) {
+    if (!enabled_) return;
+    
+    // Handle click focus
+    if (mousePressed) {
+        bool wasClicked = getBounds().contains(mousePos);
+        setFocus(wasClicked);
+    }
+    
+    // Update cursor blink
+    if (focused_) {
+        if (cursorClock_.getElapsedTime().asMilliseconds() > 500) {
+            cursorVisible_ = !cursorVisible_;
+            cursorClock_.restart();
+        }
+    }
+}
+
+void UIInputBox::render(sf::RenderTarget& target) {
+    target.draw(background_);
+    target.draw(border_);
+    
+    float textX = position_.x + config_.padding;
+    
+    // Draw search icon
+    if (config_.showSearchIcon) {
+        target.draw(*searchIcon_);
+        textX += 24.f; // Icon width + spacing
+    }
+    
+    // Draw text or placeholder
+    if (text_.empty() && !focused_) {
+        target.draw(*placeholderObj_);
+    } else {
+        target.draw(*textObj_);
+        
+        // Draw cursor
+        if (focused_ && cursorVisible_) {
+            target.draw(cursor_);
+        }
+    }
+}
+
+void UIInputBox::updateVisuals() {
+    // Background and border position
+    background_.setPosition(position_);
+    border_.setPosition(position_);
+    
+    // Background color based on state
+    if (!enabled_) {
+        background_.setFillColor(config_.disabledBackgroundColor);
+    } else {
+        background_.setFillColor(config_.backgroundColor);
+    }
+    
+    // Border color based on focus
+    if (focused_) {
+        border_.setOutlineColor(config_.borderFocusColor);
+    } else {
+        border_.setOutlineColor(config_.borderColor);
+    }
+    
+    // Calculate text X position
+    float textX = position_.x + config_.padding;
+    if (config_.showSearchIcon) {
+        // Search icon position
+        searchIcon_->setPosition({position_.x + config_.padding, position_.y + (config_.height - static_cast<float>(config_.fontSize)) / 2.f - 2.f});
+        textX += 24.f;
+    }
+    
+    // Text position (vertically centered)
+    float textY = position_.y + (config_.height - static_cast<float>(config_.fontSize)) / 2.f - 3.f;
+    textObj_->setPosition({textX, textY});
+    placeholderObj_->setPosition({textX, textY});
+    
+    // Cursor position (after text)
+    sf::FloatRect textBounds = textObj_->getLocalBounds();
+    float cursorX = textX + textBounds.size.x + 2.f;
+    float cursorY = position_.y + 6.f;
+    cursor_.setPosition({cursorX, cursorY});
+}
+
+void UIInputBox::processTextInput(uint32_t unicode) {
+    // Ignore control characters except printable
+    if (unicode < 32 || unicode == 127) return;
+    
+    // Convert unicode to UTF-8 and append
+    if (unicode < 0x80) {
+        text_ += static_cast<char>(unicode);
+    } else if (unicode < 0x800) {
+        text_ += static_cast<char>(0xC0 | (unicode >> 6));
+        text_ += static_cast<char>(0x80 | (unicode & 0x3F));
+    } else if (unicode < 0x10000) {
+        text_ += static_cast<char>(0xE0 | (unicode >> 12));
+        text_ += static_cast<char>(0x80 | ((unicode >> 6) & 0x3F));
+        text_ += static_cast<char>(0x80 | (unicode & 0x3F));
+    } else {
+        text_ += static_cast<char>(0xF0 | (unicode >> 18));
+        text_ += static_cast<char>(0x80 | ((unicode >> 12) & 0x3F));
+        text_ += static_cast<char>(0x80 | ((unicode >> 6) & 0x3F));
+        text_ += static_cast<char>(0x80 | (unicode & 0x3F));
+    }
+    
+    textObj_->setString(toUtf8(text_));
+    updateVisuals();
+    
+    if (onTextChange_) {
+        onTextChange_(text_);
+    }
+}
+
+sf::String UIInputBox::toUtf8(const std::string& text) {
+    sf::String result;
+    size_t i = 0;
+    while (i < text.size()) {
+        uint32_t codepoint = 0;
+        unsigned char c = text[i];
+        
+        if ((c & 0x80) == 0) {
+            codepoint = c;
+            i += 1;
+        } else if ((c & 0xE0) == 0xC0) {
+            codepoint = (c & 0x1F) << 6;
+            if (i + 1 < text.size()) {
+                codepoint |= (text[i + 1] & 0x3F);
+            }
+            i += 2;
+        } else if ((c & 0xF0) == 0xE0) {
+            codepoint = (c & 0x0F) << 12;
+            if (i + 1 < text.size()) {
+                codepoint |= (text[i + 1] & 0x3F) << 6;
+            }
+            if (i + 2 < text.size()) {
+                codepoint |= (text[i + 2] & 0x3F);
+            }
+            i += 3;
+        } else if ((c & 0xF8) == 0xF0) {
+            codepoint = (c & 0x07) << 18;
+            if (i + 1 < text.size()) {
+                codepoint |= (text[i + 1] & 0x3F) << 12;
+            }
+            if (i + 2 < text.size()) {
+                codepoint |= (text[i + 2] & 0x3F) << 6;
+            }
+            if (i + 3 < text.size()) {
+                codepoint |= (text[i + 3] & 0x3F);
+            }
+            i += 4;
+        } else {
+            i += 1;
+            continue;
+        }
+        
+        result += static_cast<char32_t>(codepoint);
+    }
+    return result;
+}

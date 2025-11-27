@@ -12,6 +12,18 @@ Button::Button(const Font& font, const String& label, float width, float height,
     text->setCharacterSize(text_size);
 }
 
+Button::Button(const Font& font, const String& label, Vector2f size, int textSize)
+    : font(font), box(size)
+{
+    box.setOutlineThickness(0.f);
+    box.setOutlineColor(Color::Transparent);
+
+    text = make_unique<Text>(font);
+    text->setString(label);
+    text->setFillColor(Color::White);
+    text->setCharacterSize(textSize);
+}
+
 // Copy constructor - deep copy
 Button::Button(const Button& other) 
     : font(other.font), box(other.box), hovered(other.hovered), pressed(other.pressed)
@@ -79,6 +91,13 @@ void Button::setOutlineColor(Color color) {
     box.setOutlineColor(color);
 }
 
+void Button::setColors(Color normal, Color hover, Color textCol) {
+    normalColor = normal;
+    hoverColor = hover;
+    box.setFillColor(normal);
+    if (text) text->setFillColor(textCol);
+}
+
 void Button::update(Vector2f mousePos, bool mousePressed, Color hover, Color normal) {
     hovered = box.getGlobalBounds().contains(mousePos);
 
@@ -92,8 +111,17 @@ void Button::update(Vector2f mousePos, bool mousePressed, Color hover, Color nor
     }
 }
 
+void Button::update(Vector2f mousePos) {
+    hovered = box.getGlobalBounds().contains(mousePos);
+    box.setFillColor(hovered ? hoverColor : normalColor);
+}
+
 bool Button::isClicked(Vector2f mousePos, bool mousePressed) {
     return box.getGlobalBounds().contains(mousePos) && mousePressed;
+}
+
+bool Button::isClicked(Vector2f mousePos) {
+    return box.getGlobalBounds().contains(mousePos);
 }
 
 void Button::draw(RenderWindow& window) {

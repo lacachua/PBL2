@@ -44,6 +44,7 @@ void AdminScreen::switchPanel(AppState newState) {
     revenuePanel.reset();
     showtimePanel.reset();
     profilePanel.reset();
+    voucherPanel.reset();
     
     // Create appropriate panel based on state
     switch (newState) {
@@ -83,6 +84,10 @@ void AdminScreen::switchPanel(AppState newState) {
         case AppState::ADMIN_CHANGE_PASSWORD:
             profilePanel = make_unique<AdminProfilePanel>(font, panelWidth, panelHeight, authService);
             profilePanel->setPosition(Vector2f(280, 20));
+            break;
+        case AppState::ADMIN_VOUCHERS:
+            voucherPanel = make_unique<VoucherPanel>(font, panelWidth, panelHeight);
+            voucherPanel->setPosition(Vector2f(280, 20));
             break;
         case AppState::ADMIN_STAFF:
             cout << "[AdminScreen] Panel not implemented yet\n";
@@ -126,6 +131,9 @@ void AdminScreen::handleEvent(const Event& event) {
     if (profilePanel) {
         profilePanel->handleEvent(event, window);
     }
+    if (voucherPanel) {
+        voucherPanel->handleEvent(event, window);
+    }
 }
 
 void AdminScreen::update(Vector2f mousePos, bool mousePressed, AppState& state) {
@@ -157,6 +165,9 @@ void AdminScreen::update(Vector2f mousePos, bool mousePressed, AppState& state) 
     if (profilePanel) {
         profilePanel->update(mousePos, mousePressed);
     }
+    if (voucherPanel) {
+        voucherPanel->update(mousePos, mousePressed);
+    }
 }
 
 void AdminScreen::render() {
@@ -171,6 +182,7 @@ void AdminScreen::render() {
     if (revenuePanel) revenuePanel->render(window);
     if (showtimePanel) showtimePanel->render(window);
     if (profilePanel) profilePanel->render(window);
+    if (voucherPanel) voucherPanel->render(window);
 
     sidebar->render(window);
 }

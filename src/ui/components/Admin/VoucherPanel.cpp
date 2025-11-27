@@ -1,0 +1,1555 @@
+#include "UI/components/Admin/VoucherPanel.h"
+#include "UI/components/Admin/RoundedRectRenderer.h"
+
+#include <algorithm>
+#include <cmath>
+#include <iomanip>
+#include <iostream>
+#include <sstream>
+
+using namespace std;
+using namespace sf;
+
+namespace {
+    inline sf::String toUtf8(const std::string& text) {
+        return sf::String::fromUtf8(text.begin(), text.end());
+    }
+}
+
+VoucherPanel::VoucherPanel(Font& f, float w, float h)
+    : font(f), width(w), height(h) {
+    repository = make_unique<AdminVoucherRepository>();
+    userSelectPopup_ = make_unique<UserSelectPopup>(font);
+    setupUI();
+    refreshData();
+}
+
+void VoucherPanel::setupUI() {
+    // Background
+    background.setSize(Vector2f(width, height));
+    background.setFillColor(bgColor);
+    
+    // Title
+    titleText = make_unique<Text>(font, toUtf8("Quản lý Voucher"), 26);
+    titleText->setFillColor(tableHeaderColor);
+    titleText->setStyle(Text::Bold);
+    
+    // Left panel (Voucher Definitions)
+    leftPanelBg.setSize(Vector2f(LEFT_PANEL_WIDTH, height - 100));
+    leftPanelBg.setFillColor(panelBgColor);
+    leftPanelBg.setOutlineColor(borderColor);
+    leftPanelBg.setOutlineThickness(1.f);
+    
+    leftPanelTitle = make_unique<Text>(font, toUtf8("Danh sách Voucher"), 18);
+    leftPanelTitle->setFillColor(tableHeaderColor);
+    leftPanelTitle->setStyle(Text::Bold);
+    
+    // Right panel (User Vouchers)
+    rightPanelBg.setSize(Vector2f(RIGHT_PANEL_WIDTH, height - 100));
+    rightPanelBg.setFillColor(panelBgColor);
+    rightPanelBg.setOutlineColor(borderColor);
+    rightPanelBg.setOutlineThickness(1.f);
+    
+    rightPanelTitle = make_unique<Text>(font, toUtf8("Chi tiết người nhận"), 18);
+    rightPanelTitle->setFillColor(tableHeaderColor);
+    rightPanelTitle->setStyle(Text::Bold);
+    
+    // Table headers
+    defTableHeader.setSize(Vector2f(LEFT_PANEL_WIDTH - 40, HEADER_HEIGHT));
+    defTableHeader.setFillColor(headerColor);
+    
+    userTableHeader.setSize(Vector2f(RIGHT_PANEL_WIDTH - 40, HEADER_HEIGHT));
+    userTableHeader.setFillColor(headerColor);
+    
+    // Setup buttons - Left panel
+    setupButton(btnAddVoucher, "Thêm mới", Color(40, 167, 69), Color(60, 187, 89), {120.f, BUTTON_HEIGHT});
+    setupButton(btnEditVoucher, "Chỉnh sửa", Color(20, 118, 172), Color(40, 138, 192), {120.f, BUTTON_HEIGHT});
+    setupButton(btnDeleteVoucher, "Xóa", Color(220, 53, 69), Color(240, 73, 89), {80.f, BUTTON_HEIGHT});
+    setupButton(btnDistribute, "Phát đồng loạt", Color(255, 152, 0), Color(255, 172, 40), {150.f, BUTTON_HEIGHT});
+    setupButton(btnViewUsers, "Xem người nhận", Color(108, 117, 125), Color(128, 137, 145), {150.f, BUTTON_HEIGHT});
+    setupButton(btnRefresh, "", Color(27, 38, 59), Color(47, 58, 79), {48.f, 48.f});
+    
+    // Setup buttons - Right panel
+    setupButton(btnAddToUser, "Thêm người nhận", Color(40, 167, 69), Color(60, 187, 89), {160.f, BUTTON_HEIGHT});
+    setupButton(btnRemoveFromUser, "Thu hồi voucher", Color(220, 53, 69), Color(240, 73, 89), {160.f, BUTTON_HEIGHT});
+    setupButton(btnBackToList, "← Quay lại", Color(108, 117, 125), Color(128, 137, 145), {120.f, BUTTON_HEIGHT});
+    
+    // Reload icon
+    if (!reloadTexture.loadFromFile("../assets/elements/reload.png")) {
+        btnRefresh.label = make_unique<Text>(font, toUtf8("↻"), 18);
+        btnRefresh.label->setFillColor(Color::White);
+    } else {
+        reloadTexture.setSmooth(true);
+        reloadSprite.emplace(reloadTexture);
+    }
+    
+    // Notification
+    notificationBg.setSize(Vector2f(400.f, 52.f));
+    notificationText = make_unique<Text>(font, "", 16);
+    notificationText->setFillColor(Color::White);
+    
+    // Popup
+    popupOverlay.setFillColor(Color(0, 0, 0, 150));
+    popupBackground.setFillColor(Color::White);
+    popupBackground.setOutlineColor(borderColor);
+    popupBackground.setOutlineThickness(2.f);
+    
+    popupTitle = make_unique<Text>(font, "", 20);
+    popupTitle->setFillColor(tableHeaderColor);
+    popupTitle->setStyle(Text::Bold);
+    
+    layoutElements();
+}
+
+void VoucherPanel::setupButton(ActionButton& button, const string& labelUtf8, 
+                               const Color& base, const Color& hover, Vector2f size) {
+    button.box.setSize(size);
+    button.box.setFillColor(base);
+    button.baseColor = base;
+    button.hoverColor = hover;
+    
+    if (!labelUtf8.empty()) {
+        button.label = make_unique<Text>(font, toUtf8(labelUtf8), 15);
+        button.label->setFillColor(Color::White);
+    }
+}
+
+void VoucherPanel::layoutElements() {
+    background.setPosition(position);
+    
+    // Title
+    if (titleText) {
+        titleText->setPosition(Vector2f(position.x + 32.f, position.y + 20.f));
+    }
+    
+    // Panels
+    float panelY = position.y + 70.f;
+    leftPanelBg.setPosition(Vector2f(position.x + PANEL_MARGIN, panelY));
+    rightPanelBg.setPosition(Vector2f(position.x + PANEL_MARGIN + LEFT_PANEL_WIDTH + PANEL_MARGIN, panelY));
+    
+    // Panel titles
+    if (leftPanelTitle) {
+        leftPanelTitle->setPosition(Vector2f(leftPanelBg.getPosition().x + 20.f, panelY + 15.f));
+    }
+    if (rightPanelTitle) {
+        rightPanelTitle->setPosition(Vector2f(rightPanelBg.getPosition().x + 20.f, panelY + 15.f));
+    }
+    
+    // Table headers
+    defTableHeader.setPosition(Vector2f(leftPanelBg.getPosition().x + 20.f, panelY + 100.f));
+    userTableHeader.setPosition(Vector2f(rightPanelBg.getPosition().x + 20.f, panelY + 100.f));
+    
+    // Left panel buttons
+    float leftBtnY = panelY + 50.f;
+    float leftBtnX = leftPanelBg.getPosition().x + 20.f;
+    
+    btnAddVoucher.box.setPosition(Vector2f(leftBtnX, leftBtnY));
+    leftBtnX += btnAddVoucher.box.getSize().x + 10.f;
+    
+    btnEditVoucher.box.setPosition(Vector2f(leftBtnX, leftBtnY));
+    leftBtnX += btnEditVoucher.box.getSize().x + 10.f;
+    
+    btnDeleteVoucher.box.setPosition(Vector2f(leftBtnX, leftBtnY));
+    leftBtnX += btnDeleteVoucher.box.getSize().x + 10.f;
+    
+    btnDistribute.box.setPosition(Vector2f(leftBtnX, leftBtnY));
+    leftBtnX += btnDistribute.box.getSize().x + 10.f;
+    
+    btnRefresh.box.setPosition(Vector2f(
+        leftPanelBg.getPosition().x + LEFT_PANEL_WIDTH - 68.f, 
+        leftBtnY - 2.f
+    ));
+    
+    // Right panel buttons
+    float rightBtnY = panelY + 50.f;
+    float rightBtnX = rightPanelBg.getPosition().x + 20.f;
+    
+    btnBackToList.box.setPosition(Vector2f(rightBtnX, rightBtnY));
+    rightBtnX += btnBackToList.box.getSize().x + 10.f;
+    
+    btnAddToUser.box.setPosition(Vector2f(rightBtnX, rightBtnY));
+    rightBtnX += btnAddToUser.box.getSize().x + 10.f;
+    
+    btnRemoveFromUser.box.setPosition(Vector2f(rightBtnX, rightBtnY));
+    
+    // Center button labels
+    auto centerLabel = [](ActionButton& btn) {
+        if (!btn.label) return;
+        FloatRect bounds = btn.label->getLocalBounds();
+        btn.label->setPosition(Vector2f(
+            btn.box.getPosition().x + (btn.box.getSize().x - bounds.size.x) / 2.f - bounds.position.x,
+            btn.box.getPosition().y + (btn.box.getSize().y - bounds.size.y) / 2.f - bounds.position.y
+        ));
+    };
+    
+    centerLabel(btnAddVoucher);
+    centerLabel(btnEditVoucher);
+    centerLabel(btnDeleteVoucher);
+    centerLabel(btnDistribute);
+    centerLabel(btnViewUsers);
+    centerLabel(btnRefresh);
+    centerLabel(btnAddToUser);
+    centerLabel(btnRemoveFromUser);
+    centerLabel(btnBackToList);
+    
+    // Reload sprite
+    if (reloadSprite) {
+        FloatRect bounds = reloadSprite->getLocalBounds();
+        float scale = 24.f / max(bounds.size.x, bounds.size.y);
+        reloadSprite->setScale(Vector2f(scale, scale));
+        reloadSprite->setPosition(Vector2f(
+            btnRefresh.box.getPosition().x + (btnRefresh.box.getSize().x - bounds.size.x * scale) / 2.f,
+            btnRefresh.box.getPosition().y + (btnRefresh.box.getSize().y - bounds.size.y * scale) / 2.f
+        ));
+        reloadSprite->setColor(Color::White);
+    }
+}
+
+void VoucherPanel::setPosition(Vector2f pos) {
+    position = pos;
+    layoutElements();
+}
+
+void VoucherPanel::refreshData() {
+    repository->reload();
+    repository->cleanupExpiredVouchers();
+    selectedVoucherIndex = -1;
+    selectedVoucherCode = "";
+    currentVoucherUsers.clear();
+    defScrollOffset = 0;
+    userScrollOffset = 0;
+}
+
+void VoucherPanel::loadUsersForVoucher(const string& code) {
+    selectedVoucherCode = code;
+    currentVoucherUsers = repository->getUsersWithVoucher(code);
+    selectedUserIndex = -1;
+    userScrollOffset = 0;
+    
+    // Update right panel title
+    if (rightPanelTitle) {
+        string title = "Người nhận: " + code + " (" + to_string(currentVoucherUsers.size()) + ")";
+        rightPanelTitle->setString(toUtf8(title));
+    }
+}
+
+void VoucherPanel::updateButton(ActionButton& button, Vector2f mousePos) {
+    button.hovered = button.box.getGlobalBounds().contains(mousePos);
+    button.box.setFillColor(button.hovered ? button.hoverColor : button.baseColor);
+}
+
+void VoucherPanel::handleEvent(const Event& event, const RenderWindow& window) {
+    // Handle UserSelectPopup if open
+    if (userSelectPopup_ && userSelectPopup_->isOpen()) {
+        userSelectPopup_->handleEvent(event, window);
+        return;
+    }
+    
+    // Handle scroll
+    if (const auto* scroll = event.getIf<Event::MouseWheelScrolled>()) {
+        Vector2f mousePos(static_cast<float>(scroll->position.x), static_cast<float>(scroll->position.y));
+        
+        // Scroll in voucher definitions
+        if (leftPanelBg.getGlobalBounds().contains(mousePos)) {
+            auto defs = repository->getAllDefinitions();
+            int maxScroll = max(0, static_cast<int>(defs.size()) - 8);
+            if (scroll->delta > 0) {
+                defScrollOffset = max(0, defScrollOffset - 1);
+            } else {
+                defScrollOffset = min(maxScroll, defScrollOffset + 1);
+            }
+        }
+        
+        // Scroll in user vouchers
+        if (rightPanelBg.getGlobalBounds().contains(mousePos)) {
+            int maxScroll = max(0, static_cast<int>(currentVoucherUsers.size()) - 8);
+            if (scroll->delta > 0) {
+                userScrollOffset = max(0, userScrollOffset - 1);
+            } else {
+                userScrollOffset = min(maxScroll, userScrollOffset + 1);
+            }
+        }
+        return;
+    }
+    
+    // Handle popup events
+    if (currentPopup != PopupType::NONE) {
+        // Handle mouse click for input focus
+        if (const auto* click = event.getIf<Event::MouseButtonPressed>()) {
+            if (click->button == Mouse::Button::Left) {
+                Vector2f mousePos(static_cast<float>(click->position.x), static_cast<float>(click->position.y));
+                
+                // Handle TextBox focus on click
+                for (auto& textBox : inputBoxes) {
+                    if (textBox) {
+                        textBox->update(mousePos, true);  // Pass mousePressed=true
+                    }
+                }
+                
+                // Handle search box focus on click
+                if (currentPopup == PopupType::ADD_TO_USER && searchBox) {
+                    searchBox->update(mousePos, true);
+                }
+            }
+        }
+        
+        // Handle textbox text input
+        for (auto& textBox : inputBoxes) {
+            if (textBox) {
+                textBox->handleEvent(event, window);
+            }
+        }
+        
+        // Handle search box input for ADD_TO_USER popup
+        if (currentPopup == PopupType::ADD_TO_USER && searchBox) {
+            searchBox->handleEvent(event, window);
+            
+            // Check if search text changed and filter users
+            string newFilter = searchBox->getText();
+            if (newFilter != userSearchFilter) {
+                userSearchFilter = newFilter;
+                filterUsers(userSearchFilter);
+            }
+        }
+        
+        if (const auto* click = event.getIf<Event::MouseButtonPressed>()) {
+            if (click->button == Mouse::Button::Left) {
+                Vector2f mousePos(static_cast<float>(click->position.x), static_cast<float>(click->position.y));
+                
+                // Handle save button
+                if (btnPopupSave && btnPopupSave->isClicked(mousePos)) {
+                    switch (currentPopup) {
+                        case PopupType::ADD_VOUCHER: handleAddVoucher(); break;
+                        case PopupType::EDIT_VOUCHER: handleEditVoucher(); break;
+                        case PopupType::DELETE_VOUCHER: handleDeleteVoucher(); break;
+                        case PopupType::DISTRIBUTE_VOUCHER: handleDistribute(); break;
+                        case PopupType::ADD_TO_USER: handleAddToUser(); break;
+                        default: break;
+                    }
+                    return;
+                }
+                
+                // Handle cancel button
+                if (btnPopupCancel && btnPopupCancel->isClicked(mousePos)) {
+                    closePopup();
+                    return;
+                }
+                
+                // Handle user selection in ADD_TO_USER popup (checkbox toggle)
+                if (currentPopup == PopupType::ADD_TO_USER && userListBg.getGlobalBounds().contains(mousePos)) {
+                    float localY = mousePos.y - userListBg.getPosition().y;
+                    int visualIdx = static_cast<int>(localY / 38.f);  // Visual index in the list
+                    int actualListIdx = visualIdx + availableUserScrollOffset;  // Actual index in filtered list
+                    
+                    if (actualListIdx >= 0 && actualListIdx < static_cast<int>(filteredAvailableUsers.size())) {
+                        int userIdx = filteredAvailableUsers[actualListIdx];
+                        // Toggle selection
+                        if (selectedUserSet.find(userIdx) != selectedUserSet.end()) {
+                            selectedUserSet.erase(userIdx);
+                        } else {
+                            selectedUserSet.insert(userIdx);
+                        }
+                    }
+                }
+                
+                // Handle Select All button
+                if (currentPopup == PopupType::ADD_TO_USER && btnSelectAll && btnSelectAll->isClicked(mousePos)) {
+                    if (selectedUserSet.size() == filteredAvailableUsers.size()) {
+                        // Deselect all
+                        selectedUserSet.clear();
+                        btnSelectAll->setText(toUtf8("Chọn tất cả"));
+                    } else {
+                        // Select all
+                        for (int idx : filteredAvailableUsers) {
+                            selectedUserSet.insert(idx);
+                        }
+                        btnSelectAll->setText(toUtf8("Bỏ chọn tất cả"));
+                    }
+                }
+            }
+        }
+        
+        // Handle scroll in user selection popup
+        if (currentPopup == PopupType::ADD_TO_USER) {
+            if (const auto* scroll = event.getIf<Event::MouseWheelScrolled>()) {
+                Vector2f mousePos(static_cast<float>(scroll->position.x), static_cast<float>(scroll->position.y));
+                if (userListBg.getGlobalBounds().contains(mousePos)) {
+                    int maxScroll = max(0, static_cast<int>(filteredAvailableUsers.size()) - 6);
+                    if (scroll->delta > 0) {
+                        availableUserScrollOffset = max(0, availableUserScrollOffset - 1);
+                    } else {
+                        availableUserScrollOffset = min(maxScroll, availableUserScrollOffset + 1);
+                    }
+                }
+            }
+        }
+        
+        return;
+    }
+    
+    // Handle main panel clicks
+    if (const auto* click = event.getIf<Event::MouseButtonPressed>()) {
+        if (click->button == Mouse::Button::Left) {
+            Vector2f mousePos(static_cast<float>(click->position.x), static_cast<float>(click->position.y));
+            
+            // Left panel buttons
+            if (btnAddVoucher.box.getGlobalBounds().contains(mousePos)) {
+                openAddVoucherPopup();
+                return;
+            }
+            
+            if (btnEditVoucher.box.getGlobalBounds().contains(mousePos)) {
+                if (selectedVoucherIndex >= 0) {
+                    openEditVoucherPopup();
+                } else {
+                    showNotification("Vui lòng chọn voucher cần chỉnh sửa", dangerColor);
+                }
+                return;
+            }
+            
+            if (btnDeleteVoucher.box.getGlobalBounds().contains(mousePos)) {
+                if (selectedVoucherIndex >= 0) {
+                    openDeleteVoucherPopup();
+                } else {
+                    showNotification("Vui lòng chọn voucher cần xóa", dangerColor);
+                }
+                return;
+            }
+            
+            if (btnDistribute.box.getGlobalBounds().contains(mousePos)) {
+                if (selectedVoucherIndex >= 0) {
+                    openDistributePopup();
+                } else {
+                    showNotification("Vui lòng chọn voucher để phát", dangerColor);
+                }
+                return;
+            }
+            
+            if (btnRefresh.box.getGlobalBounds().contains(mousePos)) {
+                refreshData();
+                showNotification("Đã làm mới dữ liệu", successColor);
+                return;
+            }
+            
+            // Right panel buttons
+            if (btnAddToUser.box.getGlobalBounds().contains(mousePos)) {
+                if (!selectedVoucherCode.empty()) {
+                    openAddToUserPopup();
+                } else {
+                    showNotification("Vui lòng chọn voucher trước", dangerColor);
+                }
+                return;
+            }
+            
+            if (btnRemoveFromUser.box.getGlobalBounds().contains(mousePos)) {
+                if (selectedUserIndex >= 0 && selectedUserIndex < static_cast<int>(currentVoucherUsers.size())) {
+                    handleRemoveFromUser();
+                } else {
+                    showNotification("Vui lòng chọn người dùng cần thu hồi", dangerColor);
+                }
+                return;
+            }
+            
+            if (btnBackToList.box.getGlobalBounds().contains(mousePos)) {
+                selectedVoucherCode = "";
+                currentVoucherUsers.clear();
+                if (rightPanelTitle) {
+                    rightPanelTitle->setString(toUtf8("Chi tiết người nhận"));
+                }
+                return;
+            }
+            
+            // Click on voucher definition table
+            FloatRect defTableBounds(
+                Vector2f(defTableHeader.getPosition().x, defTableHeader.getPosition().y + HEADER_HEIGHT),
+                Vector2f(defTableHeader.getSize().x, height - 250.f)
+            );
+            
+            if (defTableBounds.contains(mousePos)) {
+                float localY = mousePos.y - defTableBounds.position.y;
+                int idx = static_cast<int>(localY / ROW_HEIGHT) + defScrollOffset;
+                auto defs = repository->getAllDefinitions();
+                if (idx >= 0 && idx < static_cast<int>(defs.size())) {
+                    selectedVoucherIndex = idx;
+                    loadUsersForVoucher(defs[idx].code);
+                }
+                return;
+            }
+            
+            // Click on user voucher table
+            FloatRect userTableBounds(
+                Vector2f(userTableHeader.getPosition().x, userTableHeader.getPosition().y + HEADER_HEIGHT),
+                Vector2f(userTableHeader.getSize().x, height - 250.f)
+            );
+            
+            if (userTableBounds.contains(mousePos)) {
+                float localY = mousePos.y - userTableBounds.position.y;
+                int idx = static_cast<int>(localY / ROW_HEIGHT) + userScrollOffset;
+                if (idx >= 0 && idx < static_cast<int>(currentVoucherUsers.size())) {
+                    selectedUserIndex = idx;
+                }
+                return;
+            }
+        }
+    }
+}
+
+void VoucherPanel::update(Vector2f mousePos, bool mousePressed) {
+    (void)mousePressed;
+    
+    // Update UserSelectPopup if open
+    if (userSelectPopup_ && userSelectPopup_->isOpen()) {
+        userSelectPopup_->update(mousePos, mousePressed);
+        return;
+    }
+    
+    // Update buttons
+    updateButton(btnAddVoucher, mousePos);
+    updateButton(btnEditVoucher, mousePos);
+    updateButton(btnDeleteVoucher, mousePos);
+    updateButton(btnDistribute, mousePos);
+    updateButton(btnViewUsers, mousePos);
+    updateButton(btnRefresh, mousePos);
+    updateButton(btnAddToUser, mousePos);
+    updateButton(btnRemoveFromUser, mousePos);
+    updateButton(btnBackToList, mousePos);
+    
+    // Update hover states for tables
+    hoveredVoucherIndex = -1;
+    hoveredUserIndex = -1;
+    
+    // Voucher definition hover
+    FloatRect defTableBounds(
+        Vector2f(defTableHeader.getPosition().x, defTableHeader.getPosition().y + HEADER_HEIGHT),
+        Vector2f(defTableHeader.getSize().x, height - 250.f)
+    );
+    
+    if (defTableBounds.contains(mousePos)) {
+        float localY = mousePos.y - defTableBounds.position.y;
+        int idx = static_cast<int>(localY / ROW_HEIGHT) + defScrollOffset;
+        auto defs = repository->getAllDefinitions();
+        if (idx >= 0 && idx < static_cast<int>(defs.size())) {
+            hoveredVoucherIndex = idx;
+        }
+    }
+    
+    // User voucher hover
+    FloatRect userTableBounds(
+        Vector2f(userTableHeader.getPosition().x, userTableHeader.getPosition().y + HEADER_HEIGHT),
+        Vector2f(userTableHeader.getSize().x, height - 250.f)
+    );
+    
+    if (userTableBounds.contains(mousePos)) {
+        float localY = mousePos.y - userTableBounds.position.y;
+        int idx = static_cast<int>(localY / ROW_HEIGHT) + userScrollOffset;
+        if (idx >= 0 && idx < static_cast<int>(currentVoucherUsers.size())) {
+            hoveredUserIndex = idx;
+        }
+    }
+    
+    // Update popup buttons
+    if (currentPopup != PopupType::NONE) {
+        if (btnPopupSave) btnPopupSave->update(mousePos);
+        if (btnPopupCancel) btnPopupCancel->update(mousePos);
+        
+        for (auto& textBox : inputBoxes) {
+            if (textBox) textBox->update(mousePos);
+        }
+        
+        // Update hover in user selection
+        if (currentPopup == PopupType::ADD_TO_USER) {
+            hoveredAvailableUserIndex = -1;
+            if (userListBg.getGlobalBounds().contains(mousePos)) {
+                float localY = mousePos.y - userListBg.getPosition().y;
+                int visualIdx = static_cast<int>(localY / 38.f);  // Visual index
+                int actualListIdx = visualIdx + availableUserScrollOffset;
+                if (actualListIdx >= 0 && actualListIdx < static_cast<int>(filteredAvailableUsers.size())) {
+                    hoveredAvailableUserIndex = actualListIdx;
+                }
+            }
+            
+            // Update Select All button
+            if (btnSelectAll) btnSelectAll->update(mousePos);
+            
+            // Update search box (hover only, click handled in handleEvent)
+            if (searchBox) searchBox->update(mousePos);
+        }
+    }
+}
+
+void VoucherPanel::render(RenderWindow& window) {
+    window.draw(background);
+    
+    if (titleText) window.draw(*titleText);
+    
+    renderLeftPanel(window);
+    renderRightPanel(window);
+    renderNotification(window);
+    
+    if (currentPopup != PopupType::NONE) {
+        renderPopup(window);
+    }
+    
+    // Render UserSelectPopup (with its own overlay)
+    if (userSelectPopup_ && userSelectPopup_->isOpen()) {
+        userSelectPopup_->render(window);
+    }
+}
+
+void VoucherPanel::renderLeftPanel(RenderWindow& window) {
+    window.draw(leftPanelBg);
+    if (leftPanelTitle) window.draw(*leftPanelTitle);
+    
+    // Render buttons
+    auto drawButton = [&](ActionButton& btn) {
+        RoundedRectRenderer::draw(window, btn.box.getPosition(), btn.box.getSize(), 
+                                  BUTTON_RADIUS, btn.box.getFillColor());
+        if (btn.label) window.draw(*btn.label);
+    };
+    
+    drawButton(btnAddVoucher);
+    drawButton(btnEditVoucher);
+    drawButton(btnDeleteVoucher);
+    drawButton(btnDistribute);
+    
+    RoundedRectRenderer::draw(window, btnRefresh.box.getPosition(), btnRefresh.box.getSize(),
+                              BUTTON_RADIUS, btnRefresh.box.getFillColor());
+    if (reloadSprite) {
+        window.draw(*reloadSprite);
+    } else if (btnRefresh.label) {
+        window.draw(*btnRefresh.label);
+    }
+    
+    renderVoucherDefinitions(window);
+}
+
+void VoucherPanel::renderRightPanel(RenderWindow& window) {
+    window.draw(rightPanelBg);
+    if (rightPanelTitle) window.draw(*rightPanelTitle);
+    
+    // Render buttons
+    auto drawButton = [&](ActionButton& btn) {
+        RoundedRectRenderer::draw(window, btn.box.getPosition(), btn.box.getSize(), 
+                                  BUTTON_RADIUS, btn.box.getFillColor());
+        if (btn.label) window.draw(*btn.label);
+    };
+    
+    drawButton(btnBackToList);
+    drawButton(btnAddToUser);
+    drawButton(btnRemoveFromUser);
+    
+    renderUserVouchers(window);
+}
+
+void VoucherPanel::renderVoucherDefinitions(RenderWindow& window) {
+    // Table header
+    window.draw(defTableHeader);
+    
+    // Header columns
+    vector<string> headers = {"Mã", "Loại", "Giá trị", "Tối thiểu", "Người nhận"};
+    vector<float> colWidths = {100.f, 80.f, 120.f, 120.f, 100.f};
+    
+    float headerX = defTableHeader.getPosition().x + 10.f;
+    float headerY = defTableHeader.getPosition().y;
+    
+    for (size_t i = 0; i < headers.size(); i++) {
+        Text headerText(font, toUtf8(headers[i]), 14);
+        headerText.setFillColor(Color::White);
+        headerText.setStyle(Text::Bold);
+        headerText.setPosition(Vector2f(headerX, headerY + (HEADER_HEIGHT - 14) / 2.f));
+        window.draw(headerText);
+        headerX += colWidths[i];
+    }
+    
+    // Table rows
+    auto defs = repository->getAllDefinitions();
+    float rowY = defTableHeader.getPosition().y + HEADER_HEIGHT;
+    int maxRows = static_cast<int>((height - 250.f) / ROW_HEIGHT);
+    int endIdx = min(static_cast<int>(defs.size()), defScrollOffset + maxRows);
+    
+    for (int i = defScrollOffset; i < endIdx; i++) {
+        const auto& def = defs[i];
+        float currentRowY = rowY + (i - defScrollOffset) * ROW_HEIGHT;
+        
+        // Row background
+        RectangleShape rowBg(Vector2f(defTableHeader.getSize().x, ROW_HEIGHT - 2));
+        rowBg.setPosition(Vector2f(defTableHeader.getPosition().x, currentRowY));
+        
+        if (i == selectedVoucherIndex) {
+            rowBg.setFillColor(selectedColor);
+        } else if (i == hoveredVoucherIndex) {
+            rowBg.setFillColor(hoverColor);
+        } else {
+            rowBg.setFillColor(i % 2 == 0 ? rowColor : rowAltColor);
+        }
+        window.draw(rowBg);
+        
+        // Row data
+        float colX = defTableHeader.getPosition().x + 10.f;
+        
+        // Code
+        Text codeText(font, toUtf8(def.code), 13);
+        codeText.setFillColor(accentColor);
+        codeText.setStyle(Text::Bold);
+        codeText.setPosition(Vector2f(colX, currentRowY + (ROW_HEIGHT - 16) / 2.f));
+        window.draw(codeText);
+        colX += colWidths[0];
+        
+        // Type
+        Text typeText(font, toUtf8(getTypeString(def.type)), 13);
+        typeText.setFillColor(textColor);
+        typeText.setPosition(Vector2f(colX, currentRowY + (ROW_HEIGHT - 16) / 2.f));
+        window.draw(typeText);
+        colX += colWidths[1];
+        
+        // Value
+        string valueStr = def.type == 1 ? formatCurrency(def.value) : to_string(static_cast<int>(def.value)) + "%";
+        Text valueText(font, toUtf8(valueStr), 13);
+        valueText.setFillColor(successColor);
+        valueText.setPosition(Vector2f(colX, currentRowY + (ROW_HEIGHT - 16) / 2.f));
+        window.draw(valueText);
+        colX += colWidths[2];
+        
+        // Min bill
+        Text minText(font, toUtf8(formatCurrency(def.minBill)), 13);
+        minText.setFillColor(textColor);
+        minText.setPosition(Vector2f(colX, currentRowY + (ROW_HEIGHT - 16) / 2.f));
+        window.draw(minText);
+        colX += colWidths[3];
+        
+        // User count
+        int userCount = repository->countUsersWithVoucher(def.code);
+        Text countText(font, toUtf8(to_string(userCount)), 13);
+        countText.setFillColor(userCount > 0 ? accentColor : textColor);
+        countText.setPosition(Vector2f(colX, currentRowY + (ROW_HEIGHT - 16) / 2.f));
+        window.draw(countText);
+    }
+    
+    // Empty state
+    if (defs.empty()) {
+        Text emptyText(font, toUtf8("Chưa có voucher nào"), 16);
+        emptyText.setFillColor(Color(150, 150, 150));
+        FloatRect bounds = emptyText.getLocalBounds();
+        emptyText.setPosition(Vector2f(
+            defTableHeader.getPosition().x + (defTableHeader.getSize().x - bounds.size.x) / 2.f,
+            defTableHeader.getPosition().y + HEADER_HEIGHT + 50.f
+        ));
+        window.draw(emptyText);
+    }
+}
+
+void VoucherPanel::renderUserVouchers(RenderWindow& window) {
+    // Table header
+    window.draw(userTableHeader);
+    
+    // Header columns
+    vector<string> headers = {"Email", "Tên", "SL", "HSD"};
+    vector<float> colWidths = {180.f, 150.f, 50.f, 100.f};
+    
+    float headerX = userTableHeader.getPosition().x + 10.f;
+    float headerY = userTableHeader.getPosition().y;
+    
+    for (size_t i = 0; i < headers.size(); i++) {
+        Text headerText(font, toUtf8(headers[i]), 14);
+        headerText.setFillColor(Color::White);
+        headerText.setStyle(Text::Bold);
+        headerText.setPosition(Vector2f(headerX, headerY + (HEADER_HEIGHT - 14) / 2.f));
+        window.draw(headerText);
+        headerX += colWidths[i];
+    }
+    
+    // Table rows
+    float rowY = userTableHeader.getPosition().y + HEADER_HEIGHT;
+    int maxRows = static_cast<int>((height - 250.f) / ROW_HEIGHT);
+    int endIdx = min(static_cast<int>(currentVoucherUsers.size()), userScrollOffset + maxRows);
+    
+    for (int i = userScrollOffset; i < endIdx; i++) {
+        const auto& user = currentVoucherUsers[i];
+        float currentRowY = rowY + (i - userScrollOffset) * ROW_HEIGHT;
+        
+        // Row background
+        RectangleShape rowBg(Vector2f(userTableHeader.getSize().x, ROW_HEIGHT - 2));
+        rowBg.setPosition(Vector2f(userTableHeader.getPosition().x, currentRowY));
+        
+        if (i == selectedUserIndex) {
+            rowBg.setFillColor(selectedColor);
+        } else if (i == hoveredUserIndex) {
+            rowBg.setFillColor(hoverColor);
+        } else {
+            rowBg.setFillColor(i % 2 == 0 ? rowColor : rowAltColor);
+        }
+        window.draw(rowBg);
+        
+        // Row data
+        float colX = userTableHeader.getPosition().x + 10.f;
+        
+        // Email
+        string displayEmail = user.email;
+        if (displayEmail.length() > 22) {
+            displayEmail = displayEmail.substr(0, 19) + "...";
+        }
+        Text emailText(font, toUtf8(displayEmail), 12);
+        emailText.setFillColor(textColor);
+        emailText.setPosition(Vector2f(colX, currentRowY + (ROW_HEIGHT - 14) / 2.f));
+        window.draw(emailText);
+        colX += colWidths[0];
+        
+        // Name
+        string displayName = user.fullName;
+        if (displayName.length() > 18) {
+            displayName = displayName.substr(0, 15) + "...";
+        }
+        Text nameText(font, toUtf8(displayName), 12);
+        nameText.setFillColor(textColor);
+        nameText.setPosition(Vector2f(colX, currentRowY + (ROW_HEIGHT - 14) / 2.f));
+        window.draw(nameText);
+        colX += colWidths[1];
+        
+        // Quantity
+        Text qtyText(font, toUtf8(to_string(user.quantity)), 12);
+        qtyText.setFillColor(successColor);
+        qtyText.setPosition(Vector2f(colX, currentRowY + (ROW_HEIGHT - 14) / 2.f));
+        window.draw(qtyText);
+        colX += colWidths[2];
+        
+        // Expiry
+        Text expText(font, toUtf8(formatDate(user.expiryDate)), 12);
+        expText.setFillColor(Color(100, 100, 100));
+        expText.setPosition(Vector2f(colX, currentRowY + (ROW_HEIGHT - 14) / 2.f));
+        window.draw(expText);
+    }
+    
+    // Empty state
+    if (currentVoucherUsers.empty()) {
+        string emptyMsg = selectedVoucherCode.empty() ? 
+            "Chọn voucher để xem người nhận" : 
+            "Chưa có người nhận voucher này";
+        Text emptyText(font, toUtf8(emptyMsg), 16);
+        emptyText.setFillColor(Color(150, 150, 150));
+        FloatRect bounds = emptyText.getLocalBounds();
+        emptyText.setPosition(Vector2f(
+            userTableHeader.getPosition().x + (userTableHeader.getSize().x - bounds.size.x) / 2.f,
+            userTableHeader.getPosition().y + HEADER_HEIGHT + 50.f
+        ));
+        window.draw(emptyText);
+    }
+}
+
+void VoucherPanel::renderPopup(RenderWindow& window) {
+    // Overlay
+    popupOverlay.setSize(Vector2f(static_cast<float>(window.getSize().x), static_cast<float>(window.getSize().y)));
+    popupOverlay.setPosition(Vector2f(0, 0));
+    window.draw(popupOverlay);
+    
+    // Popup size based on type
+    Vector2f popupSize(450.f, 400.f);
+    if (currentPopup == PopupType::ADD_TO_USER) {
+        popupSize = Vector2f(520.f, 520.f);
+    } else if (currentPopup == PopupType::DELETE_VOUCHER) {
+        popupSize = Vector2f(400.f, 200.f);
+    } else if (currentPopup == PopupType::DISTRIBUTE_VOUCHER) {
+        popupSize = Vector2f(450.f, 280.f);
+    }
+    
+    Vector2f popupPos(
+        (window.getSize().x - popupSize.x) / 2.f,
+        (window.getSize().y - popupSize.y) / 2.f
+    );
+    
+    popupBackground.setSize(popupSize);
+    popupBackground.setPosition(popupPos);
+    RoundedRectRenderer::draw(window, popupPos, popupSize, 12.f, Color::White);
+    
+    // Title
+    if (popupTitle) {
+        popupTitle->setPosition(Vector2f(popupPos.x + 24.f, popupPos.y + 20.f));
+        window.draw(*popupTitle);
+    }
+    
+    // Position and render input labels and boxes based on popup type
+    float contentStartY = popupPos.y + 60.f;
+    float labelX = popupPos.x + 24.f;
+    float inputX = popupPos.x + 140.f;
+    float rowHeight = 50.f;
+    
+    if (currentPopup == PopupType::ADD_TO_USER) {
+        // Position inputs for ADD_TO_USER popup - horizontal layout
+        if (inputLabels.size() >= 2 && inputBoxes.size() >= 2) {
+            // Days to expire
+            inputLabels[0]->setPosition(Vector2f(labelX, contentStartY + 8.f));
+            inputBoxes[0]->setPosition(Vector2f(inputX, contentStartY));
+            
+            // Quantity - next to days
+            inputLabels[1]->setPosition(Vector2f(popupPos.x + 260.f, contentStartY + 8.f));
+            inputBoxes[1]->setPosition(Vector2f(popupPos.x + 340.f, contentStartY));
+        }
+        
+        // Search box
+        if (searchBox) {
+            Text searchLabel(font, toUtf8("Tìm kiếm:"), 14);
+            searchLabel.setFillColor(textColor);
+            searchLabel.setPosition(Vector2f(labelX, contentStartY + 50.f + 8.f));
+            window.draw(searchLabel);
+            
+            searchBox->setPosition(Vector2f(inputX, contentStartY + 50.f));
+            searchBox->draw(window);
+        }
+        
+        // User list label
+        Text userListLabel(font, toUtf8("Chọn người dùng:"), 14);
+        userListLabel.setFillColor(textColor);
+        userListLabel.setStyle(Text::Bold);
+        userListLabel.setPosition(Vector2f(labelX, contentStartY + 100.f));
+        window.draw(userListLabel);
+        
+        // Position and render user list
+        userListBg.setPosition(Vector2f(labelX, contentStartY + 125.f));
+        userListBg.setSize(Vector2f(popupSize.x - 48.f, 230.f));
+        window.draw(userListBg);
+        
+        // === Render user list with clipping using sf::View ===
+        // Save current view
+        View defaultView = window.getView();
+        
+        // Calculate list area
+        FloatRect listArea(
+            Vector2f(userListBg.getPosition().x, userListBg.getPosition().y),
+            Vector2f(userListBg.getSize().x, userListBg.getSize().y)
+        );
+        
+        // Create clipping view
+        View clippedView;
+        clippedView.setViewport(FloatRect(
+            Vector2f(listArea.position.x / window.getSize().x, listArea.position.y / window.getSize().y),
+            Vector2f(listArea.size.x / window.getSize().x, listArea.size.y / window.getSize().y)
+        ));
+        clippedView.setCenter(Vector2f(listArea.position.x + listArea.size.x / 2.f, 
+                                       listArea.position.y + listArea.size.y / 2.f));
+        clippedView.setSize(Vector2f(listArea.size.x, listArea.size.y));
+        
+        window.setView(clippedView);
+        
+        // Render user list items
+        float listY = userListBg.getPosition().y;
+        int totalUsers = static_cast<int>(filteredAvailableUsers.size());
+        int maxVisible = 6;
+        int endIdx = min(totalUsers, availableUserScrollOffset + maxVisible);
+        
+        for (int i = availableUserScrollOffset; i < endIdx; i++) {
+            int visualIdx = i - availableUserScrollOffset;
+            float itemY = listY + visualIdx * 38.f;
+            int userIdx = filteredAvailableUsers[i];
+            
+            RectangleShape itemBg(Vector2f(userListBg.getSize().x - 4, 36.f));
+            itemBg.setPosition(Vector2f(userListBg.getPosition().x + 2, itemY + 1));
+            
+            // Check if this user is selected (checkbox selected)
+            bool isSelected = (selectedUserSet.find(userIdx) != selectedUserSet.end());
+            
+            if (isSelected) {
+                itemBg.setFillColor(selectedColor);
+            } else if (i == hoveredAvailableUserIndex) {
+                itemBg.setFillColor(hoverColor);
+            } else {
+                itemBg.setFillColor(visualIdx % 2 == 0 ? rowColor : rowAltColor);
+            }
+            window.draw(itemBg);
+            
+            // Checkbox
+            RectangleShape checkbox(Vector2f(18.f, 18.f));
+            checkbox.setPosition(Vector2f(userListBg.getPosition().x + 10.f, itemY + 9.f));
+            checkbox.setFillColor(isSelected ? accentColor : Color::White);
+            checkbox.setOutlineColor(isSelected ? accentColor : borderColor);
+            checkbox.setOutlineThickness(1.5f);
+            window.draw(checkbox);
+            
+            // Checkmark if selected
+            if (isSelected) {
+                Text checkmark(font, toUtf8("✓"), 14);
+                checkmark.setFillColor(Color::White);
+                checkmark.setStyle(Text::Bold);
+                checkmark.setPosition(Vector2f(checkbox.getPosition().x + 2.f, checkbox.getPosition().y - 1.f));
+                window.draw(checkmark);
+            }
+            
+            // Email
+            string email = availableUsers[userIdx].first;
+            if (email.length() > 28) {
+                email = email.substr(0, 25) + "...";
+            }
+            Text emailText(font, toUtf8(email), 13);
+            emailText.setFillColor(textColor);
+            emailText.setPosition(Vector2f(userListBg.getPosition().x + 38.f, itemY + 10.f));
+            window.draw(emailText);
+            
+            // Name
+            string name = availableUsers[userIdx].second;
+            if (name.length() > 20) {
+                name = name.substr(0, 17) + "...";
+            }
+            Text nameText(font, toUtf8(name), 11);
+            nameText.setFillColor(Color(100, 100, 100));
+            nameText.setPosition(Vector2f(userListBg.getPosition().x + 300.f, itemY + 11.f));
+            window.draw(nameText);
+        }
+        
+        // Restore default view after clipped rendering
+        window.setView(defaultView);
+        
+        if (filteredAvailableUsers.empty()) {
+            Text emptyText(font, toUtf8("Không có người dùng khả dụng"), 14);
+            emptyText.setFillColor(Color(150, 150, 150));
+            FloatRect bounds = emptyText.getLocalBounds();
+            emptyText.setPosition(Vector2f(
+                userListBg.getPosition().x + (userListBg.getSize().x - bounds.size.x) / 2.f,
+                userListBg.getPosition().y + 100.f
+            ));
+            window.draw(emptyText);
+        }
+        
+        // Scroll indicator (show if more items exist)
+        if (totalUsers > maxVisible) {
+            string scrollInfo = to_string(availableUserScrollOffset + 1) + "-" + 
+                               to_string(min(availableUserScrollOffset + maxVisible, totalUsers)) + 
+                               "/" + to_string(totalUsers);
+            Text scrollText(font, toUtf8(scrollInfo), 11);
+            scrollText.setFillColor(Color(120, 120, 120));
+            scrollText.setPosition(Vector2f(
+                userListBg.getPosition().x + userListBg.getSize().x - 60.f,
+                userListBg.getPosition().y + userListBg.getSize().y + 5.f
+            ));
+            window.draw(scrollText);
+        }
+        
+        // Selected count label
+        string countStr = "Đã chọn: " + to_string(selectedUserSet.size()) + " người";
+        Text countText(font, toUtf8(countStr), 13);
+        countText.setFillColor(accentColor);
+        countText.setStyle(Text::Bold);
+        countText.setPosition(Vector2f(labelX, contentStartY + 360.f));
+        window.draw(countText);
+        
+        // "Chọn tất cả" button
+        if (btnSelectAll) {
+            btnSelectAll->setPosition(Vector2f(popupPos.x + 200.f, contentStartY + 355.f));
+            btnSelectAll->draw(window);
+        }
+        
+    } else {
+        // Standard input layout for other popups
+        for (size_t i = 0; i < inputLabels.size(); i++) {
+            if (inputLabels[i]) {
+                float currentY = contentStartY + i * rowHeight;
+                inputLabels[i]->setPosition(Vector2f(labelX, currentY + 8.f));
+            }
+        }
+        for (size_t i = 0; i < inputBoxes.size(); i++) {
+            if (inputBoxes[i]) {
+                float currentY = contentStartY + i * rowHeight;
+                inputBoxes[i]->setPosition(Vector2f(inputX, currentY));
+            }
+        }
+    }
+    
+    // Render input labels and boxes
+    for (size_t i = 0; i < inputLabels.size(); i++) {
+        if (inputLabels[i]) window.draw(*inputLabels[i]);
+    }
+    for (auto& textBox : inputBoxes) {
+        if (textBox) textBox->draw(window);
+    }
+    
+    // Position and render buttons at the bottom of popup
+    float buttonY = popupPos.y + popupSize.y - 60.f;
+    float buttonSpacing = 15.f;
+    
+    if (btnPopupSave && btnPopupCancel) {
+        float totalBtnWidth = btnPopupSave->getGlobalBounds().size.x + btnPopupCancel->getGlobalBounds().size.x + buttonSpacing;
+        float startX = popupPos.x + (popupSize.x - totalBtnWidth) / 2.f;
+        
+        btnPopupSave->setPosition(Vector2f(startX, buttonY));
+        btnPopupCancel->setPosition(Vector2f(startX + btnPopupSave->getGlobalBounds().size.x + buttonSpacing, buttonY));
+        
+        btnPopupSave->draw(window);
+        btnPopupCancel->draw(window);
+    }
+}
+
+void VoucherPanel::renderNotification(RenderWindow& window) {
+    if (!notificationVisible) return;
+    
+    if (notificationClock.getElapsedTime().asSeconds() > 3.f) {
+        notificationVisible = false;
+        return;
+    }
+    
+    Vector2f notifPos(position.x + width - 420.f, position.y + 20.f);
+    notificationBg.setPosition(notifPos);
+    notificationBg.setFillColor(notificationColor);
+    
+    RoundedRectRenderer::draw(window, notifPos, notificationBg.getSize(), 8.f, notificationColor);
+    
+    if (notificationText) {
+        FloatRect bounds = notificationText->getLocalBounds();
+        notificationText->setPosition(Vector2f(
+            notifPos.x + (notificationBg.getSize().x - bounds.size.x) / 2.f - bounds.position.x,
+            notifPos.y + (notificationBg.getSize().y - bounds.size.y) / 2.f - bounds.position.y
+        ));
+        window.draw(*notificationText);
+    }
+}
+
+// ===== POPUP METHODS =====
+
+void VoucherPanel::openAddVoucherPopup() {
+    currentPopup = PopupType::ADD_VOUCHER;
+    
+    popupTitle->setString(toUtf8("Thêm Voucher mới"));
+    
+    inputBoxes.clear();
+    inputLabels.clear();
+    
+    float startY = 70.f;
+    float labelX = 24.f;
+    float inputX = 130.f;
+    float inputWidth = 280.f;
+    float rowHeight = 55.f;
+    
+    vector<string> labels = {"Mã voucher:", "Loại (1/2):", "Giá trị:", "HĐ tối thiểu:", "Mô tả:"};
+    
+    for (size_t i = 0; i < labels.size(); i++) {
+        auto label = make_unique<Text>(font, toUtf8(labels[i]), 14);
+        label->setFillColor(textColor);
+        inputLabels.push_back(move(label));
+        
+        auto textBox = make_unique<TextBox>(font, inputWidth, 36.f);
+        inputBoxes.push_back(move(textBox));
+    }
+    
+    // Popup buttons
+    btnPopupSave = make_unique<Button>(font, toUtf8("Lưu"), Vector2f(100.f, 40.f), 15);
+    btnPopupSave->setColors(successColor, Color(60, 187, 89), Color::White);
+    
+    btnPopupCancel = make_unique<Button>(font, toUtf8("Hủy"), Vector2f(100.f, 40.f), 15);
+    btnPopupCancel->setColors(Color(108, 117, 125), Color(128, 137, 145), Color::White);
+    
+    // Position elements (will be set in render based on popup position)
+}
+
+void VoucherPanel::openEditVoucherPopup() {
+    auto defs = repository->getAllDefinitions();
+    if (selectedVoucherIndex < 0 || selectedVoucherIndex >= static_cast<int>(defs.size())) return;
+    
+    const auto& def = defs[selectedVoucherIndex];
+    
+    currentPopup = PopupType::EDIT_VOUCHER;
+    popupTitle->setString(toUtf8("Chỉnh sửa Voucher"));
+    
+    inputBoxes.clear();
+    inputLabels.clear();
+    
+    vector<string> labels = {"Mã voucher:", "Loại (1/2):", "Giá trị:", "HĐ tối thiểu:", "Mô tả:"};
+    vector<string> values = {
+        def.code,
+        to_string(def.type),
+        to_string(static_cast<int>(def.value)),
+        to_string(static_cast<int>(def.minBill)),
+        def.description
+    };
+    
+    float inputWidth = 280.f;
+    
+    for (size_t i = 0; i < labels.size(); i++) {
+        auto label = make_unique<Text>(font, toUtf8(labels[i]), 14);
+        label->setFillColor(textColor);
+        inputLabels.push_back(move(label));
+        
+        auto textBox = make_unique<TextBox>(font, inputWidth, 36.f);
+        textBox->setText(values[i]);
+        if (i == 0) textBox->setEditable(false); // Code is not editable
+        inputBoxes.push_back(move(textBox));
+    }
+    
+    btnPopupSave = make_unique<Button>(font, toUtf8("Cập nhật"), Vector2f(100.f, 40.f), 15);
+    btnPopupSave->setColors(accentColor, Color(40, 138, 192), Color::White);
+    
+    btnPopupCancel = make_unique<Button>(font, toUtf8("Hủy"), Vector2f(100.f, 40.f), 15);
+    btnPopupCancel->setColors(Color(108, 117, 125), Color(128, 137, 145), Color::White);
+}
+
+void VoucherPanel::openDeleteVoucherPopup() {
+    auto defs = repository->getAllDefinitions();
+    if (selectedVoucherIndex < 0 || selectedVoucherIndex >= static_cast<int>(defs.size())) return;
+    
+    currentPopup = PopupType::DELETE_VOUCHER;
+    
+    string msg = "Xác nhận xóa voucher: " + defs[selectedVoucherIndex].code + "?";
+    popupTitle->setString(toUtf8(msg));
+    
+    inputBoxes.clear();
+    inputLabels.clear();
+    
+    btnPopupSave = make_unique<Button>(font, toUtf8("Xóa"), Vector2f(100.f, 40.f), 15);
+    btnPopupSave->setColors(dangerColor, Color(240, 73, 89), Color::White);
+    
+    btnPopupCancel = make_unique<Button>(font, toUtf8("Hủy"), Vector2f(100.f, 40.f), 15);
+    btnPopupCancel->setColors(Color(108, 117, 125), Color(128, 137, 145), Color::White);
+}
+
+void VoucherPanel::openDistributePopup() {
+    auto defs = repository->getAllDefinitions();
+    if (selectedVoucherIndex < 0 || selectedVoucherIndex >= static_cast<int>(defs.size())) return;
+    
+    currentPopup = PopupType::DISTRIBUTE_VOUCHER;
+    
+    string title = "Phát voucher: " + defs[selectedVoucherIndex].code;
+    popupTitle->setString(toUtf8(title));
+    
+    inputBoxes.clear();
+    inputLabels.clear();
+    
+    vector<string> labels = {"Số ngày hết hạn:", "Số lượng/người:"};
+    vector<string> defaults = {"30", "1"};
+    float inputWidth = 200.f;
+    
+    for (size_t i = 0; i < labels.size(); i++) {
+        auto label = make_unique<Text>(font, toUtf8(labels[i]), 14);
+        label->setFillColor(textColor);
+        inputLabels.push_back(move(label));
+        
+        auto textBox = make_unique<TextBox>(font, inputWidth, 36.f);
+        textBox->setText(defaults[i]);
+        inputBoxes.push_back(move(textBox));
+    }
+    
+    // Info text
+    auto activeUsers = repository->getActiveUsers();
+    string infoStr = "Sẽ phát cho " + to_string(activeUsers.size()) + " người dùng active";
+    auto infoLabel = make_unique<Text>(font, toUtf8(infoStr), 13);
+    infoLabel->setFillColor(accentColor);
+    inputLabels.push_back(move(infoLabel));
+    
+    btnPopupSave = make_unique<Button>(font, toUtf8("Phát ngay"), Vector2f(120.f, 40.f), 15);
+    btnPopupSave->setColors(warningColor, Color(255, 172, 40), Color::White);
+    
+    btnPopupCancel = make_unique<Button>(font, toUtf8("Hủy"), Vector2f(100.f, 40.f), 15);
+    btnPopupCancel->setColors(Color(108, 117, 125), Color(128, 137, 145), Color::White);
+}
+
+void VoucherPanel::openAddToUserPopup() {
+    // Use the new UserSelectPopup component
+    if (!userSelectPopup_) {
+        userSelectPopup_ = make_unique<UserSelectPopup>(font);
+    }
+    
+    userSelectPopup_->setTitle("Thêm người nhận voucher: " + selectedVoucherCode);
+    
+    // Set extra fields (days to expire, quantity)
+    userSelectPopup_->setExtraFields({
+        {"Số ngày HH:", "30"},
+        {"Số lượng:", "1"}
+    });
+    
+    // Load available users (exclude those who already have this voucher)
+    auto allUsers = repository->getActiveUsers();
+    auto existingUsers = repository->getUsersWithVoucher(selectedVoucherCode);
+    
+    vector<UserInfo> filteredUsers;
+    for (const auto& user : allUsers) {
+        bool alreadyHas = false;
+        for (const auto& existing : existingUsers) {
+            if (existing.email == user.first) {
+                alreadyHas = true;
+                break;
+            }
+        }
+        if (!alreadyHas) {
+            filteredUsers.emplace_back(user.first, user.second);
+        }
+    }
+    
+    userSelectPopup_->setUsers(filteredUsers);
+    
+    // Set callbacks
+    userSelectPopup_->setOnConfirm([this](const vector<UserInfo>& selectedUsers) {
+        if (selectedUsers.empty()) {
+            showNotification("Vui lòng chọn ít nhất một người dùng", dangerColor);
+            return;
+        }
+        
+        try {
+            int daysToExpire = stoi(userSelectPopup_->getExtraFieldValue(0));
+            int quantity = stoi(userSelectPopup_->getExtraFieldValue(1));
+            
+            if (daysToExpire <= 0 || quantity <= 0) {
+                showNotification("Giá trị phải lớn hơn 0", dangerColor);
+                return;
+            }
+            
+            int successCount = 0;
+            for (const auto& user : selectedUsers) {
+                if (repository->giveVoucherToUser(user.email, selectedVoucherCode, daysToExpire, quantity)) {
+                    successCount++;
+                }
+            }
+            
+            if (successCount > 0) {
+                showNotification("Đã thêm voucher cho " + to_string(successCount) + " người", successColor);
+                loadUsersForVoucher(selectedVoucherCode);
+            } else {
+                showNotification("Không thể thêm voucher", dangerColor);
+            }
+        } catch (...) {
+            showNotification("Dữ liệu không hợp lệ", dangerColor);
+        }
+    });
+    
+    userSelectPopup_->setOnCancel([this]() {
+        // Nothing to do on cancel
+    });
+    
+    userSelectPopup_->open();
+    
+    // Keep the old popup type set to NONE since we're using the new component
+    currentPopup = PopupType::NONE;
+}
+
+void VoucherPanel::closePopup() {
+    currentPopup = PopupType::NONE;
+    inputBoxes.clear();
+    inputLabels.clear();
+    btnPopupSave.reset();
+    btnPopupCancel.reset();
+    btnSelectAll.reset();
+    searchBox.reset();
+    availableUsers.clear();
+    filteredAvailableUsers.clear();
+    selectedUserSet.clear();
+    selectedAvailableUserIndex = -1;
+    userSearchFilter = "";
+}
+
+// ===== ACTION HANDLERS =====
+
+void VoucherPanel::handleAddVoucher() {
+    if (inputBoxes.size() < 5) return;
+    
+    string code = inputBoxes[0]->getText();
+    string typeStr = inputBoxes[1]->getText();
+    string valueStr = inputBoxes[2]->getText();
+    string minBillStr = inputBoxes[3]->getText();
+    string desc = inputBoxes[4]->getText();
+    
+    if (code.empty() || typeStr.empty() || valueStr.empty()) {
+        showNotification("Vui lòng điền đầy đủ thông tin", dangerColor);
+        return;
+    }
+    
+    try {
+        VoucherDefinition def;
+        def.code = code;
+        def.type = stoi(typeStr);
+        def.value = stod(valueStr);
+        def.minBill = minBillStr.empty() ? 0 : stod(minBillStr);
+        def.description = desc;
+        
+        if (def.type != 1 && def.type != 2) {
+            showNotification("Loại voucher phải là 1 hoặc 2", dangerColor);
+            return;
+        }
+        
+        if (repository->addDefinition(def)) {
+            showNotification("Đã thêm voucher thành công", successColor);
+            closePopup();
+            refreshData();
+        } else {
+            showNotification("Mã voucher đã tồn tại", dangerColor);
+        }
+    } catch (...) {
+        showNotification("Dữ liệu không hợp lệ", dangerColor);
+    }
+}
+
+void VoucherPanel::handleEditVoucher() {
+    if (inputBoxes.size() < 5) return;
+    
+    string code = inputBoxes[0]->getText();
+    string typeStr = inputBoxes[1]->getText();
+    string valueStr = inputBoxes[2]->getText();
+    string minBillStr = inputBoxes[3]->getText();
+    string desc = inputBoxes[4]->getText();
+    
+    try {
+        VoucherDefinition def;
+        def.code = code;
+        def.type = stoi(typeStr);
+        def.value = stod(valueStr);
+        def.minBill = minBillStr.empty() ? 0 : stod(minBillStr);
+        def.description = desc;
+        
+        if (repository->updateDefinition(def)) {
+            showNotification("Đã cập nhật voucher", successColor);
+            closePopup();
+            refreshData();
+        } else {
+            showNotification("Không thể cập nhật voucher", dangerColor);
+        }
+    } catch (...) {
+        showNotification("Dữ liệu không hợp lệ", dangerColor);
+    }
+}
+
+void VoucherPanel::handleDeleteVoucher() {
+    auto defs = repository->getAllDefinitions();
+    if (selectedVoucherIndex < 0 || selectedVoucherIndex >= static_cast<int>(defs.size())) return;
+    
+    if (repository->deleteDefinition(defs[selectedVoucherIndex].code)) {
+        showNotification("Đã xóa voucher", successColor);
+        closePopup();
+        refreshData();
+    } else {
+        showNotification("Không thể xóa voucher", dangerColor);
+    }
+}
+
+void VoucherPanel::handleDistribute() {
+    auto defs = repository->getAllDefinitions();
+    if (selectedVoucherIndex < 0 || selectedVoucherIndex >= static_cast<int>(defs.size())) return;
+    if (inputBoxes.size() < 2) return;
+    
+    try {
+        int daysToExpire = stoi(inputBoxes[0]->getText());
+        int quantity = stoi(inputBoxes[1]->getText());
+        
+        if (daysToExpire <= 0 || quantity <= 0) {
+            showNotification("Giá trị phải lớn hơn 0", dangerColor);
+            return;
+        }
+        
+        int count = repository->giveVoucherToAllActiveUsers(
+            defs[selectedVoucherIndex].code, 
+            daysToExpire, 
+            quantity
+        );
+        
+        showNotification("Đã phát voucher cho " + to_string(count) + " người", successColor);
+        closePopup();
+        loadUsersForVoucher(defs[selectedVoucherIndex].code);
+    } catch (...) {
+        showNotification("Dữ liệu không hợp lệ", dangerColor);
+    }
+}
+
+void VoucherPanel::handleAddToUser() {
+    if (selectedUserSet.empty()) {
+        showNotification("Vui lòng chọn ít nhất một người dùng", dangerColor);
+        return;
+    }
+    
+    if (inputBoxes.size() < 2) return;
+    
+    try {
+        int daysToExpire = stoi(inputBoxes[0]->getText());
+        int quantity = stoi(inputBoxes[1]->getText());
+        
+        if (daysToExpire <= 0 || quantity <= 0) {
+            showNotification("Giá trị phải lớn hơn 0", dangerColor);
+            return;
+        }
+        
+        int successCount = 0;
+        for (int userIdx : selectedUserSet) {
+            if (userIdx >= 0 && userIdx < static_cast<int>(availableUsers.size())) {
+                string email = availableUsers[userIdx].first;
+                if (repository->giveVoucherToUser(email, selectedVoucherCode, daysToExpire, quantity)) {
+                    successCount++;
+                }
+            }
+        }
+        
+        if (successCount > 0) {
+            showNotification("Đã thêm voucher cho " + to_string(successCount) + " người", successColor);
+            closePopup();
+            loadUsersForVoucher(selectedVoucherCode);
+        } else {
+            showNotification("Không thể thêm voucher", dangerColor);
+        }
+    } catch (...) {
+        showNotification("Dữ liệu không hợp lệ", dangerColor);
+    }
+}
+
+void VoucherPanel::handleRemoveFromUser() {
+    if (selectedUserIndex < 0 || selectedUserIndex >= static_cast<int>(currentVoucherUsers.size())) return;
+    
+    string email = currentVoucherUsers[selectedUserIndex].email;
+    
+    if (repository->removeVoucherFromUser(email, selectedVoucherCode)) {
+        showNotification("Đã thu hồi voucher", successColor);
+        loadUsersForVoucher(selectedVoucherCode);
+        selectedUserIndex = -1;
+    } else {
+        showNotification("Không thể thu hồi voucher", dangerColor);
+    }
+}
+
+// ===== HELPERS =====
+
+void VoucherPanel::showNotification(const string& message, const Color& color) {
+    notificationMessage = message;
+    notificationColor = color;
+    notificationVisible = true;
+    notificationClock.restart();
+    
+    if (notificationText) {
+        notificationText->setString(toUtf8(message));
+    }
+}
+
+string VoucherPanel::formatCurrency(double amount) const {
+    long long value = static_cast<long long>(round(amount));
+    string digits = to_string(abs(value));
+    string formatted;
+    
+    for (size_t i = 0; i < digits.size(); i++) {
+        if (i > 0 && (digits.size() - i) % 3 == 0) {
+            formatted.push_back('.');
+        }
+        formatted.push_back(digits[i]);
+    }
+    
+    if (value < 0) formatted.insert(formatted.begin(), '-');
+    formatted += "đ";
+    
+    return formatted;
+}
+
+string VoucherPanel::formatDate(const string& raw) const {
+    if (raw.size() != 8) return raw;
+    return raw.substr(6, 2) + "/" + raw.substr(4, 2) + "/" + raw.substr(0, 4);
+}
+
+string VoucherPanel::getTypeString(int type) const {
+    return type == 1 ? "Cố định" : "Phần %";
+}
+
+void VoucherPanel::filterUsers(const string& query) {
+    filteredAvailableUsers.clear();
+    availableUserScrollOffset = 0;
+    
+    string lowerQuery = query;
+    transform(lowerQuery.begin(), lowerQuery.end(), lowerQuery.begin(), ::tolower);
+    
+    for (int i = 0; i < static_cast<int>(availableUsers.size()); i++) {
+        string email = availableUsers[i].first;
+        string name = availableUsers[i].second;
+        
+        // Convert to lowercase for case-insensitive search
+        transform(email.begin(), email.end(), email.begin(), ::tolower);
+        transform(name.begin(), name.end(), name.begin(), ::tolower);
+        
+        if (query.empty() || email.find(lowerQuery) != string::npos || name.find(lowerQuery) != string::npos) {
+            filteredAvailableUsers.push_back(i);
+        }
+    }
+}

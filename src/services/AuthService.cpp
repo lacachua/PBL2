@@ -53,6 +53,9 @@ bool AuthService::registerUser(const string& email,
     // Tự động tặng voucher WELCOME cho user mới (chỉ áp dụng cho Customer)
     if (success && role == AppRole::Customer && voucherManager) {
         voucherManager->giveVoucher(email, "WELCOME", 365, 1); // Hạn 1 năm, 1 lượt dùng
+        
+        // Publish UserRegisteredEvent for auto-provisioning additional vouchers
+        AppEventSystem::getInstance().publish(UserRegisteredEvent(email, newUser.getFullName()));
     }
     
     return success;

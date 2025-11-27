@@ -5,6 +5,7 @@
 #include "models/User.h"
 #include "services/UserRepository.h"
 #include "services/VoucherManager.h"
+#include "services/EventSystem.h"
 #include "utils/PasswordHasher.h"
 #include "utils/Validator.h"
 #include "core/AppRole.h"

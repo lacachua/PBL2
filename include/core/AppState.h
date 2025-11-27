@@ -13,6 +13,7 @@ enum class AppState {
     ADMIN_SHOWTIMES,        // Quản lý suất chiếu
     ADMIN_TICKETS,          // Quản lý vé
     ADMIN_COMBOS,           // Quản lý combo bắp nước
+    ADMIN_VOUCHERS,         // Quản lý voucher
     ADMIN_STAFF,            // Quản lý nhân viên
     ADMIN_CUSTOMERS,        // Quản lý khách hàng
     ADMIN_REVENUE,          // Thống kê doanh thu

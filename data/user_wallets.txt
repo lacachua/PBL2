@@ -1,1 +1,16 @@
 email|code|status|expiry_date|quantity
+vanvu41ht3@gmail.com|WELCOME|1|20251227|1
+vanvu41ht5@gmail.com|WELCOME|1|20251227|1
+vuvannguyen@gmail.com|WELCOME|1|20251227|1
+vanvu41ht6@gmail.com|WELCOME|1|20251227|1
+phuc@gmail.com|WELCOME|1|20251227|1
+vuxiedaking1@gmail.com|WELCOME|1|20251227|1
+vanvu41ht@gmail.com|WELCOME|1|20251227|1
+vanvu41@gmail.com|WELCOME|1|20251227|1
+admin@cinexine.vn|WELCOME|1|20251227|1
+vuvannguyen1@gmail.net|WELCOME|1|20251227|1
+test@gmail.com|WELCOME|1|20251227|1
+vanvu1@gmail.com|WELCOME|1|20251227|1
+vanvu41ht1@gmail.com|WELCOME|1|20251227|1
+ntctuyen@gmail.com|WELCOME|1|20251227|1
+vanvu41ht5@gmail.com|METIZ|1|20251227|1

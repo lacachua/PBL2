@@ -1,0 +1,138 @@
+#pragma once
+
+#include <SFML/Graphics.hpp>
+#include <memory>
+#include <vector>
+#include <string>
+#include <functional>
+#include <set>
+#include "UI/components/Admin/UIInputBox.h"
+#include "UI/components/Admin/UICheckboxItem.h"
+#include "UI/components/Admin/UIScrollableList.h"
+#include "UI/components/Button.h"
+
+/**
+ * @brief Reusable User Selection Popup Component
+ * 
+ * Features:
+ * - Search/filter users
+ * - Multi-select with checkboxes
+ * - Select all / Deselect all
+ * - Scrollable list with view culling
+ * - Configurable callbacks
+ * 
+ * Usage:
+ *   UserSelectPopup popup(font);
+ *   popup.setUsers(users);
+ *   popup.setOnConfirm([](const std::set<int>& selected) { ... });
+ *   popup.open();
+ */
+
+struct UserInfo {
+    std::string email;
+    std::string name;
+    
+    UserInfo() = default;
+    UserInfo(const std::string& e, const std::string& n) : email(e), name(n) {}
+};
+
+class UserSelectPopup {
+public:
+    using ConfirmCallback = std::function<void(const std::vector<UserInfo>& selectedUsers)>;
+    using CancelCallback = std::function<void()>;
+
+    explicit UserSelectPopup(sf::Font& font);
+    
+    // Data
+    void setUsers(const std::vector<UserInfo>& users);
+    void setTitle(const std::string& title);
+    void setExtraFields(const std::vector<std::pair<std::string, std::string>>& fields); // Label, default value pairs
+    
+    // Getters for extra field values
+    std::string getExtraFieldValue(size_t index) const;
+    
+    // State
+    void open();
+    void close();
+    bool isOpen() const { return isOpen_; }
+    
+    // Get selected users
+    std::vector<UserInfo> getSelectedUsers() const;
+    size_t getSelectedCount() const { return selectedIndices_.size(); }
+    
+    // Callbacks
+    void setOnConfirm(ConfirmCallback callback) { onConfirm_ = std::move(callback); }
+    void setOnCancel(CancelCallback callback) { onCancel_ = std::move(callback); }
+    
+    // Event handling
+    void handleEvent(const sf::Event& event, const sf::RenderWindow& window);
+    void update(sf::Vector2f mousePos, bool mousePressed = false);
+    void render(sf::RenderWindow& window);
+
+private:
+    sf::Font& font_;
+    bool isOpen_ = false;
+    
+    std::string title_ = "Chọn người dùng";
+    
+    // Users
+    std::vector<UserInfo> allUsers_;
+    std::vector<size_t> filteredIndices_;
+    std::set<size_t> selectedIndices_;
+    std::string searchFilter_;
+    
+    // Scroll
+    float scrollOffset_ = 0.f;
+    int hoveredIndex_ = -1;
+    
+    // Extra input fields (e.g., days to expire, quantity)
+    std::vector<std::pair<std::string, std::unique_ptr<UIInputBox>>> extraFields_;
+    
+    // UI Components
+    std::unique_ptr<UIInputBox> searchBox_;
+    std::unique_ptr<Button> btnSelectAll_;
+    std::unique_ptr<Button> btnConfirm_;
+    std::unique_ptr<Button> btnCancel_;
+    
+    // Renderables
+    sf::RectangleShape overlay_;
+    sf::RectangleShape background_;
+    std::unique_ptr<sf::Text> titleText_;
+    std::unique_ptr<sf::Text> selectedCountText_;
+    sf::RectangleShape listBackground_;
+    
+    // Layout constants
+    static constexpr float POPUP_WIDTH = 520.f;
+    static constexpr float POPUP_HEIGHT = 520.f;
+    static constexpr float PADDING = 24.f;
+    static constexpr float ITEM_HEIGHT = 38.f;
+    static constexpr float LIST_HEIGHT = 230.f;
+    static constexpr int MAX_VISIBLE_ITEMS = 6;
+    
+    // Colors
+    sf::Color bgColor_{255, 255, 255};
+    sf::Color borderColor_{210, 216, 224};
+    sf::Color headerColor_{27, 38, 59};
+    sf::Color accentColor_{20, 118, 172};
+    sf::Color textColor_{33, 37, 41};
+    sf::Color rowColor_{255, 255, 255};
+    sf::Color rowAltColor_{248, 250, 252};
+    sf::Color hoverColor_{235, 244, 252};
+    sf::Color selectedColor_{214, 232, 248};
+    sf::Color successColor_{40, 167, 69};
+    sf::Color grayColor_{108, 117, 125};
+    
+    // Callbacks
+    ConfirmCallback onConfirm_;
+    CancelCallback onCancel_;
+    
+    // Methods
+    void filterUsers();
+    void toggleSelection(size_t index);
+    void selectAll();
+    void deselectAll();
+    void renderUserList(sf::RenderWindow& window);
+    void setupUI();
+    
+    static sf::String toUtf8(const std::string& text);
+};

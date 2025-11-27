@@ -2,7 +2,7 @@
 #include <algorithm>
 
 TextBox::TextBox(Font& font, const string& label, float x, float y, float width, float height)
-    : font(font), x(x), y(y), width(width), height(height), isFocused(false), isActive(true) {
+    : font(font), x(x), y(y), width(width), height(height), isFocused(false), isActive(true), editable(true) {
     
     // Background
     background.setSize({width, height});
@@ -35,6 +35,36 @@ TextBox::TextBox(Font& font, const string& label, float x, float y, float width,
     cursor.setPosition({x + horizontalPadding, y + (height - cursor.getSize().y) / 2});
 }
 
+TextBox::TextBox(Font& font, float width, float height)
+    : font(font), x(0), y(0), width(width), height(height), isFocused(false), isActive(true), editable(true) {
+    
+    // Background
+    background.setSize({width, height});
+    background.setPosition({0, 0});
+    background.setFillColor(bgColor);
+    
+    // Border
+    border.setSize({width, height});
+    border.setPosition({0, 0});
+    border.setFillColor(Color::Transparent);
+    border.setOutlineThickness(1.f);
+    border.setOutlineColor(borderColor);
+    
+    // No label for this constructor
+    labelText = nullptr;
+    
+    // Display text
+    displayText = make_unique<Text>(font);
+    displayText->setCharacterSize(15);
+    displayText->setFillColor(textColor);
+    displayText->setPosition({horizontalPadding, 0});
+
+    // Cursor setup
+    cursor.setSize({1.6f, height - 16.f});
+    cursor.setFillColor(focusColor);
+    cursor.setPosition({horizontalPadding, (height - cursor.getSize().y) / 2});
+}
+
 void TextBox::setPlaceholder(const string& text) {
     placeholder = text;
 }
@@ -53,6 +83,11 @@ void TextBox::setPosition(Vector2f pos) {
 }
 
 void TextBox::setFocus(bool focus) {
+    if (!editable) {
+        isFocused = false;
+        return;
+    }
+    
     isFocused = focus;
     if (isFocused) {
         border.setOutlineColor(focusColor);
@@ -65,8 +100,23 @@ void TextBox::setFocus(bool focus) {
     }
 }
 
+void TextBox::setEditable(bool edit) {
+    editable = edit;
+    if (!editable) {
+        background.setFillColor(disabledBgColor);
+        setFocus(false);
+    } else {
+        background.setFillColor(bgColor);
+    }
+}
+
+void TextBox::handleEvent(const Event& event, const RenderWindow& window) {
+    (void)window;
+    handleEvent(event);
+}
+
 void TextBox::handleEvent(const Event& event) {
-    if (!isFocused) return;
+    if (!isFocused || !editable) return;
     
     if (const auto* textEvent = event.getIf<Event::TextEntered>()) {
         if (textEvent->unicode == 8) { // Backspace
@@ -108,6 +158,8 @@ void TextBox::handleEvent(const Event& event) {
 }
 
 void TextBox::update(Vector2f mousePos, bool mousePressed) {
+    if (!editable) return;
+    
     if (mousePressed) {
         FloatRect bounds = background.getGlobalBounds();
         if (bounds.contains(mousePos)) {
@@ -116,6 +168,11 @@ void TextBox::update(Vector2f mousePos, bool mousePressed) {
             setFocus(false);
         }
     }
+}
+
+void TextBox::update(Vector2f mousePos) {
+    // Just for hover effects, no action needed for now
+    (void)mousePos;
 }
 
 void TextBox::render(RenderWindow& window) {

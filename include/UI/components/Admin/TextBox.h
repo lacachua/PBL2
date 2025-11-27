@@ -27,6 +27,7 @@ private:
     string placeholder;
     bool isFocused;
     bool isActive;
+    bool editable = true;
     
     Clock cursorClock;
     
@@ -35,20 +36,32 @@ private:
     Color focusColor = Color(20, 118, 172);    // #1476AC
     Color textColor = Color(34, 34, 34);
     Color placeholderColor = Color(160, 160, 160);
+    Color disabledBgColor = Color(240, 240, 240);
     float horizontalPadding = 10.f;
     
 public:
+    // Constructor with label
     TextBox(Font& font, const string& label, float x, float y, float width, float height);
+    
+    // Constructor without label (for use in popups)
+    TextBox(Font& font, float width, float height);
     
     void setPlaceholder(const string& text);
     void setValue(const string& text);
+    void setText(const string& text) { setValue(text); }
     string getValue() const { return value; }
+    string getText() const { return value; }
     
     void setPosition(Vector2f pos);
+    void setEditable(bool edit);
+    bool isEditable() const { return editable; }
     
+    void handleEvent(const Event& event, const RenderWindow& window);
     void handleEvent(const Event& event);
     void update(Vector2f mousePos, bool mousePressed);
+    void update(Vector2f mousePos);
     void render(RenderWindow& window);
+    void draw(RenderWindow& window) { render(window); }
     
     void setFocus(bool focus);
     bool getFocus() const { return isFocused; }

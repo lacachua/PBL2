@@ -79,6 +79,7 @@ void AdminSidebar::initializeMenuItems() {
     menuItems.push_back(MenuItem("Quản lý suất chiếu", AppState::ADMIN_SHOWTIMES));
     menuItems.push_back(MenuItem("Quản lý vé", AppState::ADMIN_TICKETS));
     menuItems.push_back(MenuItem("Quản lý combo bắp nước", AppState::ADMIN_COMBOS));
+    menuItems.push_back(MenuItem("Quản lý voucher", AppState::ADMIN_VOUCHERS));
     
     // Group 2: THỐNG KÊ & BÁO CÁO
     menuItems.push_back(MenuItem("THỐNG KÊ & BÁO CÁO", AppState::ADMIN_DASHBOARD, true, false));
