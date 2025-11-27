@@ -4,8 +4,46 @@
 #include <vector>
 #include <memory>
 #include <set>
+#include <unordered_map>
 #include "services/EventSystem.h"
-#include "services/VoucherManager.h"
+#include "utils/StringUtils.h"
+#include "utils/DateTimeUtils.h"
+
+/**
+ * @brief Data structure for voucher definition
+ * Follows Single Responsibility: Only holds voucher definition data
+ */
+struct VoucherDef {
+    std::string code;
+    int type = 0;          // 1: fixed amount, 2: percentage
+    double value = 0.0;
+    double minBill = 0.0;
+    std::string description;
+};
+
+/**
+ * @brief Data structure for user's voucher in wallet
+ */
+struct UserVoucher {
+    std::string email;
+    std::string code;
+    int status = 0;        // 1: usable, 0: used/expired
+    std::string expiry;    // YYYYMMDD
+    int quantity = 1;
+};
+
+/**
+ * @brief Data Transfer Object for displaying voucher info to user
+ */
+struct VoucherDisplay {
+    std::string code;
+    std::string description;
+    double value = 0.0;
+    int type = 0;
+    int status = 0;
+    std::string expiry;
+    int quantity = 1;
+};
 
 /**
  * @brief Configuration for auto-provisioning vouchers to new users
@@ -18,14 +56,19 @@ struct AutoProvisionConfig {
 };
 
 /**
- * @brief Service class for admin voucher management operations
+ * @brief Unified service class for ALL voucher operations
  * 
- * This service provides business logic for:
+ * This service consolidates VoucherManager functionality and provides:
+ * - Voucher definition management (CRUD)
+ * - User wallet operations (give, apply, get)
  * - Mass voucher distribution
- * - Individual user voucher assignment
  * - Auto-provisioning vouchers to new users (Observer pattern)
  * 
- * Follows Single Responsibility Principle by separating business logic from UI.
+ * Design Principles Applied:
+ * - Single Responsibility: Only handles voucher-related operations
+ * - Open/Closed: Can extend functionality without modifying existing code
+ * - Dependency Inversion: Uses utility abstractions (StringUtils, DateTimeUtils)
+ * - Interface Segregation: Implements only required IAppEventObserver methods
  */
 class VoucherService : public IAppEventObserver, public std::enable_shared_from_this<VoucherService> {
 public:
@@ -41,13 +84,20 @@ public:
      */
     void initialize();
     
-    // ===== Voucher Definition Operations =====
+    // ===== Voucher Definition Operations (Admin) =====
     
     /**
      * @brief Get all voucher definitions
      * @return Vector of VoucherDef
      */
     std::vector<VoucherDef> getAllDefinitions() const;
+    
+    /**
+     * @brief Get voucher definition by code
+     * @param code Voucher code
+     * @return Pointer to VoucherDef or nullptr if not found
+     */
+    const VoucherDef* getDefinition(const std::string& code) const;
     
     /**
      * @brief Add a new voucher definition
@@ -67,7 +117,7 @@ public:
      */
     bool deleteVoucherDefinition(const std::string& code);
     
-    // ===== Distribution Operations =====
+    // ===== User Wallet Operations (Customer-facing) =====
     
     /**
      * @brief Give voucher to a single user
@@ -79,6 +129,26 @@ public:
      */
     bool giveVoucherToUser(const std::string& email, const std::string& voucherCode,
                            int daysToExpire, int quantity = 1);
+    
+    /**
+     * @brief Get all vouchers owned by a user (for display)
+     * @param email User's email
+     * @return Vector of VoucherDisplay
+     */
+    std::vector<VoucherDisplay> getVouchersByUser(const std::string& email);
+    
+    /**
+     * @brief Apply a voucher to a purchase
+     * @param email User's email
+     * @param code Voucher code
+     * @param totalBill Current bill amount
+     * @param consume If true, deduct voucher quantity
+     * @return Discount amount (0 if invalid/not applicable)
+     */
+    double applyVoucher(const std::string& email, const std::string& code, 
+                        double totalBill, bool consume = true);
+    
+    // ===== Distribution Operations (Admin) =====
     
     /**
      * @brief Give voucher to multiple users at once
@@ -179,6 +249,9 @@ public:
     void onAppEvent(const AppEvent& event) override;
     std::vector<std::string> getSubscribedEvents() const override;
     
+    // Public lookup map for external access (e.g., VoucherListView)
+    std::unordered_map<std::string, VoucherDef> voucherLookup;
+    
 private:
     std::string definitionPath;
     std::string walletPath;
@@ -187,17 +260,13 @@ private:
     std::vector<VoucherDef> definitions;
     std::vector<AutoProvisionConfig> autoProvisionConfigs;
     
-    // Helper methods
+    // Helper methods - delegate to utility classes
     void loadDefinitions();
     void saveDefinitions();
+    void loadWallet(std::vector<UserVoucher>& wallet) const;
+    void saveWallet(const std::vector<UserVoucher>& wallet) const;
     void loadAutoProvisionConfigs();
     void saveAutoProvisionConfigs();
-    
-    std::string buildExpiryDate(int daysToExpire) const;
-    int todayAsNumber() const;
-    int dateStringToNumber(const std::string& date) const;
-    std::vector<std::string> splitString(const std::string& input, char delimiter) const;
-    std::string trim(const std::string& input) const;
     
     void handleUserRegistered(const UserRegisteredEvent& event);
 };

@@ -204,8 +204,6 @@ bool LoginScreen::update(Vector2f mouse, bool mousePressed, const Event& event, 
             // ✅ Role-based redirect
             if (user->getRole() == AppRole::Admin) {
                 state = AppState::ADMIN_DASHBOARD;
-            } else if (user->getRole() == AppRole::Staff) {
-                state = AppState::STAFF_DASHBOARD;
             } else {
                 // Customer goes to HOME
                 state = AppState::HOME;

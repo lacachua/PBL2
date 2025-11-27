@@ -131,13 +131,25 @@ void ShowtimeCleanupService::removeExpiredShowtimes(const string& showtimesPath)
     vector<ShowtimeData> showtimes = loadShowtimes(showtimesPath);
     int originalCount = showtimes.size();
     
-    // Filter out expired showtimes
+    // Lấy ngày hôm nay (không tính giờ)
+    time_t now = time(nullptr);
+    tm* nowTm = localtime(&now);
+    string todayStr = formatDate(nowTm);
+    
+    // Chỉ xóa suất chiếu của ngày TRƯỚC hôm nay (giữ lại suất chiếu hôm nay dù đã qua giờ)
     vector<ShowtimeData> validShowtimes;
-    for (const auto& showtime : showtimes) 
-        if (!isExpired(showtime)) validShowtimes.push_back(showtime);
+    for (const auto& showtime : showtimes) {
+        // Giữ lại nếu ngày >= hôm nay
+        if (showtime.date >= todayStr) {
+            validShowtimes.push_back(showtime);
+        }
+    }
     
     int removedCount = originalCount - validShowtimes.size();
-    if (removedCount > 0) saveShowtimes(showtimesPath, validShowtimes);
+    if (removedCount > 0) {
+        saveShowtimes(showtimesPath, validShowtimes);
+        cout << "Removed " << removedCount << " old showtimes from previous days." << endl;
+    }
 }
 
 // ==================== DATA LOADING ====================

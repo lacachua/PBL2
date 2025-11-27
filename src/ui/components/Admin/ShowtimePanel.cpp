@@ -231,13 +231,14 @@ void ShowtimePanel::loadData() {
     roomNames.clear();
     allShowtimes.clear();
     filteredShowtimes.clear();
-    archivedIds.clear();
     loadedShowtimeIds.clear();
 
     loadMovies();
     loadRooms();
-    loadHistory();
+    
+    // Chỉ load dữ liệu từ showtimes.txt (không dùng history nữa)
     loadShowtimes();
+    
     refreshDropdowns();
     applyFilters();
 }
@@ -316,7 +317,6 @@ void ShowtimePanel::loadShowtimes() {
 
     string line;
     bool firstLine = true;
-    vector<TimelineItem> pendingHistory;
     while (getline(file, line)) {
         if (firstLine && line.find("showtime_id") != string::npos) {
             firstLine = false;
@@ -328,14 +328,7 @@ void ShowtimePanel::loadShowtimes() {
             if (loadedShowtimeIds.insert(item->showtimeId).second) {
                 allShowtimes.push_back(*item);
             }
-            if (isDateOnOrBeforeToday(item->date) && archivedIds.insert(item->showtimeId).second) {
-                pendingHistory.push_back(*item);
-            }
         }
-    }
-
-    if (!pendingHistory.empty()) {
-        appendHistory(pendingHistory);
     }
 
     sort(allShowtimes.begin(), allShowtimes.end(), [](const TimelineItem& a, const TimelineItem& b) {

@@ -23,6 +23,7 @@ namespace {
 
 VoucherListView::VoucherListView(sf::Font& fontRef)
 	: font(fontRef),
+	  voucherService(std::make_shared<VoucherService>()),
 	  titleText(fontRef, toUtf8("VOUCHER CỦA TÔI"), 22),
 	  prevButtonText(fontRef, toUtf8("← Trước"), 16),
 	  nextButtonText(fontRef, toUtf8("Tiếp →"), 16),
@@ -53,11 +54,11 @@ void VoucherListView::setUser(const string& email) {
 }
 
 void VoucherListView::refresh() {
-	manager.cleanupExpiredVouchers();
+	voucherService->cleanupExpiredVouchers();
 	if (currentUser.empty()) {
 		vouchers.clear();
 	} else {
-		vouchers = manager.getVouchersByUser(currentUser);
+		vouchers = voucherService->getVouchersByUser(currentUser);
 	}
 	currentPage = 0;
 }
@@ -228,11 +229,11 @@ string VoucherListView::formatValue(const VoucherDisplay& voucher) const {
 }
 
 string VoucherListView::formatMinBill(const VoucherDisplay& voucher) const {
-	auto it = manager.voucherLookup.find(voucher.code);
-	if (it == manager.voucherLookup.end()) return "";
+	const VoucherDef* def = voucherService->getDefinition(voucher.code);
+	if (!def) return "";
 	
-	if (it->second.minBill > 0) {
-		return "cho đơn từ " + formatCurrency(it->second.minBill);
+	if (def->minBill > 0) {
+		return "cho đơn từ " + formatCurrency(def->minBill);
 	}
 	return "cho mọi đơn hàng";
 }

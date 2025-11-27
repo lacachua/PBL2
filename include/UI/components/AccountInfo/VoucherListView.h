@@ -3,7 +3,8 @@
 #include <SFML/Graphics.hpp>
 #include <string>
 #include <vector>
-#include "services/VoucherManager.h"
+#include <memory>
+#include "services/VoucherService.h"
 
 class VoucherListView {
 public:
@@ -17,7 +18,7 @@ public:
 
 private:
     sf::Font& font;
-    VoucherManager manager;
+    std::shared_ptr<VoucherService> voucherService;
     std::string currentUser;
     std::vector<VoucherDisplay> vouchers;
 

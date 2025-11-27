@@ -1,10 +1,10 @@
 #include "services/VoucherService.h"
+#include "utils/StringUtils.h"
+#include "utils/DateTimeUtils.h"
 
 #include <fstream>
 #include <sstream>
 #include <algorithm>
-#include <chrono>
-#include <iomanip>
 #include <iostream>
 #include <map>
 
@@ -24,69 +24,11 @@ void VoucherService::initialize() {
     AppEventSystem::getInstance().subscribe(shared_from_this());
 }
 
-// ===== Helper methods =====
-
-string VoucherService::trim(const string& input) const {
-    size_t start = input.find_first_not_of(" \t\r\n");
-    if (start == string::npos) return "";
-    size_t end = input.find_last_not_of(" \t\r\n");
-    return input.substr(start, end - start + 1);
-}
-
-vector<string> VoucherService::splitString(const string& input, char delimiter) const {
-    vector<string> result;
-    stringstream ss(input);
-    string item;
-    while (getline(ss, item, delimiter)) {
-        result.push_back(trim(item));
-    }
-    return result;
-}
-
-string VoucherService::buildExpiryDate(int daysToExpire) const {
-    auto now = chrono::system_clock::now();
-    auto future = now + chrono::hours(24 * daysToExpire);
-    auto tt = chrono::system_clock::to_time_t(future);
-    
-    tm local_tm;
-#ifdef _WIN32
-    localtime_s(&local_tm, &tt);
-#else
-    localtime_r(&tt, &local_tm);
-#endif
-    
-    ostringstream oss;
-    oss << put_time(&local_tm, "%Y%m%d");
-    return oss.str();
-}
-
-int VoucherService::todayAsNumber() const {
-    auto now = chrono::system_clock::now();
-    auto tt = chrono::system_clock::to_time_t(now);
-    
-    tm local_tm;
-#ifdef _WIN32
-    localtime_s(&local_tm, &tt);
-#else
-    localtime_r(&tt, &local_tm);
-#endif
-    
-    return (local_tm.tm_year + 1900) * 10000 + (local_tm.tm_mon + 1) * 100 + local_tm.tm_mday;
-}
-
-int VoucherService::dateStringToNumber(const string& date) const {
-    if (date.size() != 8) return 0;
-    try {
-        return stoi(date);
-    } catch (...) {
-        return 0;
-    }
-}
-
 // ===== Data Loading/Saving =====
 
 void VoucherService::loadDefinitions() {
     definitions.clear();
+    voucherLookup.clear();
     
     ifstream file(definitionPath);
     if (!file.is_open()) return;
@@ -96,11 +38,11 @@ void VoucherService::loadDefinitions() {
     while (getline(file, line)) {
         if (line.empty()) continue;
         
-        auto cols = splitString(line, '|');
+        auto cols = StringUtils::split(line, '|');
         if (cols.size() < 5) continue;
         
         // Skip header
-        if (isFirstLine && (cols[0] == "code" || cols[0] == "Code")) {
+        if (isFirstLine && StringUtils::isHeaderRow(cols, "code")) {
             isFirstLine = false;
             continue;
         }
@@ -114,6 +56,7 @@ void VoucherService::loadDefinitions() {
         def.description = cols.size() > 4 ? cols[4] : "";
         
         definitions.push_back(def);
+        voucherLookup[def.code] = def;
     }
 }
 
@@ -141,11 +84,11 @@ void VoucherService::loadAutoProvisionConfigs() {
     while (getline(file, line)) {
         if (line.empty()) continue;
         
-        auto cols = splitString(line, '|');
+        auto cols = StringUtils::split(line, '|');
         if (cols.size() < 4) continue;
         
         // Skip header
-        if (cols[0] == "code" || cols[0] == "voucherCode") continue;
+        if (StringUtils::isHeaderRow(cols, "code") || StringUtils::isHeaderRow(cols, "voucherCode")) continue;
         
         AutoProvisionConfig config;
         config.voucherCode = cols[0];
@@ -181,6 +124,14 @@ vector<VoucherDef> VoucherService::getAllDefinitions() const {
     return definitions;
 }
 
+const VoucherDef* VoucherService::getDefinition(const string& code) const {
+    auto it = voucherLookup.find(code);
+    if (it != voucherLookup.end()) {
+        return &(it->second);
+    }
+    return nullptr;
+}
+
 bool VoucherService::addVoucherDefinition(const VoucherDef& def) {
     // Check for duplicate code
     for (const auto& existing : definitions) {
@@ -190,6 +141,7 @@ bool VoucherService::addVoucherDefinition(const VoucherDef& def) {
     }
     
     definitions.push_back(def);
+    voucherLookup[def.code] = def;
     saveDefinitions();
     
     // Publish event
@@ -205,6 +157,7 @@ bool VoucherService::updateVoucherDefinition(const VoucherDef& def) {
             existing.value = def.value;
             existing.minBill = def.minBill;
             existing.description = def.description;
+            voucherLookup[def.code] = existing;
             saveDefinitions();
             return true;
         }
@@ -219,6 +172,7 @@ bool VoucherService::deleteVoucherDefinition(const string& code) {
     if (it == definitions.end()) return false;
     
     definitions.erase(it);
+    voucherLookup.erase(code);
     saveDefinitions();
     
     // Also remove from user wallets
@@ -226,7 +180,7 @@ bool VoucherService::deleteVoucherDefinition(const string& code) {
     ifstream file(walletPath);
     string line;
     while (getline(file, line)) {
-        auto cols = splitString(line, '|');
+        auto cols = StringUtils::split(line, '|');
         if (cols.size() >= 2 && cols[1] != code) {
             lines.push_back(line);
         }
@@ -244,6 +198,115 @@ bool VoucherService::deleteVoucherDefinition(const string& code) {
     return true;
 }
 
+// ===== User Wallet Operations (from VoucherManager) =====
+
+vector<VoucherDisplay> VoucherService::getVouchersByUser(const string& email) {
+    vector<VoucherDisplay> result;
+    vector<UserVoucher> wallet;
+    loadWallet(wallet);
+    
+    int today = DateTimeUtils::getTodayAsNumber();
+
+    for (const auto& voucher : wallet) {
+        if (voucher.email != email) continue;
+        
+        // Skip expired or depleted vouchers
+        if (DateTimeUtils::dateStringToNumber(voucher.expiry) < today || voucher.quantity <= 0) continue;
+        
+        auto it = voucherLookup.find(voucher.code);
+        if (it == voucherLookup.end()) continue;
+
+        VoucherDisplay display;
+        display.code = voucher.code;
+        display.description = it->second.description;
+        display.value = it->second.value;
+        display.type = it->second.type;
+        display.status = voucher.status;
+        display.expiry = voucher.expiry;
+        display.quantity = voucher.quantity;
+        result.push_back(display);
+    }
+
+    return result;
+}
+
+double VoucherService::applyVoucher(const string& email, const string& code, 
+                                     double totalBill, bool consume) {
+    vector<UserVoucher> wallet;
+    loadWallet(wallet);
+    
+    bool updated = false;
+    double discount = 0.0;
+    int today = DateTimeUtils::getTodayAsNumber();
+
+    for (auto& voucher : wallet) {
+        if (voucher.email != email || voucher.code != code) continue;
+        if (voucher.status != 1) break;
+        if (DateTimeUtils::dateStringToNumber(voucher.expiry) < today) break;
+        if (voucher.quantity <= 0) break;
+
+        auto defIt = voucherLookup.find(code);
+        if (defIt == voucherLookup.end()) break;
+        
+        const auto& def = defIt->second;
+        if (totalBill < def.minBill) break;
+
+        if (def.type == 1) {
+            // Fixed amount discount
+            discount = min(def.value, totalBill);
+        } else {
+            // Percentage discount
+            discount = min(totalBill, totalBill * def.value / 100.0);
+        }
+
+        if (discount > 0.0 && consume) {
+            voucher.quantity--;
+            updated = true;
+        }
+        break;
+    }
+
+    if (updated) {
+        saveWallet(wallet);
+    }
+
+    return discount;
+}
+
+void VoucherService::loadWallet(vector<UserVoucher>& wallet) const {
+    wallet.clear();
+    ifstream file(walletPath);
+    if (!file.is_open()) return;
+
+    string line;
+    while (getline(file, line)) {
+        if (line.empty() || line[0] == '#') continue;
+        auto cols = StringUtils::split(line, '|');
+        if (cols.size() < 4) continue;
+
+        if (StringUtils::isHeaderRow(cols, "email")) continue;
+
+        UserVoucher voucher;
+        voucher.email = cols[0];
+        voucher.code = cols[1];
+        voucher.status = stoi(cols[2]);
+        voucher.expiry = cols[3];
+        voucher.quantity = (cols.size() >= 5) ? stoi(cols[4]) : 1;
+        wallet.push_back(voucher);
+    }
+}
+
+void VoucherService::saveWallet(const vector<UserVoucher>& wallet) const {
+    ofstream file(walletPath, ios::trunc);
+    if (!file.is_open()) return;
+    
+    file << "email|code|status|expiry_date|quantity\n";
+    for (const auto& voucher : wallet) {
+        file << voucher.email << '|' << voucher.code << '|' << voucher.status 
+             << '|' << voucher.expiry << '|' << voucher.quantity << '\n';
+    }
+}
+
 // ===== Distribution Operations =====
 
 bool VoucherService::giveVoucherToUser(const string& email, const string& voucherCode,
@@ -258,7 +321,7 @@ bool VoucherService::giveVoucherToUser(const string& email, const string& vouche
     }
     if (!found) return false;
     
-    string expiry = buildExpiryDate(daysToExpire);
+    string expiry = DateTimeUtils::buildExpiryDate(daysToExpire);
     
     // Check if user already has this voucher
     vector<string> lines;
@@ -270,8 +333,8 @@ bool VoucherService::giveVoucherToUser(const string& email, const string& vouche
     while (getline(file, line)) {
         if (line.empty()) continue;
         
-        auto cols = splitString(line, '|');
-        if (isFirst && cols.size() > 0 && (cols[0] == "email" || cols[0] == "Email")) {
+        auto cols = StringUtils::split(line, '|');
+        if (isFirst && cols.size() > 0 && StringUtils::isHeaderRow(cols, "email")) {
             lines.push_back(line);
             isFirst = false;
             continue;
@@ -342,7 +405,7 @@ bool VoucherService::removeVoucherFromUser(const string& email, const string& vo
     while (getline(file, line)) {
         if (line.empty()) continue;
         
-        auto cols = splitString(line, '|');
+        auto cols = StringUtils::split(line, '|');
         if (cols.size() >= 2 && cols[0] == email && cols[1] == voucherCode) {
             removed = true;
             continue; // Skip this line
@@ -404,9 +467,9 @@ vector<pair<string, string>> VoucherService::getActiveUsers() const {
     while (getline(file, line)) {
         if (line.empty()) continue;
         
-        auto cols = splitString(line, '|');
+        auto cols = StringUtils::split(line, '|');
         // Skip header
-        if (cols.size() >= 1 && (cols[0] == "email" || cols[0] == "Email")) continue;
+        if (cols.size() >= 1 && StringUtils::isHeaderRow(cols, "email")) continue;
         
         // Format: email|password|fullName|phone|role|status
         if (cols.size() >= 6) {
@@ -431,7 +494,7 @@ vector<VoucherService::UserVoucherInfo> VoucherService::getUsersWithVoucher(cons
     ifstream usersFile(usersPath);
     string line;
     while (getline(usersFile, line)) {
-        auto cols = splitString(line, '|');
+        auto cols = StringUtils::split(line, '|');
         if (cols.size() >= 3 && cols[0] != "email") {
             userNames[cols[0]] = cols[2];
         }
@@ -441,7 +504,7 @@ vector<VoucherService::UserVoucherInfo> VoucherService::getUsersWithVoucher(cons
     // Load wallet entries
     ifstream walletFile(walletPath);
     while (getline(walletFile, line)) {
-        auto cols = splitString(line, '|');
+        auto cols = StringUtils::split(line, '|');
         // email|code|status|expiry|quantity
         if (cols.size() >= 5 && cols[1] == voucherCode && cols[2] == "1") {
             UserVoucherInfo info;
@@ -463,7 +526,7 @@ int VoucherService::countUsersWithVoucher(const string& voucherCode) const {
 // ===== Maintenance =====
 
 void VoucherService::cleanupExpiredVouchers() {
-    int today = todayAsNumber();
+    int today = DateTimeUtils::getTodayAsNumber();
     
     vector<string> lines;
     ifstream file(walletPath);
@@ -472,16 +535,16 @@ void VoucherService::cleanupExpiredVouchers() {
     while (getline(file, line)) {
         if (line.empty()) continue;
         
-        auto cols = splitString(line, '|');
+        auto cols = StringUtils::split(line, '|');
         // Keep header
-        if (cols.size() > 0 && (cols[0] == "email" || cols[0] == "Email")) {
+        if (cols.size() > 0 && StringUtils::isHeaderRow(cols, "email")) {
             lines.push_back(line);
             continue;
         }
         
         // email|code|status|expiry|quantity
         if (cols.size() >= 4) {
-            int expiry = dateStringToNumber(cols[3]);
+            int expiry = DateTimeUtils::dateStringToNumber(cols[3]);
             if (expiry >= today || cols[2] == "0") {
                 lines.push_back(line);
             }

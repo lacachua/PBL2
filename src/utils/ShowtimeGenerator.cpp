@@ -14,10 +14,8 @@ vector<GeneratedShowtime> ShowtimeGenerator::generatedShowtimes;
 vector<MovieInfo> ShowtimeGenerator::loadMovies(const string& moviesPath) {
     vector<MovieInfo> movies;
     ifstream file(moviesPath);
-    if (!file.is_open()) {
-        cerr << "Cannot open movies file: " << moviesPath << endl;
+    if (!file.is_open()) 
         return movies;
-    }
     
     string line;
     getline(file, line); // Skip header
@@ -48,10 +46,8 @@ vector<MovieInfo> ShowtimeGenerator::loadMovies(const string& moviesPath) {
         getline(ss, movie.status, '|');    // 12: status
         
         // Chỉ lấy phim "Đang chiếu" hoặc "Sắp chiếu"
-        if (movie.status == "Đang chiếu" || movie.status == "Sắp chiếu" ||
-            movie.status == "Dang chieu" || movie.status == "Sap chieu") {
+        if (movie.status == "Đang chiếu" || movie.status == "Sắp chiếu")
             movies.push_back(movie);
-        }
     }
     
     file.close();
@@ -61,10 +57,8 @@ vector<MovieInfo> ShowtimeGenerator::loadMovies(const string& moviesPath) {
 vector<string> ShowtimeGenerator::loadRooms(const string& roomsPath) {
     vector<string> rooms;
     ifstream file(roomsPath);
-    if (!file.is_open()) {
-        cerr << "Cannot open rooms file: " << roomsPath << endl;
+    if (!file.is_open()) 
         return rooms;
-    }
     
     string line;
     getline(file, line); // Skip header
@@ -151,14 +145,10 @@ void ShowtimeGenerator::generateShowtimesFile(const string& outputPath, int numD
     vector<MovieInfo> movies = loadMovies("../data/movies.txt");
     vector<string> rooms = loadRooms("../data/rooms.txt");
     
-    if (movies.empty()) {
-        cerr << "No movies found!" << endl;
+    if (movies.empty()) 
         return;
-    }
-    if (rooms.empty()) {
-        cerr << "No rooms found!" << endl;
+    if (rooms.empty()) 
         return;
-    }
     
     // Initialize Round-Robin queue
     movieQueue.clear();
@@ -170,10 +160,8 @@ void ShowtimeGenerator::generateShowtimesFile(const string& outputPath, int numD
     generatedShowtimes.clear();
     
     ofstream file(outputPath);
-    if (!file.is_open()) {
-        cerr << "Cannot write to file: " << outputPath << endl;
+    if (!file.is_open())
         return;
-    }
     
     // Write header
     file << "showtime_id|movie_id|room_id|date|time|price\n";
@@ -247,7 +235,6 @@ void ShowtimeGenerator::generateShowtimesFile(const string& outputPath, int numD
     }
     
     file.close();
-    cout << "Generated " << globalCounter << " showtimes for " << numDays << " days." << endl;
 }
 
 // ==================== UTILITIES ====================

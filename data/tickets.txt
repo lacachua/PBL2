@@ -72,3 +72,4 @@ T0034|SUATCHIEU_20251121_0003|TỬ CHIẾN TRÊN KHÔNG|2025-11-21|20:00|Phòng 
 T0035|SUATCHIEU_20251124_0003|TỬ CHIẾN TRÊN KHÔNG|2025-11-24|20:00|Phòng Chiếu 1|I4, I5|2 CocaCola + 2 Bắp Caramel x1, 2 CocaCola + 2 Bắp Phô Mai x1|510000|vanvu41ht1@gmail.com|Nguyễn Văn Vũ|24/11/2025|17:03:31
 T1021|SUATCHIEU_20251126_0001|TỬ CHIẾN TRÊN KHÔNG|2025-11-26|21:00|Phòng Chiếu 1|I6, I5|2 CocaCola + 2 Bắp Caramel x1, 2 CocaCola + 2 Bắp Phô Mai x1|510000|vanvu41ht1@gmail.com|Nguyễn Văn Vũ|26/11/2025|20:23:16
 T1022|SUATCHIEU_20251127_0009|TỬ CHIẾN TRÊN KHÔNG|2025-11-27|20:50|Phòng Chiếu 3|G7, G8|CocaCola x1|152000|ntctuyen@gmail.com|Nguyễn Thị Cẩm |27/11/2025|15:34:54
+T1023|SUATCHIEU_20251128_0025|BLUE BEETLE|2025-11-28|10:20|Phòng Chiếu 5|I5, I6|4 CocaCola + 2 Bắp Phô Mai x1|304000|vanvu41ht1@gmail.com|Nguyễn Văn Vũ|27/11/2025|19:55:30

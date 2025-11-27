@@ -12,8 +12,8 @@ App::App()
 {
     window.setFramerateLimit(60);
 
-    // Force regenerate showtimes using Round-Robin algorithm
-    ShowtimeCleanupService::forceRegenerate("../data/showtimes.txt", 30);
+    // Chỉ duy trì showtimes (xóa expired + thêm mới nếu cần), KHÔNG regenerate toàn bộ
+    ShowtimeCleanupService::maintainShowtimes("../data/showtimes.txt", 5);
 
     authService = make_unique<AuthService>("../data/users.txt");
     authService->ensureSampleUser();
@@ -120,7 +120,6 @@ void App::run() {
                 case AppState::ADMIN_SHOWTIMES:
                 case AppState::ADMIN_TICKETS:
                 case AppState::ADMIN_COMBOS:
-                case AppState::ADMIN_STAFF:
                 case AppState::ADMIN_CUSTOMERS:
                 case AppState::ADMIN_REVENUE:
                 case AppState::ADMIN_SOLD_TICKETS:
@@ -210,7 +209,6 @@ void App::run() {
             case AppState::ADMIN_SHOWTIMES:
             case AppState::ADMIN_TICKETS:
             case AppState::ADMIN_COMBOS:
-            case AppState::ADMIN_STAFF:
             case AppState::ADMIN_CUSTOMERS:
             case AppState::ADMIN_REVENUE:
             case AppState::ADMIN_SOLD_TICKETS:
@@ -273,7 +271,6 @@ void App::run() {
             case AppState::ADMIN_SHOWTIMES:
             case AppState::ADMIN_TICKETS:
             case AppState::ADMIN_COMBOS:
-            case AppState::ADMIN_STAFF:
             case AppState::ADMIN_CUSTOMERS:
             case AppState::ADMIN_REVENUE:
             case AppState::ADMIN_SOLD_TICKETS:

@@ -2,30 +2,23 @@
 #include <string>
 #include <ctime>
 #include "core/AppRole.h"
+#include "models/IUser.h"
 
 using namespace std;
 
 /**
- * @brief Model đại diện cho người dùng trong hệ thống
+ * @brief Concrete class User - Backwards compatible với code cũ
  * 
- * Responsibility (Single Responsibility Principle):
- * - Chứa thông tin người dùng
- * - Cung cấp getters/setters
- * - Không chứa logic nghiệp vụ (để cho AuthService, UserRepository)
+ * Kế thừa từ IUser và implement các phương thức virtual.
+ * Class này giữ lại để tương thích với code hiện có.
+ * 
+ * Cho code mới, nên sử dụng:
+ * - Guest, Customer, Staff, Admin classes
+ * - UserFactory để tạo user
  * 
  * Note: Email là khóa chính, KHÔNG ĐƯỢC PHÉP THAY ĐỔI
  */
-class User {
-private:
-    string email;           // Primary key - IMMUTABLE
-    string passwordHash;
-    string fullName;
-    string birthDate;       // Format: dd/mm/yyyy
-    string phone;
-    time_t registeredAt;    // Unix timestamp
-    AppRole role;
-    UserStatus status;
-
+class User : public IUser {
 public:
     /**
      * @brief Constructor mặc định
@@ -44,80 +37,49 @@ public:
          AppRole role = AppRole::Customer,
          UserStatus status = UserStatus::Active);
 
-    // ===== GETTERS =====
+    // ===== IMPLEMENT PURE VIRTUAL METHODS từ IUser =====
     
-    /**
-     * @brief Lấy email (primary key - IMMUTABLE)
-     * @return Email của user
-     */
-    string getEmail() const { return email; }
+    string getUserType() const override {
+        switch (role) {
+            case AppRole::Admin: return "Admin";
+            case AppRole::Customer: return "Customer";
+            default: return "Guest";
+        }
+    }
     
-    string getPasswordHash() const { return passwordHash; }
-    string getFullName() const { return fullName; }
-    string getBirthDate() const { return birthDate; }
-    string getPhone() const { return phone; }
-    time_t getRegisteredAt() const { return registeredAt; }
-    AppRole getRole() const { return role; }
-    UserStatus getStatus() const { return status; }
+    bool hasPermission(const string& feature) const override {
+        // Admin có tất cả quyền
+        if (role == AppRole::Admin) return true;
+        
+        // Customer có quyền đặt vé, xem voucher
+        if (role == AppRole::Customer || role == AppRole::Admin) {
+            if (feature == "book_ticket") return true;
+            if (feature == "view_booking_history") return true;
+            if (feature == "use_voucher") return true;
+            if (feature == "view_vouchers") return true;
+            if (feature == "update_profile") return true;
+            if (feature == "view_account") return true;
+        }
+        
+        // Guest chỉ có quyền xem
+        if (feature == "view_movies") return true;
+        if (feature == "view_movie_detail") return true;
+        if (feature == "search_movies") return true;
+        
+        return false;
+    }
     
-    /**
-     * @brief Lấy username để hiển thị (từ fullName)
-     * @return Tên hiển thị
-     */
-    string getUsername() const { return fullName; }
-    
-    /**
-     * @brief Kiểm tra tài khoản có đang hoạt động không
-     * @return true nếu status = Active
-     */
-    bool isActive() const { return status == UserStatus::Active; }
-    
-    /**
-     * @brief Kiểm tra tài khoản có bị khóa không
-     * @return true nếu status = Locked
-     */
-    bool isLocked() const { return status == UserStatus::Locked; }
+    string getPermissions() const override {
+        switch (role) {
+            case AppRole::Admin:
+                return "Toàn quyền quản trị";
+            case AppRole::Customer:
+                return "Đặt vé, Xem lịch sử, Sử dụng voucher";
+            default:
+                return "Xem phim";
+        }
+    }
 
-    // ===== SETTERS (Email KHÔNG CÓ setter - IMMUTABLE) =====
-    
-    void setPasswordHash(const string& hash) { passwordHash = hash; }
-    void setFullName(const string& name) { fullName = name; }
-    void setBirthDate(const string& date) { birthDate = date; }
-    void setPhone(const string& phoneNum) { phone = phoneNum; }
+    // ===== SETTER cho role (User class cần setRole) =====
     void setRole(AppRole r) { role = r; }
-    void setStatus(UserStatus s) { status = s; }
-    
-    /**
-     * @brief Khóa tài khoản
-     */
-    void lock() { status = UserStatus::Locked; }
-    
-    /**
-     * @brief Mở khóa tài khoản
-     */
-    void unlock() { status = UserStatus::Active; }
-    
-    // ===== HELPER METHODS =====
-    
-    /**
-     * @brief Chuyển role thành chuỗi để lưu file
-     * @return "guest", "customer", "staff", hoặc "admin"
-     */
-    string getRoleString() const;
-    
-    /**
-     * @brief Chuyển status thành chuỗi để lưu file
-     * @return "active" hoặc "locked"
-     */
-    string getStatusString() const;
-    
-    /**
-     * @brief Parse role từ chuỗi
-     */
-    static AppRole parseRole(const string& roleStr);
-    
-    /**
-     * @brief Parse status từ chuỗi
-     */
-    static UserStatus parseStatus(const string& statusStr);
 };

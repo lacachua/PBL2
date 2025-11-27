@@ -14,8 +14,7 @@ AccountScreen::AccountScreen(Font& f, AuthService& auth)
     personalInfoView = make_unique<PersonalInfoView>(f, auth);
     purchaseHistoryView = make_unique<PurchaseHistoryView>(f);
     voucherListView = make_unique<VoucherListView>(f);
-    
-    // ✅ Initialize global search bar with movie data
+
     MovieRepository repo("../data/movies.txt");
     initializeGlobalSearch(repo.getAllMovies());
     
@@ -42,9 +41,7 @@ AccountScreen::AccountScreen(Font& f, AuthService& auth)
 }
 
 void AccountScreen::setCurrentUser(const string& email) {
-    if (email.empty() || email == currentUserEmail) {
-        return;
-    }
+    if (email.empty() || email == currentUserEmail) return;
 
     currentUserEmail = email;
     personalInfoView->setUser(email);
@@ -88,21 +85,13 @@ void AccountScreen::updatePositions(Vector2u windowSize) {
 
 void AccountScreen::update(Vector2f mousePos, bool mousePressed, const Event* event, AppState& state) {
     BaseScreen::update(mousePos, mousePressed, state);
-    
-    // Handle events for global search bar
-    if (event) {
-        BaseScreen::handleEvent(*event);
-    }
-    
-    // Don't process account screen logic if search is active
+    if (event) BaseScreen::handleEvent(*event);
     if (globalSearchBar && globalSearchBar->isInputActive()) return;
     
     Color hoverColor(50, 70, 100, 230);
     Color activeColor = Color(65, 135, 220, 255);
     Color inactiveColor = Color(35, 55, 85, 220);
     
-    // Update menu items with correct colors based on current tab
-    // Active items should not have hover effect (use same color for both hover and normal)
     Color color1 = (currentTab == AccountTab::CUSTOMER_INFO) ? activeColor : inactiveColor;
     Color color2 = (currentTab == AccountTab::PURCHASE_HISTORY) ? activeColor : inactiveColor;
     Color color3 = (currentTab == AccountTab::MY_GIFTS) ? activeColor : inactiveColor;
@@ -137,10 +126,7 @@ void AccountScreen::update(Vector2f mousePos, bool mousePressed, const Event* ev
             menuItem3.setFillColor(Color(35, 55, 85, 220));
             menuItem3.setTextColor(Color(180, 195, 215));
             
-            // Refresh purchase history khi chuyển sang tab này
-            if (purchaseHistoryView) {
-                purchaseHistoryView->loadTickets(true);
-            }
+            if (purchaseHistoryView) purchaseHistoryView->loadTickets(true);
         }
         else if (menuItem3.isClicked(mousePos, true)) {
             currentTab = AccountTab::MY_GIFTS;
@@ -151,24 +137,18 @@ void AccountScreen::update(Vector2f mousePos, bool mousePressed, const Event* ev
             menuItem3.setFillColor(Color(65, 135, 220, 255));
             menuItem3.setTextColor(Color::White);
             
-            // Refresh voucher list khi chuyển sang tab này
-            if (voucherListView) {
-                voucherListView->refresh();
-            }
+            if (voucherListView) voucherListView->refresh();
         }
     }
     
     Vector2f cardPos = mainCardBg.getPosition();
     
-    if (currentTab == AccountTab::CUSTOMER_INFO) {
+    if (currentTab == AccountTab::CUSTOMER_INFO) 
         personalInfoView->update(mousePos, mousePressed, event, cardPos);
-    }
-    else if (currentTab == AccountTab::PURCHASE_HISTORY) {
+    else if (currentTab == AccountTab::PURCHASE_HISTORY) 
         purchaseHistoryView->update(mousePos, mouseJustPressed, cardPos);
-    }
-    else if (currentTab == AccountTab::MY_GIFTS && voucherListView) {
+    else if (currentTab == AccountTab::MY_GIFTS && voucherListView) 
         voucherListView->update(mousePos, mouseJustPressed, cardPos, mainCardBg.getSize());
-    }
 }
 
 void AccountScreen::draw(RenderWindow& window) {
@@ -183,13 +163,10 @@ void AccountScreen::draw(RenderWindow& window) {
     
     window.draw(mainCardBg);
     
-    if (currentTab == AccountTab::CUSTOMER_INFO) {
+    if (currentTab == AccountTab::CUSTOMER_INFO) 
         personalInfoView->draw(window);
-    }
-    else if (currentTab == AccountTab::PURCHASE_HISTORY) {
+    else if (currentTab == AccountTab::PURCHASE_HISTORY) 
         purchaseHistoryView->draw(window, mainCardBg.getPosition());
-    }
-    else if (currentTab == AccountTab::MY_GIFTS && voucherListView) {
+    else if (currentTab == AccountTab::MY_GIFTS && voucherListView) 
         voucherListView->draw(window, mainCardBg.getPosition(), mainCardBg.getSize());
-    }
 }

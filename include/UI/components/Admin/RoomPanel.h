@@ -54,10 +54,8 @@ private:
 
     vector<RoomRow> rows;
     vector<RoomInfo> rooms;
-    unordered_map<string, vector<ShowtimeSlot>> roomSchedules;
     unordered_map<string, vector<ShowtimeSlot>> liveSchedules;
     unordered_map<string, vector<ShowtimeSlot>> cachedSchedules;
-    bool cacheDirty = false;
     const string cacheFilePath = "../data/room_schedule_cache.txt";
 
     int hoveredRow = -1;
@@ -69,22 +67,18 @@ private:
     static vector<string> splitLine(const string& line, char delimiter);
     static string trim(const string& text);
     static optional<chrono::system_clock::time_point> parseDateTime(const string& dateStr, const string& timeStr);
-    static optional<chrono::system_clock::time_point> parseCacheDateTime(const string& value);
     static string formatDateTime(chrono::system_clock::time_point tp);
+    static string getDateString(chrono::system_clock::time_point tp);
+    static chrono::system_clock::time_point get8AMOfDate(chrono::system_clock::time_point tp);
+    static chrono::system_clock::time_point getNextDay(chrono::system_clock::time_point tp);
 
     void setupUI();
     void loadData();
     vector<RoomInfo> loadRooms(const string& path);
     unordered_map<string, MovieInfo> loadMovies(const string& path);
     void loadShowtimes(const string& path, const unordered_map<string, MovieInfo>& movies);
-    void loadCache();
     void saveCache();
-    bool removeExpiredCachedShows();
-    bool ensureUpcomingShowsCached();
-    bool hasSlot(const vector<ShowtimeSlot>& slots, const ShowtimeSlot& slot) const;
-    static bool slotsEqual(const ShowtimeSlot& a, const ShowtimeSlot& b);
-    static bool pruneSchedules(unordered_map<string, vector<ShowtimeSlot>>& schedules,
-                               chrono::system_clock::time_point now);
+    void rebuildCacheFromLive();
     void updateRoomStatuses();
     void renderTable(RenderWindow& window);
 

@@ -5,7 +5,7 @@
 #include <memory>
 #include "UI/components/TicketBooking/TicketRepository.h"
 #include "UI/components/TicketBooking/ShowtimeSeatRepository.h"
-#include "services/VoucherManager.h"
+#include "services/VoucherService.h"
 #include "services/UserRepository.h"
 
 /**
@@ -60,7 +60,7 @@ struct BookingInfo {
 class BookingService {
 private:
     std::unique_ptr<UserRepository> userRepository;
-    VoucherManager voucherManager;
+    std::shared_ptr<VoucherService> voucherService;
     TicketRepository ticketRepository;
     ShowtimeSeatRepository seatRepository;
 

@@ -3,7 +3,6 @@
 enum class AppRole {
     Guest,
     Customer,
-    Staff,
     Admin
 };
 

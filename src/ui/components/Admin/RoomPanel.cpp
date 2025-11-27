@@ -66,20 +66,15 @@ void RoomPanel::loadData() {
     auto movies = loadMovies(MOVIES_FILE);
     liveSchedules.clear();
     cachedSchedules.clear();
-    roomSchedules.clear();
-    cacheDirty = false;
 
     loadShowtimes(SHOWTIMES_FILE, movies);
-    roomSchedules = liveSchedules;
-    loadCache();
-    cacheDirty = removeExpiredCachedShows();
+    
+    // Rebuild cache từ showtimes.txt
+    rebuildCacheFromLive();
+    saveCache();
+    
     updateRoomStatuses();
-    if (ensureUpcomingShowsCached()) {
-        cacheDirty = true;
-    }
-    if (cacheDirty) {
-        saveCache();
-    }
+    
     hoveredRow = -1;
     selectedRow = -1;
     statusRefreshClock.restart();
@@ -218,13 +213,6 @@ optional<system_clock::time_point> RoomPanel::parseDateTime(const string& dateSt
     return system_clock::from_time_t(localTime);
 }
 
-optional<system_clock::time_point> RoomPanel::parseCacheDateTime(const string& value) {
-    if (value.size() < 16) return nullopt;
-    string date = value.substr(0, 10);
-    string time = value.substr(11, 5);
-    return parseDateTime(date, time);
-}
-
 string RoomPanel::formatDateTime(system_clock::time_point tp) {
     time_t raw = system_clock::to_time_t(tp);
     tm local{};
@@ -236,46 +224,6 @@ string RoomPanel::formatDateTime(system_clock::time_point tp) {
     char buffer[20];
     strftime(buffer, sizeof(buffer), "%Y-%m-%dT%H:%M", &local);
     return string(buffer);
-}
-
-void RoomPanel::loadCache() {
-    cachedSchedules.clear();
-    ifstream file(cacheFilePath);
-    if (!file.is_open()) {
-        return;
-    }
-
-    string line;
-    while (getline(file, line)) {
-        auto parts = splitLine(line, '|');
-        if (parts.size() < 4) continue;
-        string roomId = trim(parts[0]);
-        string movieTitle = trim(parts[1]);
-        auto startOpt = parseCacheDateTime(trim(parts[2]));
-        auto endOpt = parseCacheDateTime(trim(parts[3]));
-        if (!startOpt.has_value() || !endOpt.has_value()) continue;
-
-        ShowtimeSlot slot{startOpt.value(), endOpt.value(), movieTitle};
-        auto& cachedList = cachedSchedules[roomId];
-        if (!hasSlot(cachedList, slot)) {
-            cachedList.push_back(slot);
-        }
-        auto& combined = roomSchedules[roomId];
-        if (!hasSlot(combined, slot)) {
-            combined.push_back(slot);
-        }
-    }
-
-    for (auto& [roomId, slots] : cachedSchedules) {
-        sort(slots.begin(), slots.end(), [](const ShowtimeSlot& a, const ShowtimeSlot& b) {
-            return a.start < b.start;
-        });
-    }
-    for (auto& [roomId, slots] : roomSchedules) {
-        sort(slots.begin(), slots.end(), [](const ShowtimeSlot& a, const ShowtimeSlot& b) {
-            return a.start < b.start;
-        });
-    }
 }
 
 void RoomPanel::saveCache() {
@@ -291,119 +239,130 @@ void RoomPanel::saveCache() {
                  << '|' << formatDateTime(slot.end) << '\n';
         }
     }
-}
-
-bool RoomPanel::hasSlot(const vector<ShowtimeSlot>& slots, const ShowtimeSlot& slot) const {
-    for (const auto& existing : slots) {
-        if (slotsEqual(existing, slot)) {
-            return true;
-        }
+        file.close();
     }
-    return false;
-}
 
-bool RoomPanel::slotsEqual(const ShowtimeSlot& a, const ShowtimeSlot& b) {
-    return a.movieTitle == b.movieTitle && a.start == b.start;
-}
+void RoomPanel::rebuildCacheFromLive() {
+    auto now = system_clock::now();
+    string todayStr = getDateString(now);
+    bool allowUpcomingToday = now >= get8AMOfDate(now);
 
-bool RoomPanel::pruneSchedules(unordered_map<string, vector<ShowtimeSlot>>& schedules,
-                               chrono::system_clock::time_point now) {
-    bool removed = false;
-    for (auto it = schedules.begin(); it != schedules.end();) {
-        auto& list = it->second;
-        size_t before = list.size();
-        list.erase(remove_if(list.begin(), list.end(), [&](const ShowtimeSlot& slot) {
-            return slot.end <= now;
-        }), list.end());
+    cachedSchedules.clear();
 
-        if (list.empty()) {
-            it = schedules.erase(it);
-        } else {
-            ++it;
+    for (const auto& room : rooms) {
+        auto liveIt = liveSchedules.find(room.id);
+        if (liveIt == liveSchedules.end()) {
+            continue;
         }
 
-        if (list.size() != before) {
-            removed = true;
-        }
-    }
-    return removed;
-}
+        const auto& slots = liveIt->second;
+        optional<ShowtimeSlot> currentSlot;
+        optional<ShowtimeSlot> upcomingSlot;
 
-bool RoomPanel::removeExpiredCachedShows() {
-    auto now = system_clock::now();
-    bool removed = pruneSchedules(cachedSchedules, now);
-    removed = pruneSchedules(roomSchedules, now) || removed;
-    return removed;
-}
-
-bool RoomPanel::ensureUpcomingShowsCached() {
-    auto now = system_clock::now();
-    bool updated = false;
-
-    for (const auto& [roomId, slots] : liveSchedules) {
-        ShowtimeSlot candidate;
-        bool found = false;
+        // Tìm phim đang chiếu
         for (const auto& slot : slots) {
-            if (slot.end <= now) continue;
-            candidate = slot;
-            found = true;
-            break;
-        }
-        if (!found) continue;
-
-        auto& cachedList = cachedSchedules[roomId];
-        if (!hasSlot(cachedList, candidate)) {
-            cachedList.push_back(candidate);
-            updated = true;
+            if (now >= slot.start && now < slot.end) {
+                currentSlot = slot;
+                break;
+            }
         }
 
-        auto& combined = roomSchedules[roomId];
-        if (!hasSlot(combined, candidate)) {
-            combined.push_back(candidate);
-            updated = true;
+        // Tìm phim sắp chiếu: phim tiếp theo GẦN NHẤT trong ngày hôm nay
+        if (allowUpcomingToday) {
+            for (const auto& slot : slots) {
+                string slotDate = getDateString(slot.start);
+                if (slotDate != todayStr) {
+                    continue; // Bỏ qua phim không phải hôm nay
+                }
+                if (slot.start > now) {
+                    upcomingSlot = slot;
+                    break; // Lấy phim đầu tiên chưa bắt đầu (đã sort theo thời gian)
+                }
+            }
+        }
+
+        // Lưu vào cache
+        auto& compact = cachedSchedules[room.id];
+        if (currentSlot.has_value()) {
+            compact.push_back(currentSlot.value());
+        }
+        if (upcomingSlot.has_value()) {
+            compact.push_back(upcomingSlot.value());
         }
     }
+}
 
-    if (updated) {
-        for (auto& [roomId, slots] : cachedSchedules) {
-            sort(slots.begin(), slots.end(), [](const ShowtimeSlot& a, const ShowtimeSlot& b) {
-                return a.start < b.start;
-            });
-        }
-        for (auto& [roomId, slots] : roomSchedules) {
-            sort(slots.begin(), slots.end(), [](const ShowtimeSlot& a, const ShowtimeSlot& b) {
-                return a.start < b.start;
-            });
-        }
-    }
+// Lấy ngày (YYYY-MM-DD) từ time_point
+string RoomPanel::getDateString(system_clock::time_point tp) {
+    time_t raw = system_clock::to_time_t(tp);
+    tm local{};
+#ifdef _WIN32
+    localtime_s(&local, &raw);
+#else
+    localtime_r(&raw, &local);
+#endif
+    char buffer[11];
+    strftime(buffer, sizeof(buffer), "%Y-%m-%d", &local);
+    return string(buffer);
+}
 
-    return updated;
+// Lấy thời điểm 8h sáng của một ngày
+system_clock::time_point RoomPanel::get8AMOfDate(system_clock::time_point tp) {
+    time_t raw = system_clock::to_time_t(tp);
+    tm local{};
+#ifdef _WIN32
+    localtime_s(&local, &raw);
+#else
+    localtime_r(&raw, &local);
+#endif
+    local.tm_hour = 8;
+    local.tm_min = 0;
+    local.tm_sec = 0;
+    return system_clock::from_time_t(mktime(&local));
+}
+
+// Lấy ngày tiếp theo
+system_clock::time_point RoomPanel::getNextDay(system_clock::time_point tp) {
+    return tp + hours(24);
 }
 
 void RoomPanel::updateRoomStatuses() {
     rows.clear();
     rows.reserve(rooms.size());
     auto now = system_clock::now();
+    
+    // Lấy ngày hiện tại
+    string todayStr = getDateString(now);
+    bool allowUpcomingToday = now >= get8AMOfDate(now);
 
     for (const auto& room : rooms) {
         string current = "Không";
         string upcoming = "Không";
-        auto it = roomSchedules.find(room.id);
-        if (it != roomSchedules.end()) {
+        
+        auto it = cachedSchedules.find(room.id);
+        if (it != cachedSchedules.end()) {
             const auto& slots = it->second;
+            
+            // Tìm phim đang chiếu: thời gian hiện tại nằm trong [start, end)
             for (const auto& slot : slots) {
-                if (now >= slot.start && now <= slot.end) {
+                if (now >= slot.start && now < slot.end) {
                     current = slot.movieTitle;
                     break;
                 }
             }
-            for (const auto& slot : slots) {
-                if (slot.start > now) {
-                    upcoming = slot.movieTitle;
-                    break;
+            
+            if (allowUpcomingToday) {
+                // Tìm phim sắp chiếu: phim tiếp theo trong ngày hôm nay mà chưa bắt đầu
+                for (const auto& slot : slots) {
+                    string slotDate = getDateString(slot.start);
+                    if (slotDate == todayStr && slot.start > now) {
+                        upcoming = slot.movieTitle;
+                        break;
+                    }
                 }
             }
         }
+        
         rows.push_back(RoomRow{room.id, room.name, current, upcoming});
     }
 
@@ -436,12 +395,13 @@ void RoomPanel::handleEvent(const Event& event, const RenderWindow& window) {
 
 void RoomPanel::update(Vector2f mousePos, bool mousePressed) {
     if (statusRefreshClock.getElapsedTime().asSeconds() >= statusRefreshInterval) {
-        bool removed = removeExpiredCachedShows();
+        // Đọc lại showtimes và cập nhật cache
+        auto movies = loadMovies(MOVIES_FILE);
+        liveSchedules.clear();
+        loadShowtimes(SHOWTIMES_FILE, movies);
+        rebuildCacheFromLive();
         updateRoomStatuses();
-        bool added = ensureUpcomingShowsCached();
-        if (removed || added) {
-            saveCache();
-        }
+        saveCache();
         statusRefreshClock.restart();
     }
 

@@ -4,7 +4,7 @@
 #include <memory>
 #include "models/User.h"
 #include "services/UserRepository.h"
-#include "services/VoucherManager.h"
+#include "services/VoucherService.h"
 #include "services/EventSystem.h"
 #include "utils/PasswordHasher.h"
 #include "utils/Validator.h"
@@ -30,7 +30,6 @@ public:
 
     bool hasRole(AppRole) const;
     bool isAdmin() const;
-    bool isStaffOrAbove() const;
 
     User* getUser(const string&);
     bool emailExists(const string&);
@@ -40,11 +39,11 @@ public:
     UserRepository* getRepository() { return repository.get(); }
 
     void ensureSampleUser();
-    void ensureDefaultAdminAndStaff();
+    void ensureDefaultAdmin();
 
 private:
     unique_ptr<UserRepository> repository;
-    unique_ptr<VoucherManager> voucherManager;
+    shared_ptr<VoucherService> voucherService;
     
     string currentUserEmail;
     bool loggedIn;
