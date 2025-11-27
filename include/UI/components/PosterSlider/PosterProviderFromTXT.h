@@ -3,12 +3,13 @@
 #include <SFML/System/String.hpp>
 #include <fstream>
 #include <sstream>
+#include <string>
 
 class PosterProviderFromTXT : public IPosterProvider {
 private:
-    string filePath;
+    std::string filePath;
 
 public:
-    PosterProviderFromTXT(const string& path) : filePath(path) {}
+    PosterProviderFromTXT(const std::string& path) : filePath(path) {}
     DLL<String> getPosterPaths() override;
 };
