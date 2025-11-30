@@ -50,14 +50,18 @@ struct Ticket {
     }
 };
 
+/**
+ * @brief Repository thống nhất quản lý Ticket
+ * REFACTORED: Sử dụng DLL thay vì std::vector cho internal storage
+ */
 class TicketRepository {
 private:
     string filePath;
-    vector<Ticket> tickets;
+    DLL<Ticket> tickets;  // Changed from vector<Ticket> to DLL<Ticket>
 
     string generateNewId() const {
         int maxId = 0;
-        for (const auto& t : tickets) {
+        for (const auto& t : tickets) {  // DLL iterator
             if (t.ticketId.length() > 1 && t.ticketId[0] == 'T') {
                 try {
                     int id = stoi(t.ticketId.substr(1));
@@ -140,7 +144,7 @@ public:
         
         file << "ticket_id|showtime_id|title|date|time|room_name|booked|combo_name|price|email|fullName|booked_date|booked_time\n";
         
-        for (const auto& t : tickets) {
+        for (const auto& t : tickets) {  // DLL iterator
             file << t.ticketId << "|" << t.showtimeId << "|" << t.title << "|"
                  << t.date << "|" << t.time << "|" << t.roomName << "|"
                  << t.booked << "|" << t.comboName << "|" << t.price << "|"
@@ -152,18 +156,31 @@ public:
     
     void reload() { loadFromFile(); }
     
-    const vector<Ticket>& getAll() const { return tickets; }
+    /**
+     * @brief Return DLL reference for iteration
+     * NOTE: Changed from std::vector to DLL
+     */
+    const DLL<Ticket>& getAll() const { return tickets; }
+    DLL<Ticket>& getAll() { return tickets; }
     
-    DLL<Ticket> getAllAsDLL() const {
-        DLL<Ticket> result;
+    /**
+     * @brief Legacy support: Convert to vector when needed
+     */
+    vector<Ticket> getAllAsVector() const {
+        vector<Ticket> result;
+        result.reserve(tickets.size());
         for (const auto& t : tickets) {
             result.push_back(t);
         }
         return result;
     }
+    
+    DLL<Ticket> getAllAsDLL() const {
+        return tickets;  // Copy constructor
+    }
 
-    vector<Ticket> getByEmail(const string& email) const {
-        vector<Ticket> result;
+    DLL<Ticket> getByEmail(const string& email) const {
+        DLL<Ticket> result;
         for (const auto& t : tickets) {
             if (t.email == email) {
                 result.push_back(t);
@@ -172,8 +189,8 @@ public:
         return result;
     }
 
-    vector<Ticket> getByDate(const string& date) const {
-        vector<Ticket> result;
+    DLL<Ticket> getByDate(const string& date) const {
+        DLL<Ticket> result;
         for (const auto& t : tickets) {
             if (t.date == date) {
                 result.push_back(t);
@@ -189,8 +206,12 @@ public:
         return nullptr;
     }
     
-    int count() const { return static_cast<int>(tickets.size()); }
+    int count() const { return tickets.size(); }
     
+    /**
+     * @brief Lấy dữ liệu dạng table cho UI
+     * NOTE: Returns std::vector for UI compatibility
+     */
     vector<vector<string>> getAllAsTable() const {
         vector<vector<string>> result;
         for (const auto& t : tickets) {
@@ -255,19 +276,21 @@ public:
     }
 
     bool deleteTicket(const string& ticketId) {
-        for (size_t i = 0; i < tickets.size(); i++) {
-            if (tickets[i].ticketId == ticketId) {
-                tickets.erase(tickets.begin() + i);
+        int index = 0;
+        for (const auto& t : tickets) {
+            if (t.ticketId == ticketId) {
+                tickets.removeAt(index);  // DLL method
                 saveToFile();
                 return true;
             }
+            index++;
         }
         return false;
     }
     
     bool remove(int index) {
-        if (index < 0 || index >= static_cast<int>(tickets.size())) return false;
-        tickets.erase(tickets.begin() + index);
+        if (index < 0 || index >= tickets.size()) return false;
+        tickets.removeAt(index);  // DLL method
         saveToFile();
         return true;
     }
