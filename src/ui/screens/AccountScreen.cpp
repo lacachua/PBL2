@@ -142,9 +142,18 @@ void AccountScreen::update(Vector2f mousePos, bool mousePressed, const Event* ev
     }
     
     Vector2f cardPos = mainCardBg.getPosition();
+    Vector2f cardSize = mainCardBg.getSize();
+    
+    // Calculate centered position for PersonalInfoView form
+    // Form width: 2 columns of 280px + gap of 36px = 596px total
+    // Add padding for centering within the card
+    float formWidth = 596.f;
+    float horizontalPadding = (cardSize.x - formWidth) / 2.f;
+    float verticalPadding = 30.f;
+    Vector2f centeredCardPos = {cardPos.x + horizontalPadding, cardPos.y + verticalPadding};
     
     if (currentTab == AccountTab::CUSTOMER_INFO) 
-        personalInfoView->update(mousePos, mousePressed, event, cardPos);
+        personalInfoView->update(mousePos, mousePressed, event, centeredCardPos);
     else if (currentTab == AccountTab::PURCHASE_HISTORY) 
         purchaseHistoryView->update(mousePos, mouseJustPressed, cardPos);
     else if (currentTab == AccountTab::MY_GIFTS && voucherListView) 

@@ -324,6 +324,9 @@ void ProfileInfoCard::saveInfoChange() {
     currentUser_->setBirthDate(newBirthDate);
     currentUser_->setPhone(newPhone);
     
+    // Persist changes to file
+    authService_->getRepository()->saveToFile();
+    
     userDataLoaded_ = false;
     setUser(currentEmail_);
     
@@ -358,6 +361,9 @@ void ProfileInfoCard::savePasswordChange() {
     }
     
     currentUser_->setPasswordHash(PasswordHasher::hashPassword(newPwd));
+    
+    // Persist changes to file
+    authService_->getRepository()->saveToFile();
     
     showPwdMessage(L"Đổi mật khẩu thành công!", false);
     
