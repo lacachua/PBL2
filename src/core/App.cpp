@@ -1,5 +1,6 @@
 #include "core/App.h"
 #include <SFML/Graphics.hpp>
+
 using namespace sf;
 
 App::App()
@@ -12,8 +13,7 @@ App::App()
 {
     window.setFramerateLimit(60);
 
-    // Force regenerate showtimes using Round-Robin algorithm
-    ShowtimeCleanupService::forceRegenerate("../data/showtimes.txt", 30);
+    ShowtimeCleanupService::maintainShowtimes("../data/showtimes.txt", 5);
 
     authService = make_unique<AuthService>("../data/users.txt");
     authService->ensureSampleUser();
@@ -24,10 +24,31 @@ App::App()
     accountScreen = make_unique<AccountScreen>(font, *authService);
 }
 
+bool App::isAdminState(AppState s) {
+    return (s >= AppState::ADMIN_DASHBOARD && s <= AppState::ADMIN_CHANGE_PASSWORD);
+}
+
+BaseScreen* App::getCurrentScreen() {
+    if (isAdminState(state)) return adminScreen.get();
+
+    switch (state) {
+        case AppState::HOME:          return homeScreen.get();
+        case AppState::MOVIE_DETAILS: return detailScreen.get();
+        case AppState::BOOKING:       return bookingScreen.get();
+        case AppState::ACCOUNT:       return accountScreen.get();
+        default:                      return nullptr;
+    }
+}
+
 void App::handleStateChange() {
     if (state == previousState) return;
 
     switch (state) {
+        case AppState::HOME:
+            bookingScreen.reset();
+            detailScreen.reset();
+            break;
+            
         case AppState::MOVIE_DETAILS:
             if (homeScreen && homeScreen->getRepository()) {
                 int selectedIndex = homeScreen->getSelectedMovieIndex();
@@ -40,6 +61,7 @@ void App::handleStateChange() {
             break;
 
         case AppState::BOOKING:
+            bookingScreen.reset();
             if (detailScreen && previousState == AppState::MOVIE_DETAILS) {
                 String movieId = detailScreen->getMovieId();
                 bookingScreen = make_unique<BookingScreen>(font, movieId);
@@ -47,33 +69,75 @@ void App::handleStateChange() {
             else bookingScreen = make_unique<BookingScreen>(font, "");
             break;
 
-        default:
-            break;
+        default: break;
     }
     previousState = state;
 }
 
 void App::resetAfterLogout() {
     authService->logout();
+
     detailScreen.reset();
     bookingScreen.reset();
     accountScreen.reset();
     adminScreen.reset();
+    homeScreen.reset();
     
     loginScreen = make_unique<LoginScreen>(font, *authService);
     registerScreen = make_unique<RegisterScreen>(font, *authService);
     accountScreen = make_unique<AccountScreen>(font, *authService);
-    
-    homeScreen.reset();
     homeScreen = make_unique<HomeScreen>(font, window);
     
     currentUser = "";
     currentUserEmail = "";
-    
     state = AppState::HOME;
     previousState = AppState::HOME;
 
     BaseScreen::clearLogoutFlag();
+}
+
+void App::handleGlobalSearch() {
+    BaseScreen* cur = getCurrentScreen();
+    if (!cur) return;
+
+    if (state == AppState::LOGIN || state == AppState::REGISTER || isAdminState(state)) return;
+
+    int globalSearchIdx = cur->getSelectedMovieIndexFromSearch();
+
+    if (globalSearchIdx >= 0) {
+        cur->clearSelectedMovieIndexFromSearch();
+
+        if (homeScreen && homeScreen->getRepository()) {
+            MovieDetail detail = homeScreen->getRepository()->getMovieDetailbyIndex(globalSearchIdx);
+            detailScreen = make_unique<DetailScreen>(font, font, title_font, detail_font, detail);
+
+            if (state == AppState::BOOKING) bookingScreen.reset();
+
+            state = AppState::MOVIE_DETAILS;
+        }
+    }
+}
+
+void App::render() {
+    window.clear(Color::White);
+    
+    if (isAdminState(state)) {
+        if (adminScreen) adminScreen->render();
+    }
+    else if (state == AppState::LOGIN) {
+        loginScreen->draw(window);
+    }
+    else if (state == AppState::REGISTER) {
+        registerScreen->draw(window);
+    }
+    else {
+        BaseScreen* current = getCurrentScreen();
+        if (current) {
+            current->draw(window);
+            current->drawOverlay(window);
+        }
+    }
+    window.display();
 }
 
 void App::run() {
@@ -81,210 +145,96 @@ void App::run() {
         bool mousePressed = false;
         Vector2f mousePos = window.mapPixelToCoords(Mouse::getPosition(window));
 
+        // 1. Event Polling
         while (auto event = window.pollEvent()) {
             if (event->is<Event::Closed>()) window.close();
             if (event->is<Event::MouseButtonPressed>()) mousePressed = true;
 
+            if (isAdminState(state)) {
+                if (!adminScreen) adminScreen = make_unique<AdminScreen>(font, window, state, authService.get());
+                adminScreen->handleEvent(*event);
+            }
+            else {
+                switch (state) {
+                    case AppState::HOME: 
+                        homeScreen->handleEvent(mousePos, mousePressed, state, &(*event)); 
+                        break;
+                    case AppState::MOVIE_DETAILS: 
+                        if(detailScreen) detailScreen->handleEvent(*event); 
+                        break;
+                    case AppState::BOOKING: 
+                        if(bookingScreen) bookingScreen->handleEvent(*event); 
+                        break;
+                    case AppState::LOGIN: 
+                        loginScreen->handleEvent(*event, state, currentUser, currentUserEmail, loginSuccess); 
+                        break;
+                    case AppState::REGISTER: 
+                        registerScreen->handleEvent(*event, state); 
+                        break;
+                    case AppState::ACCOUNT: 
+                        if(accountScreen) accountScreen->update(mousePos, mousePressed, &(*event), state); 
+                        break;
+                    default: break; 
+                }
+            }
+        }
+
+        // 2. Logic Updates & Search
+        handleGlobalSearch();
+
+        if (isAdminState(state)) {
+            if (adminScreen) adminScreen->update(mousePos, mousePressed, state);
+        }
+        else {
             switch (state) {
+                case AppState::HOME:
+                    homeScreen->setLoggedUser(authService->isLoggedIn() ? authService->getCurrentUser()->getUsername() : "");
+                    homeScreen->update(mousePos, mousePressed, state);
+                    break;
+
+                case AppState::MOVIE_DETAILS:
+                    if (detailScreen) detailScreen->update(mousePos, mousePressed, state);
+                    break;
+                
+                case AppState::BOOKING:
+                    if (bookingScreen) bookingScreen->update(mousePos, mousePressed, state);
+                    break;
+
+                case AppState::ACCOUNT:
+                    if (accountScreen) {
+                        string email = BaseScreen::getLoggedInUserEmail();
+                        if (!email.empty()) accountScreen->setCurrentUser(email);
+                        accountScreen->update(mousePos, mousePressed, nullptr, state);
+                    }
+                    break;
+
                 case AppState::LOGIN: {
-                    AppState oldState = state;
-                    bool loginCompleted = loginScreen->update(mousePos, mousePressed, *event, currentUser, currentUserEmail, state);
+                    loginSuccess = false; // Reset mỗi frame
+                    bool loginCompleted = loginScreen->update(mousePos, mousePressed, currentUser, currentUserEmail, state);
                     if (loginCompleted && state != AppState::LOGIN) {
                         BaseScreen::setLoggedInUser(currentUser, currentUserEmail);
                         homeScreen->setLoggedUser(currentUser);
                     } 
-                    else if (oldState != state && state == AppState::HOME) {
-                        currentUser.clear();
-                        currentUserEmail.clear();
-                    }
                     break;
                 }
+
                 case AppState::REGISTER:
-                    registerScreen->update(mousePos, mousePressed, *event, state);
+                    registerScreen->update(mousePos, mousePressed, state);
                     break;
-                case AppState::HOME:
-                    homeScreen->handleEvent(mousePos, mousePressed, state, &(*event));
-                    break;
-                case AppState::MOVIE_DETAILS:
-                    if (detailScreen) detailScreen->handleEvent(*event);
-                    break;
-                case AppState::BOOKING:
-                    if (bookingScreen) bookingScreen->handleEvent(*event);
-                    break;
-                case AppState::ACCOUNT:
-                    if (accountScreen) accountScreen->update(mousePos, mousePressed, &(*event), state);
-                    break;
-                case AppState::ADMIN_DASHBOARD:
-                case AppState::ADMIN_MOVIES:
-                case AppState::ADMIN_ROOMS:
-                case AppState::ADMIN_SHOWTIMES:
-                case AppState::ADMIN_TICKETS:
-                case AppState::ADMIN_COMBOS:
-                case AppState::ADMIN_STAFF:
-                case AppState::ADMIN_CUSTOMERS:
-                case AppState::ADMIN_REVENUE:
-                case AppState::ADMIN_SOLD_TICKETS:
-                case AppState::ADMIN_CHANGE_PASSWORD:
-                    if (!adminScreen) adminScreen = make_unique<AdminScreen>(font, window, state, authService.get());
-                    adminScreen->handleEvent(*event);
-                    break;
-                default:
-                    break;
+
+                default: break;
             }
         }
 
-        AppState stateBeforeEventProcessing = state;
-        
-        bool movieSelectedFromSearch = false;
-        int globalSearchIdx = -1;
-
-        if (homeScreen) {
-            globalSearchIdx = homeScreen->getSelectedMovieIndexFromSearch();
-            if (globalSearchIdx >= 0) {
-                homeScreen->clearSelectedMovieIndexFromSearch();
-                movieSelectedFromSearch = true;
-            }
-        }
-        
-        if (!movieSelectedFromSearch && detailScreen) {
-            globalSearchIdx = detailScreen->getSelectedMovieIndexFromSearch();
-            if (globalSearchIdx >= 0) {
-                detailScreen->clearSelectedMovieIndexFromSearch();
-                movieSelectedFromSearch = true;
-            }
-        }
-        
-        if (!movieSelectedFromSearch && bookingScreen) {
-            globalSearchIdx = bookingScreen->getSelectedMovieIndexFromSearch();
-            if (globalSearchIdx >= 0) {
-                bookingScreen->clearSelectedMovieIndexFromSearch();
-                movieSelectedFromSearch = true;
-            }
-        }
-        
-        if (!movieSelectedFromSearch && accountScreen) {
-            globalSearchIdx = accountScreen->getSelectedMovieIndexFromSearch();
-            if (globalSearchIdx >= 0) {
-                accountScreen->clearSelectedMovieIndexFromSearch();
-                movieSelectedFromSearch = true;
-            }
-        }
-        
-        if (movieSelectedFromSearch && homeScreen && homeScreen->getRepository()) {
-            MovieDetail detail = homeScreen->getRepository()->getMovieDetailbyIndex(globalSearchIdx);
-            detailScreen = make_unique<DetailScreen>(font, font, title_font, detail_font, detail);
-            if (state == AppState::BOOKING || previousState == AppState::BOOKING) bookingScreen.reset();
-        }
-        
-        switch (state) {
-            case AppState::HOME:
-                homeScreen->setLoggedUser(authService->isLoggedIn() ? authService->getCurrentUser()->getUsername() : "");
-                homeScreen->update(mousePos, mousePressed, state);
-                break;
-
-            case AppState::MOVIE_DETAILS:
-                if (detailScreen) detailScreen->update(mousePos, mousePressed, state);
-                break;
-            
-            case AppState::BOOKING:
-                if (bookingScreen) bookingScreen->update(mousePos, mousePressed, state);
-                break;
-
-            case AppState::ACCOUNT:
-                if (accountScreen) {
-                    string email = BaseScreen::getLoggedInUserEmail();
-                    if (!email.empty()) accountScreen->setCurrentUser(email);
-                    accountScreen->update(mousePos, mousePressed, nullptr, state);
-                }
-                break;
-
-            case AppState::LOGIN:
-                break;
-
-            case AppState::REGISTER:
-                break;
-
-            case AppState::ADMIN_DASHBOARD:
-            case AppState::ADMIN_MOVIES:
-            case AppState::ADMIN_ROOMS:
-            case AppState::ADMIN_SHOWTIMES:
-            case AppState::ADMIN_TICKETS:
-            case AppState::ADMIN_COMBOS:
-            case AppState::ADMIN_STAFF:
-            case AppState::ADMIN_CUSTOMERS:
-            case AppState::ADMIN_REVENUE:
-            case AppState::ADMIN_SOLD_TICKETS:
-            case AppState::ADMIN_CHANGE_PASSWORD:
-                if (adminScreen) adminScreen->update(mousePos, mousePressed, state);
-                break;
-
-            default:
-                break;
-        }
-
+        // 3. State Management
         handleStateChange();
         
-        // ✅ Check if logout was requested and reset everything
         if (BaseScreen::isLogoutRequested()) {
             resetAfterLogout();
-            // After reset, skip this frame to avoid drawing deleted screens
             continue;
         }
 
-        // --- Draw ---
-        window.clear(Color::White);
-        switch (state) {
-            case AppState::HOME:
-                homeScreen->draw(window);
-                // ✅ Draw search bar overlay on top of everything
-                homeScreen->drawOverlay(window);
-                break;
-            case AppState::MOVIE_DETAILS:
-                if (detailScreen) {
-                    detailScreen->draw(window);
-                    // ✅ Draw search bar overlay on top of everything
-                    detailScreen->drawOverlay(window);
-                }
-                break;
-            case AppState::BOOKING:
-                if (bookingScreen) {
-                    bookingScreen->draw(window);
-                    // ✅ Draw search bar overlay on top of everything
-                    bookingScreen->drawOverlay(window);
-                }
-                break;
-            case AppState::ACCOUNT:
-                // ✅ AccountScreen giờ kế thừa BaseScreen nên tự vẽ header
-                if (accountScreen) {
-                    accountScreen->draw(window);
-                    // ✅ Draw search bar overlay on top of everything
-                    accountScreen->drawOverlay(window);
-                }
-                break;
-            case AppState::LOGIN:
-                loginScreen->draw(window);
-                break;
-            case AppState::REGISTER:
-                registerScreen->draw(window);
-                break;
-            case AppState::ADMIN_DASHBOARD:
-            case AppState::ADMIN_MOVIES:
-            case AppState::ADMIN_ROOMS:
-            case AppState::ADMIN_SHOWTIMES:
-            case AppState::ADMIN_TICKETS:
-            case AppState::ADMIN_COMBOS:
-            case AppState::ADMIN_STAFF:
-            case AppState::ADMIN_CUSTOMERS:
-            case AppState::ADMIN_REVENUE:
-            case AppState::ADMIN_SOLD_TICKETS:
-            case AppState::ADMIN_CHANGE_PASSWORD:
-                if (adminScreen) {
-                    adminScreen->render();
-                }
-                break;
-            default:
-                break;
-        }
-        window.display();
+        // 4. Render
+        render();
     }
 }

@@ -2,6 +2,7 @@
 #include "core/AppState.h"
 #include "core/AppRole.h"
 #include <SFML/Graphics.hpp>
+
 using namespace sf;
 
 static Text makeText(const Font& font, const String& str, unsigned size) {
@@ -77,7 +78,52 @@ wstring LoginScreen::bullets(size_t n) {
     return wstring(n, L'\u2022'); 
 }
 
-bool LoginScreen::update(Vector2f mouse, bool mousePressed, const Event& event, string& currentUser, string& currentUserEmail, AppState& state) {
+void LoginScreen::handleEvent(const Event& event, AppState& state, string& user, string& email, bool& successFlag) {
+    if (const auto* keyEvent = event.getIf<Event::KeyPressed>()) {
+        auto code = keyEvent->code;
+        if (code == Keyboard::Key::Escape) {
+            state = AppState::HOME;
+            // Reset logic...
+            return;
+        }
+        if (code == Keyboard::Key::Tab) {
+            bool e = emailActive, p = passActive;
+            emailActive = !e && !p ? true : !e;
+            passActive  = !emailActive;
+        } 
+        else if (code == Keyboard::Key::Backspace) {
+            if (emailActive && !emailInput.empty()) emailInput.pop_back();
+            else if (passActive && !passInput.empty()) passInput.pop_back();
+        } 
+        else if (code == Keyboard::Key::Enter) {
+            string uStr(emailInput.begin(), emailInput.end());
+            string pStr(passInput.begin(), passInput.end());
+            
+            if (auth.login(uStr, pStr)) {
+                msg.setFillColor(Color(60, 160, 90));
+                msg.setString(L"Đăng nhập thành công.");
+                loginSuccess = true;
+                successFlag = true;
+                loggedUser = uStr;
+                loginClock.restart();
+            } 
+            else {
+                msg.setFillColor(Color(200, 60, 60));
+                msg.setString(L"Sai thông tin đăng nhập.");
+            }
+        }
+    }
+    
+    if (const auto* textEvent = event.getIf<Event::TextEntered>()) {
+        char32_t unicode = textEvent->unicode;
+        if (unicode >= 32 && unicode != 127) {
+            if (emailActive && emailInput.size() < 48) emailInput.push_back((wchar_t)unicode);
+            else if (passActive && passInput.size() < 48) passInput.push_back((wchar_t)unicode);
+        }
+    }
+}
+
+bool LoginScreen::update(Vector2f mouse, bool mousePressed, string& currentUser, string& currentUserEmail, AppState& state) {
     const Vector2f center(864.f, 486.f);
     card.setPosition(center);
     closeX.setPosition({card.getPosition().x + card.getSize().x / 2.f - 28.f,
@@ -85,108 +131,31 @@ bool LoginScreen::update(Vector2f mouse, bool mousePressed, const Event& event, 
 
     if (mousePressed && closeX.getGlobalBounds().contains(mouse)) {
         state = AppState::HOME;
-        emailInput.clear();
-        passInput.clear();
-        emailActive = false;
-        passActive = false;
-        msg.setString(L"");
-        loginSuccess = false;
         return false;
     }
 
-    // chọn ô active
     if (mousePressed) {
-        // Toggle password visibility
-        if (eyeToggleArea.getGlobalBounds().contains(mouse)) {
-            showPassword = !showPassword;
-        }
-        
+        if (eyeToggleArea.getGlobalBounds().contains(mouse)) showPassword = !showPassword;
         emailActive = emailBox.getGlobalBounds().contains(mouse);
         passActive  = passBox.getGlobalBounds().contains(mouse);
 
-        // click Continue
         if (btn.getGlobalBounds().contains(mouse)) {
-            // ✅ verify and login
             string u(emailInput.begin(), emailInput.end());
             string p(passInput.begin(), passInput.end());
-            if (auth.login(u, p)) {  // ✅ Gọi login() thay vì verify()
+            if (auth.login(u, p)) {
                 msg.setFillColor(Color(60, 160, 90));
                 msg.setString(L"Đăng nhập thành công.");
-
-                // ensure button flow matches Enter key flow
                 loginSuccess = true;
                 loggedUser = u;
                 loginClock.restart();
-            } else {
+            } 
+            else {
                 msg.setFillColor(Color(200, 60, 60));
-                msg.setString(L"Sai tài khoản hoặc mật khẩu.");
+                msg.setString(L"Sai thông tin đăng nhập.");
             }
         }
 
-        // click "Tạo tài khoản ngay" -> nếu chưa tồn tại sẽ đăng ký luôn
-        if (linkCreate.getGlobalBounds().contains(mouse)) 
-            state = AppState::REGISTER;
-    }
-
-    // phím
-    if (event.is<Event::KeyPressed>()) {
-        auto code = event.getIf<Event::KeyPressed>()->code;
-        if (code == Keyboard::Key::Escape) {
-            state = AppState::HOME;
-            emailInput.clear();
-            passInput.clear();
-            emailActive = false;
-            passActive = false;
-            msg.setString(L"");
-            loginSuccess = false;
-            return false;
-        }
-        if (code == Keyboard::Key::Tab) {                            // chuyển ô
-            bool e = emailActive, p = passActive;
-            emailActive = !e && !p ? true : !e;
-            passActive  = !emailActive;
-        } else if (code == Keyboard::Key::Backspace) {               // xóa
-            if (emailActive && !emailInput.empty()) emailInput.pop_back();
-            else if (passActive && !passInput.empty()) passInput.pop_back();
-        } else if (code == Keyboard::Key::Enter) {                   // xác nhận
-            string email(emailInput.begin(), emailInput.end());
-            string password(passInput.begin(), passInput.end());
-            
-            // Validate email format first
-            if (!Validator::isValidEmail(email)) {
-                msg.setFillColor(Color(200,60,60));
-                msg.setString(L"Email không hợp lệ.");
-                return false;
-            }
-            
-            // ✅ Verify credentials and login
-            if (auth.login(email, password)) {  // ✅ Gọi login() thay vì verify()
-                msg.setFillColor(Color(60, 160, 90));
-                msg.setString(L"Đăng nhập thành công.");
-                
-                loginSuccess = true;
-                loggedUser = email;
-                loginClock.restart();
-            } else {
-                msg.setFillColor(Color(200,60,60));
-                
-                // More specific error message
-                if (!auth.emailExists(email)) {
-                    msg.setString(L"Email không tồn tại.");
-                } else {
-                    msg.setString(L"Mật khẩu không đúng.");
-                }
-            }
-        }
-    }
-
-    if (event.is<Event::TextEntered>()) {
-        char32_t unicode = event.getIf<Event::TextEntered>()->unicode;
-        // Allow Vietnamese and Unicode (skip control chars and Delete)
-        if (unicode >= 32 && unicode != 127) {
-            if (emailActive && emailInput.size() < 48) emailInput.push_back((wchar_t)unicode);
-            else if (passActive && passInput.size() < 48)  passInput.push_back((wchar_t)unicode);
-        }
+        if (linkCreate.getGlobalBounds().contains(mouse)) state = AppState::REGISTER;
     }
 
     if (caretClock.getElapsedTime().asSeconds() >= 0.5f) {
@@ -194,28 +163,17 @@ bool LoginScreen::update(Vector2f mouse, bool mousePressed, const Event& event, 
         caretClock.restart();
     }
 
-    if (loginSuccess && loginClock.getElapsedTime().asSeconds() >= 1.f) {
-        // Lưu email và lấy username từ User object
-        currentUserEmail = loggedUser;  // Lưu email
-        User* user = auth.getUser(loggedUser);
-        if (user) {
-            currentUser = user->getUsername();  // Chỉ lấy username để hiển thị
-            
-            // ✅ Role-based redirect
-            if (user->getRole() == AppRole::Admin) {
-                state = AppState::ADMIN_DASHBOARD;
-            } else if (user->getRole() == AppRole::Staff) {
-                state = AppState::STAFF_DASHBOARD;
-            } else {
-                // Customer goes to HOME
-                state = AppState::HOME;
-            }
-        } else {
-            currentUser = loggedUser;  // Fallback
+    if (loginSuccess && loginClock.getElapsedTime().asSeconds() >= 0.5f) {
+        currentUserEmail = loggedUser;
+        User* userObj = auth.getUser(loggedUser);
+        if (userObj) {
+            currentUser = userObj->getUsername();
+            state = (userObj->getRole() == AppRole::Admin) ? AppState::ADMIN_DASHBOARD : AppState::HOME;
+            loginSuccess = false; // Reset for next login
         }
-        return true;   // báo cho App biết là đóng login
+        return true; 
     }
-    return false; // không đóng
+    return false;
 }
 
 void LoginScreen::draw(RenderWindow& window) {

@@ -11,39 +11,26 @@ class RegisterScreen {
 private:
     AuthService& auth;
 
-    RectangleShape overlay;
-    RectangleShape card;
+    RectangleShape overlay, card, registerBtn, backBtn, cursor;
+    Text title, registerBtnText, backBtnText, closeX, msg;
     vector<RectangleShape> inputBoxes;
     vector<Text> labels;
     vector<Text> placeholders;
     vector<Text> displays; 
 
-    Text title;
-    RectangleShape registerBtn;
-    RectangleShape backBtn;
-    Text registerBtnText;
-    Text backBtnText;
-    Text closeX;
-    Text msg;
-
-    RectangleShape cursor;
-    Clock cursorClock;
-    bool showCursor = true;
+    Clock cursorClock, messageTimer;
+    bool showCursor = true, showSuccessMessage = false;
 
     int activeField = -1;
     wstring inputs[6];
 
-    bool showSuccessMessage = false;
-    Clock messageTimer;
-
-public:
-    RegisterScreen(const Font& font, AuthService& authRef);
-
-    bool update(Vector2f mouse, bool mousePressed, const Event& event, AppState& state);
-    void draw(RenderWindow& window);
-    void reset();
-
-private:
     wstring bullets(size_t n);
     bool validateInputs();
+public:
+    RegisterScreen(const Font&, AuthService&);
+
+    bool update(Vector2f, bool, AppState&);
+    void handleEvent(const Event&, AppState&);
+    void draw(RenderWindow&);
+    void reset();
 };
