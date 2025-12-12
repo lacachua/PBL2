@@ -1,5 +1,5 @@
 #include "UI/screens/DetailScreen.h"
-#include "models/MovieRepository.h"
+#include "repositories/MovieRepository.h"
 #include <sstream>
 
 using namespace sf;

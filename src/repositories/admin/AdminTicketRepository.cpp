@@ -1,4 +1,5 @@
-#include "UI/components/Admin/AdminTicketRepository.h"
+#include "repositories/admin/AdminTicketRepository.h"
+
 #include <fstream>
 #include <sstream>
 #include <cctype>
@@ -20,7 +21,6 @@ std::string AdminTicketRepository::trim(const string& value) {
     size_t start = 0;
     size_t end = value.size();
 
-    // Handle UTF-8 BOM at start
     if (value.size() >= 3 && static_cast<unsigned char>(value[0]) == 0xEF &&
         static_cast<unsigned char>(value[1]) == 0xBB && static_cast<unsigned char>(value[2]) == 0xBF) {
         start = 3;
@@ -42,7 +42,6 @@ DLL<string> AdminTicketRepository::split(const string& line, char delimiter) {
     while (std::getline(ss, token, delimiter)) {
         tokens.push_back(token);
     }
-    // Account for trailing delimiter
     if (!line.empty() && line.back() == delimiter) {
         tokens.push_back(string());
     }

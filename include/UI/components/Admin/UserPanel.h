@@ -1,7 +1,7 @@
 #pragma once
 
 #include <SFML/Graphics.hpp>
-#include "services/UserRepository.h"
+#include "repositories/UserRepository.h"
 #include <array>
 #include <string>
 #include <vector>

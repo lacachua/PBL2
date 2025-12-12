@@ -1,4 +1,5 @@
-#include "UI/components/Admin/ComboRepository.h"
+#include "repositories/admin/AdminComboRepository.h"
+
 #include <fstream>
 #include <sstream>
 #include <iomanip>
@@ -57,7 +58,7 @@ void AdminComboRepository::loadFromFile() {
     }
 
     string line;
-    getline(file, line); // header
+    getline(file, line);
 
     while (getline(file, line)) {
         if (line.empty()) continue;
@@ -118,7 +119,7 @@ void AdminComboRepository::addRecord(const vector<string>& record) {
 }
 
 void AdminComboRepository::updateRecord(int index, const vector<string>& record) {
-    if (index < 0 || index >= static_cast<int>(data.size())) return;
+    if (index < 0 || index >= (int)data.size()) return;
 
     vector<string> updated = record;
     while (updated.size() < 3) {
@@ -136,11 +137,11 @@ void AdminComboRepository::updateRecord(int index, const vector<string>& record)
 }
 
 void AdminComboRepository::deleteRecord(int index) {
-    if (index < 0 || index >= static_cast<int>(data.size())) return;
+    if (index < 0 || index >= (int)data.size()) return;
     data.erase(data.begin() + index);
 }
 
 vector<string> AdminComboRepository::getRecord(int index) const {
-    if (index < 0 || index >= static_cast<int>(data.size())) return {};
+    if (index < 0 || index >= (int)data.size()) return {};
     return data[index];
 }

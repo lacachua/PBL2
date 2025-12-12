@@ -1,4 +1,5 @@
 #pragma once
+
 #include <string>
 #include <vector>
 
@@ -24,5 +25,5 @@ public:
 
     vector<vector<string>> getAllData() const { return data; }
     vector<string> getRecord(int index) const;
-    int getRecordCount() const { return static_cast<int>(data.size()); }
+    int getRecordCount() const { return (int)data.size(); }
 };

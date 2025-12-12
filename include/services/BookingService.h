@@ -6,7 +6,7 @@
 #include "UI/components/TicketBooking/TicketRepository.h"
 #include "UI/components/TicketBooking/ShowtimeSeatRepository.h"
 #include "services/VoucherManager.h"
-#include "services/UserRepository.h"
+#include "repositories/UserRepository.h"
 
 /**
  * @brief Data Transfer Object for booking information

@@ -6,7 +6,7 @@
 #include <string>
 #include <functional>
 #include <set>
-#include "UI/components/Admin/VoucherRepository.h"
+#include "repositories/admin/AdminVoucherRepository.h"
 #include "UI/components/Admin/TextBox.h"
 #include "UI/components/Admin/UserSelectPopup.h"
 #include "UI/components/Button.h"

@@ -1,5 +1,5 @@
 #include "UI/screens/BookingScreen.h"
-#include "models/MovieRepository.h"
+#include "repositories/MovieRepository.h"
 #include "UI/components/TicketBooking/VoucherDisplayState.h"
 #include <fstream>
 #include <sstream>

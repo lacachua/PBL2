@@ -3,7 +3,7 @@
 #include <SFML/Graphics.hpp>
 #include "UI/components/Admin/TextBox.h"
 #include "UI/components/Admin/DropdownBox.h"
-#include "UI/components/Admin/MovieRepository.h"
+#include "repositories/admin/AdminMovieRepository.h"
 #include "UI/components/Button.h"
 #include "data-structures/DLL.h"
 #include <string>

@@ -3,7 +3,7 @@
 #include <memory>
 #include <vector>
 #include <string>
-#include "UI/components/Admin/ComboRepository.h"
+#include "repositories/admin/AdminComboRepository.h"
 #include "UI/components/Admin/TextBox.h"
 #include "UI/components/Button.h"
 

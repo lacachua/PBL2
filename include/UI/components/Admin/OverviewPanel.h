@@ -8,7 +8,7 @@
 
 #include "data-structures/BTree.h"
 #include "data-structures/DLL.h"
-#include "UI/components/Admin/AdminTicketRepository.h"
+#include "repositories/admin/AdminTicketRepository.h"
 #include "UI/components/Admin/StatCard.h"
 
 struct MonthlyRevenuePoint {

@@ -5,7 +5,7 @@
 #include <string>
 #include <vector>
 #include "data-structures/DLL.h"
-#include "UI/components/Admin/AdminTicketRepository.h"
+#include "repositories/admin/AdminTicketRepository.h"
 #include "UI/components/Admin/AdminSidebar.h"
 #include "UI/components/Admin/RoundRectButton.h"
 

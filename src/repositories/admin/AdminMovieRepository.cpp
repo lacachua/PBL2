@@ -1,4 +1,5 @@
-#include "UI/components/Admin/MovieRepository.h"
+#include "repositories/admin/AdminMovieRepository.h"
+
 #include <algorithm>
 #include <cctype>
 #include <iostream>
@@ -19,11 +20,11 @@ vector<string> AdminMovieRepository::splitString(const string& str, char delimit
     vector<string> tokens;
     stringstream ss(str);
     string token;
-    
+
     while (getline(ss, token, delimiter)) {
         tokens.push_back(token);
     }
-    
+
     return tokens;
 }
 
@@ -44,33 +45,31 @@ string AdminMovieRepository::generateNewId() {
 
 void AdminMovieRepository::loadFromFile() {
     data.clear();
-    
+
     ifstream file(filePath);
     if (!file.is_open()) {
         return;
     }
-    
+
     string line;
-    // Skip header
     getline(file, line);
-    
+
     while (getline(file, line)) {
         if (line.empty()) continue;
-        
-        // Remove BOM if present
-        if (line.size() >= 3 && 
-            (unsigned char)line[0] == 0xEF && 
-            (unsigned char)line[1] == 0xBB && 
+
+        if (line.size() >= 3 &&
+            (unsigned char)line[0] == 0xEF &&
+            (unsigned char)line[1] == 0xBB &&
             (unsigned char)line[2] == 0xBF) {
             line = line.substr(3);
         }
-        
+
         vector<string> rowData = splitString(line, '|');
-        if (rowData.size() >= 5) {  // Minimum required columns
+        if (rowData.size() >= 5) {
             data.push_back(rowData);
         }
     }
-    
+
     file.close();
 }
 
@@ -79,11 +78,9 @@ void AdminMovieRepository::saveToFile() {
     if (!file.is_open()) {
         return;
     }
-    
-    // Write header
+
     file << "movie_id|title|age_rating|country|language|genres|duration_min|release_date|director|cast|synopsis|poster_path|status\n";
-    
-    // Write data
+
     for (const auto& row : data) {
         for (size_t i = 0; i < row.size(); i++) {
             file << row[i];
@@ -91,14 +88,13 @@ void AdminMovieRepository::saveToFile() {
         }
         file << "\n";
     }
-    
+
     file.close();
 }
 
 void AdminMovieRepository::addRecord(const vector<string>& record) {
     vector<string> fullRecord = record;
-    
-    // Ensure ID is present (UI passes empty slot at index 0)
+
     if (fullRecord.empty()) {
         fullRecord.push_back(generateNewId());
     } else if (fullRecord[0].empty()) {
@@ -106,22 +102,20 @@ void AdminMovieRepository::addRecord(const vector<string>& record) {
     } else if (!isValidMovieId(fullRecord[0])) {
         fullRecord.insert(fullRecord.begin(), generateNewId());
     }
-    
-    // Ensure we have all required fields
+
     while (fullRecord.size() < 13) {
         fullRecord.push_back("");
     }
     if (fullRecord.size() > 13) {
         fullRecord.resize(13);
     }
-    
+
     data.push_back(fullRecord);
 }
 
 void AdminMovieRepository::updateRecord(int index, const vector<string>& record) {
-    if (index < 0 || index >= data.size()) return;
-    
-    // Keep the ID from original record
+    if (index < 0 || index >= (int)data.size()) return;
+
     vector<string> updatedRecord = record;
     if (updatedRecord.size() < 13) {
         updatedRecord.resize(13);
@@ -129,18 +123,16 @@ void AdminMovieRepository::updateRecord(int index, const vector<string>& record)
     if (!data[index].empty()) {
         updatedRecord[0] = data[index][0];
     }
-    
+
     data[index] = updatedRecord;
 }
 
 void AdminMovieRepository::deleteRecord(int index) {
-    if (index < 0 || index >= data.size()) return;
-    
+    if (index < 0 || index >= (int)data.size()) return;
     data.erase(data.begin() + index);
 }
 
 vector<string> AdminMovieRepository::getRecord(int index) const {
-    if (index < 0 || index >= data.size()) return {};
-    
+    if (index < 0 || index >= (int)data.size()) return {};
     return data[index];
 }

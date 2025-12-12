@@ -8,7 +8,7 @@
 
 #include "data-structures/BTree.h"
 #include "data-structures/DLL.h"
-#include "UI/components/Admin/AdminTicketRepository.h"
+#include "repositories/admin/AdminTicketRepository.h"
 #include "UI/components/Admin/DropdownBox.h"
 #include "UI/components/Admin/RoundRectButton.h"
 #include "UI/components/TicketBooking/ShowtimeRepository.h"
