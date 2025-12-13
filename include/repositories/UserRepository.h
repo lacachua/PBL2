@@ -8,24 +8,10 @@
 
 using namespace std;
 
-/**
- * @brief Repository quản lý CRUD operations cho User
- *
- * Responsibility (Single Responsibility Principle):
- * - Đọc/ghi file users.txt
- * - CRUD operations với email làm khóa chính
- * - Validate email uniqueness
- *
- * Design Pattern: Repository Pattern
- * - Tách biệt logic truy xuất dữ liệu khỏi business logic
- * - Dễ test, dễ thay đổi storage (từ file sang database)
- *
- * Note: Email là PRIMARY KEY - IMMUTABLE
- */
 class UserRepository {
 private:
     string filePath;
-    HashTable<string, User> users;  // key = email (lowercase)
+    HashTable<string, User> users;
 
     string normalizeEmail(const string& email) const;
     User parseLine(const string& line) const;

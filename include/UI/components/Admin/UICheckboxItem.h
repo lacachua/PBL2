@@ -37,21 +37,7 @@ public:
         sf::Color textColor;
         sf::Color secondaryTextColor;
         
-        Config()
-            : width(400.f)
-            , height(36.f)
-            , checkboxSize(18.f)
-            , padding(10.f)
-            , fontSize(13)
-            , bgColor(sf::Color::White)
-            , bgHoverColor(235, 244, 252)
-            , bgSelectedColor(214, 232, 248)
-            , checkboxColor(sf::Color::White)
-            , checkboxCheckedColor(20, 118, 172)
-            , borderColor(210, 216, 224)
-            , textColor(33, 37, 41)
-            , secondaryTextColor(100, 100, 100)
-        {}
+        Config();
     };
 
     explicit UICheckboxItem(sf::Font& font, const Config& config = Config{});
@@ -63,29 +49,29 @@ public:
     
     // State management
     void setChecked(bool checked);
-    bool isChecked() const { return checked_; }
+    bool isChecked() const;
     void toggle();
     
     // Position & Layout
     void setPosition(sf::Vector2f pos);
-    sf::Vector2f getPosition() const { return position_; }
+    sf::Vector2f getPosition() const;
     sf::FloatRect getBounds() const;
-    float getHeight() const { return config_.height; }
+    float getHeight() const;
     
     // Interaction
     bool handleClick(sf::Vector2f mousePos);  // Returns true if state changed
     void updateHover(sf::Vector2f mousePos);
-    bool isHovered() const { return hovered_; }
+    bool isHovered() const;
     
     // Callback
     using ToggleCallback = std::function<void(bool checked)>;
-    void setOnToggle(ToggleCallback callback) { onToggle_ = std::move(callback); }
+    void setOnToggle(ToggleCallback callback);
     
     // Rendering
     void render(sf::RenderTarget& target);
     
     // Visual state for external styling (e.g., alternating rows)
-    void setAlternateBackground(bool alternate) { alternateBackground_ = alternate; }
+    void setAlternateBackground(bool alternate);
 
 private:
     sf::Font& font_;

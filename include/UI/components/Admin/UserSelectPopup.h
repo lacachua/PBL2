@@ -33,7 +33,7 @@ struct UserInfo {
     std::string name;
     
     UserInfo() = default;
-    UserInfo(const std::string& e, const std::string& n) : email(e), name(n) {}
+    UserInfo(const std::string& e, const std::string& n);
 };
 
 class UserSelectPopup {
@@ -54,15 +54,15 @@ public:
     // State
     void open();
     void close();
-    bool isOpen() const { return isOpen_; }
+    bool isOpen() const;
     
     // Get selected users
     std::vector<UserInfo> getSelectedUsers() const;
-    size_t getSelectedCount() const { return selectedIndices_.size(); }
+    size_t getSelectedCount() const;
     
     // Callbacks
-    void setOnConfirm(ConfirmCallback callback) { onConfirm_ = std::move(callback); }
-    void setOnCancel(CancelCallback callback) { onCancel_ = std::move(callback); }
+    void setOnConfirm(ConfirmCallback callback);
+    void setOnCancel(CancelCallback callback);
     
     // Event handling
     void handleEvent(const sf::Event& event, const sf::RenderWindow& window);

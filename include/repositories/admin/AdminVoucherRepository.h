@@ -16,8 +16,7 @@ struct VoucherDefinition {
     std::string description;    // Mô tả voucher
 
     VoucherDefinition() = default;
-    VoucherDefinition(const std::string& c, int t, double v, double m, const std::string& d)
-        : code(c), type(t), value(v), minBill(m), description(d) {}
+    VoucherDefinition(const std::string& c, int t, double v, double m, const std::string& d);
 };
 
 /**
@@ -31,8 +30,7 @@ struct UserVoucherEntry {
     int quantity = 1;           // Số lượng còn lại
 
     UserVoucherEntry() = default;
-    UserVoucherEntry(const std::string& e, const std::string& c, int s, const std::string& exp, int qty)
-        : email(e), code(c), status(s), expiryDate(exp), quantity(qty) {}
+    UserVoucherEntry(const std::string& e, const std::string& c, int s, const std::string& exp, int qty);
 };
 
 /**

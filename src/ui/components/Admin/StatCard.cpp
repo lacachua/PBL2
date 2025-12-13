@@ -60,3 +60,11 @@ void StatCard::render(sf::RenderTarget& target) const {
     target.draw(titleText);
     target.draw(valueText);
 }
+
+sf::Vector2f StatCard::getPosition() const {
+    return box.getPosition();
+}
+
+sf::Vector2f StatCard::getSize() const {
+    return box.getSize();
+}

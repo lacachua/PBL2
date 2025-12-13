@@ -18,6 +18,14 @@ AdminComboRepository::AdminComboRepository(const string& path) : filePath(path) 
     loadFromFile();
 }
 
+vector<vector<string>> AdminComboRepository::getAllData() const {
+    return data;
+}
+
+int AdminComboRepository::getRecordCount() const {
+    return static_cast<int>(data.size());
+}
+
 vector<string> AdminComboRepository::splitString(const string& str, char delimiter) {
     vector<string> tokens;
     stringstream ss(str);

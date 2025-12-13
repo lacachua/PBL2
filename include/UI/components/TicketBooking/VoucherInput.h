@@ -89,17 +89,17 @@ public:
     /**
      * @brief Get current discount value
      */
-    int getDiscountValue() const { return voucherApplied ? discountValue : 0; }
+    int getDiscountValue() const;
     
     /**
      * @brief Check if voucher is applied
      */
-    bool isApplied() const { return voucherApplied; }
+    bool isApplied() const;
     
     /**
      * @brief Get applied voucher code
      */
-    string getAppliedCode() const { return appliedVoucherCode; }
+    string getAppliedCode() const;
     
     /**
      * @brief Reset all voucher state
@@ -109,17 +109,17 @@ public:
     /**
      * @brief Check if login popup is showing
      */
-    bool hasLoginPopup() const { return loginRequiredPopup != nullptr; }
+    bool hasLoginPopup() const;
     
     /**
      * @brief Get login popup for rendering/interaction
      */
-    LoginRequiredPopup* getLoginPopup() { return loginRequiredPopup.get(); }
+    LoginRequiredPopup* getLoginPopup();
     
     /**
      * @brief Close login popup
      */
-    void closeLoginPopup() { loginRequiredPopup.reset(); }
+    void closeLoginPopup();
     
     /**
      * @brief Refresh voucher discount if subtotal changed

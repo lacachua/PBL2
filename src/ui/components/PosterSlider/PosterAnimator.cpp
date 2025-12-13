@@ -9,6 +9,10 @@ void PosterAnimator::start(float startXPos, int direction) {
     animDirection = direction;
 }
 
+bool PosterAnimator::isAnimating() const {
+    return animating;
+}
+
 float PosterAnimator::easeInOutCubic(float t) {
     return t < 0.5f ? 4.f * t * t * t : 1.f - pow(-2.f * t + 2.f, 3.f) / 2.f;
 }

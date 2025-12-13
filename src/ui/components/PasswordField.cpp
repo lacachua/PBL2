@@ -50,6 +50,22 @@ void PasswordField::setSize(sf::Vector2f size) {
     updateEyeIcon();
 }
 
+bool PasswordField::isActive() const {
+    return active_;
+}
+
+const std::string& PasswordField::getValue() const {
+    return input_;
+}
+
+sf::Vector2f PasswordField::getPosition() const {
+    return box_.getPosition();
+}
+
+sf::Vector2f PasswordField::getSize() const {
+    return box_.getSize();
+}
+
 void PasswordField::handleEvent(const sf::Event& event, sf::Vector2f mousePos, bool mousePressed) {
     // Edge detection: only trigger on mouse down (not hold)
     bool mouseJustPressed = mousePressed && !wasMousePressed_;

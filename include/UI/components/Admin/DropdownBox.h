@@ -47,7 +47,7 @@ public:
     DropdownBox(Font& font, const string& label, float x, float y, float width, float height);
     
     void setEnabled(bool enabled); // Added
-    bool isEnabled() const { return enabled; } // Added
+    bool isEnabled() const; // Added
 
     void setOptions(const vector<string>& opts);
     void setMaxVisibleOptions(int count);
@@ -63,6 +63,6 @@ public:
     void draw(RenderWindow& window);
     
     bool isMouseOver(const Vector2f& mousePos) const;
-    bool isDropdownOpen() const { return isOpen; }
-    Vector2f getPosition() const { return Vector2f(x, y); }
+    bool isDropdownOpen() const;
+    Vector2f getPosition() const;
 };

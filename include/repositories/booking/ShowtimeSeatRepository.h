@@ -15,9 +15,8 @@ struct ShowtimeSeatStatus {
     string showtime_id;      // SUATCHIEU_20251106_0001, ...
     DLL<string> bookedSeats; // A1, B2, C3, ...
 
-    ShowtimeSeatStatus() {}
-    ShowtimeSeatStatus(const string& rId, const string& stId)
-        : room_id(rId), showtime_id(stId) {}
+    ShowtimeSeatStatus();
+    ShowtimeSeatStatus(const string& rId, const string& stId);
 };
 
 class ShowtimeSeatRepository {

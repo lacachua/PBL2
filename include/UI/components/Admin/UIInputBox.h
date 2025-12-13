@@ -40,20 +40,7 @@ public:
         sf::Color placeholderColor;
         sf::Color disabledBackgroundColor;
         
-        Config()
-            : width(300.f)
-            , height(36.f)
-            , padding(10.f)
-            , fontSize(13)
-            , showSearchIcon(false)
-            , borderRadius(4.f)
-            , backgroundColor(sf::Color::White)
-            , borderColor(201, 206, 214)
-            , borderFocusColor(20, 118, 172)
-            , textColor(34, 34, 34)
-            , placeholderColor(160, 160, 160)
-            , disabledBackgroundColor(240, 240, 240)
-        {}
+        Config();
     };
 
     using TextChangeCallback = std::function<void(const std::string& text)>;
@@ -62,33 +49,33 @@ public:
     
     // Text management
     void setText(const std::string& text);
-    const std::string& getText() const { return text_; }
+    const std::string& getText() const;
     void clear();
     
     void setPlaceholder(const std::string& placeholder);
-    const std::string& getPlaceholder() const { return placeholder_; }
+    const std::string& getPlaceholder() const;
     
     // State
     void setEnabled(bool enabled);
-    bool isEnabled() const { return enabled_; }
+    bool isEnabled() const;
     
     void setFocus(bool focus);
-    bool isFocused() const { return focused_; }
+    bool isFocused() const;
     
     // Layout
     void setPosition(sf::Vector2f pos);
-    sf::Vector2f getPosition() const { return position_; }
+    sf::Vector2f getPosition() const;
     sf::FloatRect getBounds() const;
     void setWidth(float width);
-    float getWidth() const { return config_.width; }
-    float getHeight() const { return config_.height; }
+    float getWidth() const;
+    float getHeight() const;
     
     // Event handling
     void handleEvent(const sf::Event& event);
     void update(sf::Vector2f mousePos, bool mousePressed = false);
     
     // Callback
-    void setOnTextChange(TextChangeCallback callback) { onTextChange_ = std::move(callback); }
+    void setOnTextChange(TextChangeCallback callback);
     
     // Rendering
     void render(sf::RenderTarget& target);

@@ -85,3 +85,18 @@ void HomeScreen::setLoggedUser(const string& username) {
     } 
     else setAccountButtonText(L"Đăng nhập | Đăng ký");
 }
+
+MovieRepository* HomeScreen::getRepository() const {
+    return repo.get();
+}
+
+int HomeScreen::getSelectedMovieIndex() const {
+    int searchIdx = getSelectedMovieIndexFromSearch();
+    if (searchIdx >= 0) return searchIdx;
+    return repo ? repo->getSelectedIndex() : -1;
+}
+
+void HomeScreen::clearSelectedMovieIndex() {
+    clearSelectedMovieIndexFromSearch();
+    if (repo) repo->setSelectedIndex(-1);
+}

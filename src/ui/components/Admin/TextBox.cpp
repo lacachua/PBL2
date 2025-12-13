@@ -73,6 +73,18 @@ void TextBox::setValue(const string& text) {
     value = text;
 }
 
+void TextBox::setText(const string& text) {
+    setValue(text);
+}
+
+string TextBox::getValue() const {
+    return value;
+}
+
+string TextBox::getText() const {
+    return value;
+}
+
 void TextBox::setPosition(Vector2f pos) {
     x = pos.x;
     y = pos.y;
@@ -108,6 +120,10 @@ void TextBox::setEditable(bool edit) {
     } else {
         background.setFillColor(bgColor);
     }
+}
+
+bool TextBox::isEditable() const {
+    return editable;
 }
 
 void TextBox::handleEvent(const Event& event, const RenderWindow& window) {
@@ -215,4 +231,12 @@ void TextBox::render(RenderWindow& window) {
             window.draw(cursor);
         }
     }
+}
+
+void TextBox::draw(RenderWindow& window) {
+    render(window);
+}
+
+bool TextBox::getFocus() const {
+    return isFocused;
 }

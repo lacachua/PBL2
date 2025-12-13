@@ -27,10 +27,8 @@ public:
     std::string email;
     std::string fullName;
     
-    UserRegisteredEvent(const std::string& email, const std::string& fullName)
-        : email(email), fullName(fullName) {}
-    
-    std::string getType() const override { return "UserRegistered"; }
+    UserRegisteredEvent(const std::string& email, const std::string& fullName);
+    std::string getType() const override;
 };
 
 /**
@@ -43,12 +41,9 @@ public:
     int defaultDays;     // Default days to expire for auto-provision
     int defaultQuantity; // Default quantity for auto-provision
     
-    VoucherCreatedEvent(const std::string& code, bool autoProvision = false, 
-                        int defaultDays = 30, int defaultQuantity = 1)
-        : code(code), autoProvision(autoProvision), 
-          defaultDays(defaultDays), defaultQuantity(defaultQuantity) {}
-    
-    std::string getType() const override { return "VoucherCreated"; }
+        VoucherCreatedEvent(const std::string& code, bool autoProvision = false,
+                                                int defaultDays = 30, int defaultQuantity = 1);
+        std::string getType() const override;
 };
 
 /**
@@ -70,10 +65,7 @@ public:
  */
 class AppEventSystem {
 public:
-    static AppEventSystem& getInstance() {
-        static AppEventSystem instance;
-        return instance;
-    }
+    static AppEventSystem& getInstance();
     
     // Delete copy constructor and assignment operator
     AppEventSystem(const AppEventSystem&) = delete;
@@ -83,48 +75,19 @@ public:
      * @brief Subscribe an observer to events
      * @param observer The observer to register
      */
-    void subscribe(std::shared_ptr<IAppEventObserver> observer) {
-        for (const auto& eventType : observer->getSubscribedEvents()) {
-            observers[eventType].push_back(observer);
-        }
-    }
+    void subscribe(std::shared_ptr<IAppEventObserver> observer);
     
     /**
      * @brief Unsubscribe an observer from all events
      * @param observer The observer to unregister
      */
-    void unsubscribe(std::shared_ptr<IAppEventObserver> observer) {
-        for (auto& [type, observerList] : observers) {
-            observerList.erase(
-                std::remove_if(observerList.begin(), observerList.end(),
-                    [&observer](const std::weak_ptr<IAppEventObserver>& weak) {
-                        auto locked = weak.lock();
-                        return !locked || locked == observer;
-                    }),
-                observerList.end()
-            );
-        }
-    }
+    void unsubscribe(std::shared_ptr<IAppEventObserver> observer);
     
     /**
      * @brief Publish an event to all subscribed observers
      * @param event The event to publish
      */
-    void publish(const AppEvent& event) {
-        auto it = observers.find(event.getType());
-        if (it != observers.end()) {
-            // Clean up expired weak pointers and notify observers
-            std::vector<std::weak_ptr<IAppEventObserver>>& observerList = it->second;
-            for (auto iter = observerList.begin(); iter != observerList.end();) {
-                if (auto locked = iter->lock()) {
-                    locked->onAppEvent(event);
-                    ++iter;
-                } else {
-                    iter = observerList.erase(iter);
-                }
-            }
-        }
-    }
+    void publish(const AppEvent& event);
     
 private:
     AppEventSystem() = default;

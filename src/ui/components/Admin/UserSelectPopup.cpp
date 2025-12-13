@@ -3,12 +3,31 @@
 #include <algorithm>
 #include <cstdint>
 
+UserInfo::UserInfo(const std::string& e, const std::string& n)
+    : email(e), name(n) {}
+
 UserSelectPopup::UserSelectPopup(sf::Font& font)
     : font_(font)
     , titleText_(std::make_unique<sf::Text>(font))
     , selectedCountText_(std::make_unique<sf::Text>(font))
 {
     setupUI();
+}
+
+bool UserSelectPopup::isOpen() const {
+    return isOpen_;
+}
+
+size_t UserSelectPopup::getSelectedCount() const {
+    return selectedIndices_.size();
+}
+
+void UserSelectPopup::setOnConfirm(ConfirmCallback callback) {
+    onConfirm_ = std::move(callback);
+}
+
+void UserSelectPopup::setOnCancel(CancelCallback callback) {
+    onCancel_ = std::move(callback);
 }
 
 void UserSelectPopup::setupUI() {

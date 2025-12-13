@@ -48,23 +48,23 @@ public:
     
     void setPlaceholder(const string& text);
     void setValue(const string& text);
-    void setText(const string& text) { setValue(text); }
-    string getValue() const { return value; }
-    string getText() const { return value; }
+    void setText(const string& text);
+    string getValue() const;
+    string getText() const;
     
     void setPosition(Vector2f pos);
     void setEditable(bool edit);
-    bool isEditable() const { return editable; }
+    bool isEditable() const;
     
     void handleEvent(const Event& event, const RenderWindow& window);
     void handleEvent(const Event& event);
     void update(Vector2f mousePos, bool mousePressed);
     void update(Vector2f mousePos);
     void render(RenderWindow& window);
-    void draw(RenderWindow& window) { render(window); }
+    void draw(RenderWindow& window);
     
     void setFocus(bool focus);
-    bool getFocus() const { return isFocused; }
+    bool getFocus() const;
 };
 
 #endif

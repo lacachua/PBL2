@@ -1,5 +1,20 @@
 #include "UI/components/Admin/UIInputBox.h"
 
+UIInputBox::Config::Config()
+    : width(300.f)
+    , height(36.f)
+    , padding(10.f)
+    , fontSize(13)
+    , showSearchIcon(false)
+    , borderRadius(4.f)
+    , backgroundColor(sf::Color::White)
+    , borderColor(201, 206, 214)
+    , borderFocusColor(20, 118, 172)
+    , textColor(34, 34, 34)
+    , placeholderColor(160, 160, 160)
+    , disabledBackgroundColor(240, 240, 240)
+{}
+
 UIInputBox::UIInputBox(sf::Font& font, const Config& config)
     : font_(font)
     , config_(config)
@@ -35,6 +50,38 @@ UIInputBox::UIInputBox(sf::Font& font, const Config& config)
     searchIcon_->setFillColor(config_.placeholderColor);
     
     updateVisuals();
+}
+
+const std::string& UIInputBox::getText() const {
+    return text_;
+}
+
+const std::string& UIInputBox::getPlaceholder() const {
+    return placeholder_;
+}
+
+bool UIInputBox::isEnabled() const {
+    return enabled_;
+}
+
+bool UIInputBox::isFocused() const {
+    return focused_;
+}
+
+sf::Vector2f UIInputBox::getPosition() const {
+    return position_;
+}
+
+float UIInputBox::getWidth() const {
+    return config_.width;
+}
+
+float UIInputBox::getHeight() const {
+    return config_.height;
+}
+
+void UIInputBox::setOnTextChange(TextChangeCallback callback) {
+    onTextChange_ = std::move(callback);
 }
 
 void UIInputBox::setText(const std::string& text) {

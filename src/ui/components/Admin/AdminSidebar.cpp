@@ -1,6 +1,13 @@
 #include "UI/components/Admin/AdminSidebar.h"
 #include <iostream>
 
+Vector2f SidebarRoundRectButton::getSize() const {
+    return size;
+}
+
+AdminSidebar::MenuItem::MenuItem(const string& l, AppState state, bool header, bool logout)
+    : label(l), targetState(state), isGroupHeader(header), isLogout(logout) {}
+
 SidebarRoundRectButton::SidebarRoundRectButton(Font& f, const string& text, Vector2f sz, float r)
     : font(f), size(sz), position(Vector2f()), radius(r), baseColor(Color::White),
       hoverColor(Color::White), hovered(false) {
@@ -65,6 +72,10 @@ AdminSidebar::AdminSidebar(float w, float h, const string& uName)
     
     initializeMenuItems();
     setupGraphics();
+}
+
+float AdminSidebar::getWidth() const {
+    return width;
 }
 
 void AdminSidebar::initializeMenuItems() {

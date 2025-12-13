@@ -125,5 +125,5 @@ class DetailScreen : public BaseScreen {
         void update(Vector2f, bool, AppState&) override;
         void draw(RenderWindow&) override;
         
-        String getMovieId() const { return movie.movie_id; }
+        String getMovieId() const;
 };

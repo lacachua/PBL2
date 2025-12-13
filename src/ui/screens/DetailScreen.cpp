@@ -220,3 +220,7 @@ void DetailScreen::draw(RenderWindow& window) {
     bookBtn.draw(window);
 }
 
+String DetailScreen::getMovieId() const {
+    return movie.movie_id;
+}
+

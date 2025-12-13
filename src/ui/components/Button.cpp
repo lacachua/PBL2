@@ -98,6 +98,30 @@ void Button::setColors(Color normal, Color hover, Color textCol) {
     if (text) text->setFillColor(textCol);
 }
 
+Vector2f Button::getPosition() const {
+    return box.getPosition();
+}
+
+Vector2f Button::getSize() const {
+    return box.getSize();
+}
+
+FloatRect Button::getGlobalBounds() const {
+    return box.getGlobalBounds();
+}
+
+String Button::getString() const {
+    return text ? text->getString() : "";
+}
+
+bool Button::isHovered() const {
+    return hovered;
+}
+
+bool Button::isPressed() const {
+    return pressed;
+}
+
 void Button::update(Vector2f mousePos, bool mousePressed, Color hover, Color normal) {
     hovered = box.getGlobalBounds().contains(mousePos);
 

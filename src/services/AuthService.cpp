@@ -179,6 +179,10 @@ bool AuthService::changeUserRole(const string& email, AppRole newRole) {
     return repository->updateUser(*user);
 }
 
+UserRepository* AuthService::getRepository() {
+    return repository.get();
+}
+
 void AuthService::ensureSampleUser() {
     // Backward compatibility - create a sample customer
     if (!repository->exists("test@gmail.com")) {

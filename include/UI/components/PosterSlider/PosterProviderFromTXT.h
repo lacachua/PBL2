@@ -9,6 +9,6 @@ private:
     string filePath;
 
 public:
-    PosterProviderFromTXT(const string& path) : filePath(path) {}
+    explicit PosterProviderFromTXT(const string& path);
     DLL<String> getPosterPaths() override;
 };

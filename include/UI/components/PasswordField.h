@@ -20,11 +20,11 @@ public:
     
     // State
     void setActive(bool active);
-    bool isActive() const { return active_; }
+    bool isActive() const;
     bool containsPoint(sf::Vector2f point) const;
     
     // Value
-    const std::string& getValue() const { return input_; }
+    const std::string& getValue() const;
     void setValue(const std::string& value);
     void clear();
     
@@ -39,8 +39,8 @@ public:
     
     // Bounds
     sf::FloatRect getGlobalBounds() const;
-    sf::Vector2f getPosition() const { return box_.getPosition(); }
-    sf::Vector2f getSize() const { return box_.getSize(); }
+    sf::Vector2f getPosition() const;
+    sf::Vector2f getSize() const;
 
 private:
     void updateDisplay();

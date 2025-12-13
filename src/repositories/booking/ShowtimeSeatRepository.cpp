@@ -4,6 +4,11 @@
 #include <fstream>
 #include <sstream>
 
+ShowtimeSeatStatus::ShowtimeSeatStatus() = default;
+
+ShowtimeSeatStatus::ShowtimeSeatStatus(const string& rId, const string& stId)
+    : room_id(rId), showtime_id(stId) {}
+
 ShowtimeSeatRepository::ShowtimeSeatRepository(const string& path)
     : filePath(path) {
     loadFromFile();

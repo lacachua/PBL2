@@ -4,6 +4,10 @@
 #include <locale>
 #include <codecvt>
 
+int MovieSearchManager::getMovieCount() const {
+    return movies.getSize();
+}
+
 // Map Vietnamese characters to lowercase without diacritics
 string MovieSearchManager::normalizeString(const string& str) {
     string result;

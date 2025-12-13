@@ -5,6 +5,9 @@
 using namespace std;
 using namespace sf;
 
+PosterProviderFromTXT::PosterProviderFromTXT(const string& path)
+    : filePath(path) {}
+
 DLL<String> PosterProviderFromTXT::getPosterPaths() {
     DLL<String> paths;
     ifstream file(filePath);

@@ -62,3 +62,27 @@ UserStatus User::parseStatus(const string& statusStr) {
     if (lower == "locked") return UserStatus::Locked;
     return UserStatus::Active;
 }
+
+string User::getEmail() const { return email; }
+string User::getPasswordHash() const { return passwordHash; }
+string User::getFullName() const { return fullName; }
+string User::getBirthDate() const { return birthDate; }
+string User::getPhone() const { return phone; }
+time_t User::getRegisteredAt() const { return registeredAt; }
+AppRole User::getRole() const { return role; }
+UserStatus User::getStatus() const { return status; }
+
+string User::getUsername() const { return fullName; }
+
+bool User::isActive() const { return status == UserStatus::Active; }
+bool User::isLocked() const { return status == UserStatus::Locked; }
+
+void User::setPasswordHash(const string& hash) { passwordHash = hash; }
+void User::setFullName(const string& name) { fullName = name; }
+void User::setBirthDate(const string& date) { birthDate = date; }
+void User::setPhone(const string& phoneNum) { phone = phoneNum; }
+void User::setRole(AppRole r) { role = r; }
+void User::setStatus(UserStatus s) { status = s; }
+
+void User::lock() { status = UserStatus::Locked; }
+void User::unlock() { status = UserStatus::Active; }

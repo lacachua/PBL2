@@ -3,6 +3,9 @@
 #include <iomanip>
 #include <algorithm>
 
+Seat::Seat(const string& seatId, SeatStatus st)
+    : id(seatId), status(st), shape({30.f, 30.f}) {}
+
 SeatSelection::SeatSelection(Font& f) 
     : font(f), ticketPrice(0) {
     initializeSeats();
@@ -33,6 +36,18 @@ char SeatSelection::getRowLabel(int rowIndex) const {
 
 void SeatSelection::setTicketPrice(int price) {
     ticketPrice = price;
+}
+
+DLL<string> SeatSelection::getSelectedSeats() const {
+    return selectedSeatIds;
+}
+
+int SeatSelection::getTotalPrice() const {
+    return ticketPrice * selectedSeatIds.getSize();
+}
+
+bool SeatSelection::hasSelectedSeats() const {
+    return selectedSeatIds.getSize() > 0;
 }
 
 void SeatSelection::setOccupiedSeats(const DLL<string>& occupiedIds) {

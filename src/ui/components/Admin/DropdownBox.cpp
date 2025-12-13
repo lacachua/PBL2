@@ -44,6 +44,18 @@ void DropdownBox::setEnabled(bool e) {
     }
 }
 
+bool DropdownBox::isEnabled() const {
+    return enabled;
+}
+
+bool DropdownBox::isDropdownOpen() const {
+    return isOpen;
+}
+
+Vector2f DropdownBox::getPosition() const {
+    return Vector2f(x, y);
+}
+
 void DropdownBox::setOptions(const vector<string>& opts) {
     options = opts;
     optionTexts.clear();

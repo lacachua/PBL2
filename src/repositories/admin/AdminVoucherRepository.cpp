@@ -10,6 +10,12 @@
 
 using namespace std;
 
+VoucherDefinition::VoucherDefinition(const std::string& c, int t, double v, double m, const std::string& d)
+    : code(c), type(t), value(v), minBill(m), description(d) {}
+
+UserVoucherEntry::UserVoucherEntry(const std::string& e, const std::string& c, int s, const std::string& exp, int qty)
+    : email(e), code(c), status(s), expiryDate(exp), quantity(qty) {}
+
 AdminVoucherRepository::AdminVoucherRepository(
     const string& defPath,
     const string& walletPathValue,

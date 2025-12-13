@@ -32,12 +32,12 @@ class Button {
         void setOutlineColor(Color);
         void setColors(Color normal, Color hover, Color textColor);
 
-        Vector2f getPosition() const { return box.getPosition(); }
-        Vector2f getSize() const { return box.getSize(); }
-        FloatRect getGlobalBounds() const { return box.getGlobalBounds(); }
-        String getString() const { return text ? text->getString() : ""; }
-        bool isHovered() const { return hovered; }
-        bool isPressed() const { return pressed; }
+        Vector2f getPosition() const;
+        Vector2f getSize() const;
+        FloatRect getGlobalBounds() const;
+        String getString() const;
+        bool isHovered() const;
+        bool isPressed() const;
 
         void update(Vector2f mousePos, bool mousePressed, Color hover, Color normal);
         void update(Vector2f mousePos);

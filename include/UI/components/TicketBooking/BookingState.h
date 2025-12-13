@@ -52,75 +52,10 @@ struct BookingData {
     int totalPrice = 0;
     
     // Helper method to format combo display with line breaks
-    std::string getFormattedComboDisplay(int maxPerLine = 2) const {
-        if (selectedCombos.empty()) return "Không có";
-        
-        std::string result;
-        for (size_t i = 0; i < selectedCombos.size(); i++) {
-            if (i > 0) {
-                // Add line break every maxPerLine items
-                if (i % maxPerLine == 0) {
-                    result += "\n";
-                } else {
-                    result += ", ";
-                }
-            }
-            result += selectedCombos[i].comboName;
-            if (selectedCombos[i].quantity > 1) {
-                result += " (x" + std::to_string(selectedCombos[i].quantity) + ")";
-            }
-        }
-        return result;
-    }
+    std::string getFormattedComboDisplay(int maxPerLine = 2) const;
     
     // Helper method for purchase history (max 2 combos, then "...")
-    std::string getComboDisplayForHistory() const {
-        if (selectedCombos.empty()) return "Không có";
-        
-        std::string result;
-        size_t displayCount = std::min(selectedCombos.size(), size_t(2));
-        
-        for (size_t i = 0; i < displayCount; i++) {
-            if (i > 0) result += ", ";
-            result += selectedCombos[i].comboName;
-            if (selectedCombos[i].quantity > 1) {
-                result += " (x" + std::to_string(selectedCombos[i].quantity) + ")";
-            }
-        }
-        
-        if (selectedCombos.size() > 2) {
-            result += "...";
-        }
-        
-        return result;
-    }
+    std::string getComboDisplayForHistory() const;
     
-    void clear() {
-        showtimeId.clear();
-        movieId.clear();
-        movieName.clear();
-        roomId.clear();
-        roomName.clear();
-        date.clear();
-        time.clear();
-        ticketPrice = 0;
-        
-        selectedSeats.clear();
-        seatsDisplay.clear();
-        totalSeats = 0;
-        
-        selectedCombos.clear();
-        combosDisplay.clear();
-        comboTotalPrice = 0;
-
-        voucherCode.clear();
-        voucherDiscount = 0;
-        
-        customerName.clear();
-        customerEmail.clear();
-        customerPhone.clear();
-        
-        ticketId.clear();
-        totalPrice = 0;
-    }
+    void clear();
 };

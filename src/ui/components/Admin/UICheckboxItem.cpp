@@ -1,6 +1,22 @@
 #include "UI/components/Admin/UICheckboxItem.h"
 #include <cstdint>
 
+UICheckboxItem::Config::Config()
+    : width(400.f)
+    , height(36.f)
+    , checkboxSize(18.f)
+    , padding(10.f)
+    , fontSize(13)
+    , bgColor(sf::Color::White)
+    , bgHoverColor(235, 244, 252)
+    , bgSelectedColor(214, 232, 248)
+    , checkboxColor(sf::Color::White)
+    , checkboxCheckedColor(20, 118, 172)
+    , borderColor(210, 216, 224)
+    , textColor(33, 37, 41)
+    , secondaryTextColor(100, 100, 100)
+{}
+
 UICheckboxItem::UICheckboxItem(sf::Font& font, const Config& config)
     : font_(font)
     , config_(config)
@@ -61,6 +77,10 @@ void UICheckboxItem::setChecked(bool checked) {
     }
 }
 
+bool UICheckboxItem::isChecked() const {
+    return checked_;
+}
+
 void UICheckboxItem::toggle() {
     checked_ = !checked_;
     updateVisuals();
@@ -72,6 +92,14 @@ void UICheckboxItem::toggle() {
 void UICheckboxItem::setPosition(sf::Vector2f pos) {
     position_ = pos;
     updateVisuals();
+}
+
+sf::Vector2f UICheckboxItem::getPosition() const {
+    return position_;
+}
+
+float UICheckboxItem::getHeight() const {
+    return config_.height;
 }
 
 sf::FloatRect UICheckboxItem::getBounds() const {
@@ -92,6 +120,18 @@ void UICheckboxItem::updateHover(sf::Vector2f mousePos) {
     if (wasHovered != hovered_) {
         updateVisuals();
     }
+}
+
+bool UICheckboxItem::isHovered() const {
+    return hovered_;
+}
+
+void UICheckboxItem::setOnToggle(ToggleCallback callback) {
+    onToggle_ = std::move(callback);
+}
+
+void UICheckboxItem::setAlternateBackground(bool alternate) {
+    alternateBackground_ = alternate;
 }
 
 void UICheckboxItem::render(sf::RenderTarget& target) {

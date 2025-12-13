@@ -174,6 +174,30 @@ VoucherDisplayState VoucherInput::getDisplayState() const {
     return state;
 }
 
+int VoucherInput::getDiscountValue() const {
+    return voucherApplied ? discountValue : 0;
+}
+
+bool VoucherInput::isApplied() const {
+    return voucherApplied;
+}
+
+string VoucherInput::getAppliedCode() const {
+    return appliedVoucherCode;
+}
+
+bool VoucherInput::hasLoginPopup() const {
+    return loginRequiredPopup != nullptr;
+}
+
+LoginRequiredPopup* VoucherInput::getLoginPopup() {
+    return loginRequiredPopup.get();
+}
+
+void VoucherInput::closeLoginPopup() {
+    loginRequiredPopup.reset();
+}
+
 void VoucherInput::reset() {
     inputText.clear();
     inputActive = false;

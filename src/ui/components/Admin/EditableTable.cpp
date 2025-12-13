@@ -2,6 +2,9 @@
 #include <algorithm>
 #include <cmath>
 
+EditableTable::Cell::Cell(const string& val, bool editable)
+    : value(val), isEditable(editable) {}
+
 EditableTable::EditableTable(Font& font, float x, float y, float width, float height)
     : font(font), x(x), y(y), width(width), height(height) {
     
@@ -30,6 +33,22 @@ void EditableTable::setHeaders(const vector<string>& headers) {
 
 void EditableTable::setColumnWidths(const vector<int>& widths) {
     this->columnWidths = widths;
+}
+
+void EditableTable::setOnCellChange(function<bool(int, int, const string&)> callback) {
+    onCellChange = std::move(callback);
+}
+
+void EditableTable::setOnRowSelect(function<void(int)> callback) {
+    onRowSelect = std::move(callback);
+}
+
+int EditableTable::getSelectedRow() const {
+    return selectedRow;
+}
+
+int EditableTable::getRowCount() const {
+    return static_cast<int>(rows.size());
 }
 
 void EditableTable::calculateColumnWidths() {

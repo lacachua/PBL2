@@ -25,8 +25,8 @@ public:
     void setTitleWithDate(const string& title, const string& dateStr);  // Tiêu đề (ngày/tháng)
     void setValue(const string& value);
 
-    Vector2f getPosition() const { return box.getPosition(); }
-    Vector2f getSize() const { return box.getSize(); }
+    Vector2f getPosition() const;
+    Vector2f getSize() const;
 
     void render(RenderTarget& target) const;
 };

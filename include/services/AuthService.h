@@ -37,7 +37,7 @@ public:
     bool lockUserAccount(const string&);
     bool unlockUserAccount(const string&);
     bool changeUserRole(const string&, AppRole);
-    UserRepository* getRepository() { return repository.get(); }
+    UserRepository* getRepository();
 
     void ensureSampleUser();
     void ensureDefaultAdminAndStaff();

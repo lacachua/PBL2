@@ -30,7 +30,7 @@ public:
     void update(Vector2f mousePos);
     bool contains(Vector2f point) const;
     void draw(RenderWindow& window) const;
-    Vector2f getSize() const { return size; }
+    Vector2f getSize() const;
 };
 
 class AdminSidebar {
@@ -41,8 +41,7 @@ private:
         bool isGroupHeader;
         bool isLogout;
         
-        MenuItem(const string& l, AppState state, bool header = false, bool logout = false)
-            : label(l), targetState(state), isGroupHeader(header), isLogout(logout) {}
+        MenuItem(const string& l, AppState state, bool header = false, bool logout = false);
     };
     
     float width;
@@ -97,5 +96,5 @@ public:
     void update(const RenderWindow& window);
     void render(RenderWindow& window);
     
-    float getWidth() const { return width; }
+    float getWidth() const;
 };

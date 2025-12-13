@@ -23,7 +23,7 @@ public:
     void updateRecord(int index, const vector<string>& record);
     void deleteRecord(int index);
 
-    vector<vector<string>> getAllData() const { return data; }
+    vector<vector<string>> getAllData() const;
     vector<string> getRecord(int index) const;
-    int getRecordCount() const { return (int)data.size(); }
+    int getRecordCount() const;
 };

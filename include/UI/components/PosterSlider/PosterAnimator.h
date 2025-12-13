@@ -15,6 +15,6 @@ private:
 public:
     void start(float, int direction = 0);
     void update(float, int&, int, int, float, function<void(int, float)>);
-    bool isAnimating() const { return animating; }
+    bool isAnimating() const;
     float easeInOutCubic(float);
 };

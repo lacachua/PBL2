@@ -89,13 +89,13 @@ public:
      * Check if the search input is active (focused)
      * @return true if active
      */
-    bool isInputActive() const { return isActive; }
+    bool isInputActive() const;
     
     /**
      * Get the current input string
      * @return Current input string
      */
-    string getInput() const { return inputString; }
+    string getInput() const;
     
     /**
      * Set the position of the search bar

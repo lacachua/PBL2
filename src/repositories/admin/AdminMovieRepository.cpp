@@ -16,6 +16,14 @@ AdminMovieRepository::AdminMovieRepository(const string& path) : filePath(path) 
     loadFromFile();
 }
 
+vector<vector<string>> AdminMovieRepository::getAllData() const {
+    return data;
+}
+
+int AdminMovieRepository::getRecordCount() const {
+    return static_cast<int>(data.size());
+}
+
 vector<string> AdminMovieRepository::splitString(const string& str, char delimiter) {
     vector<string> tokens;
     stringstream ss(str);

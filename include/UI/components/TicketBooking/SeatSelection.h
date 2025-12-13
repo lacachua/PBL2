@@ -17,8 +17,7 @@ struct Seat {
     SeatStatus status;
     RectangleShape shape;
     
-    Seat(const string& seatId, SeatStatus st = SeatStatus::AVAILABLE) 
-        : id(seatId), status(st), shape({30.f, 30.f}) {}
+    Seat(const string& seatId, SeatStatus st = SeatStatus::AVAILABLE);
 };
 
 class SeatSelection {
@@ -51,9 +50,9 @@ public:
     void draw(RenderWindow&);
     
     // Getters
-    DLL<string> getSelectedSeats() const { return selectedSeatIds; }
-    int getTotalPrice() const { return ticketPrice * selectedSeatIds.getSize(); }
-    bool hasSelectedSeats() const { return selectedSeatIds.getSize() > 0; }
+    DLL<string> getSelectedSeats() const;
+    int getTotalPrice() const;
+    bool hasSelectedSeats() const;
     int  getSelectedCount() const;   // số ghế đang chọn
     int  getUnitPrice()     const;   // giá 1 ghế
     

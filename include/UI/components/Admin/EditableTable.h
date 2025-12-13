@@ -26,8 +26,7 @@ public:
         string value;
         bool isEditable;
         
-        Cell(const string& val = "", bool editable = true) 
-            : value(val), isEditable(editable) {}
+        Cell(const string& val = "", bool editable = true);
     };
     
 private:
@@ -89,12 +88,12 @@ public:
     void render(RenderWindow& window);
     
     // Callbacks
-    void setOnCellChange(function<bool(int, int, const string&)> callback) { onCellChange = callback; }
-    void setOnRowSelect(function<void(int)> callback) { onRowSelect = callback; }
+    void setOnCellChange(function<bool(int, int, const string&)> callback);
+    void setOnRowSelect(function<void(int)> callback);
     
-    int getSelectedRow() const { return selectedRow; }
+    int getSelectedRow() const;
     vector<string> getRowData(int row) const;
-    int getRowCount() const { return rows.size(); }
+    int getRowCount() const;
     
     // Update/delete operations
     void updateRow(int row, const vector<string>& newData);

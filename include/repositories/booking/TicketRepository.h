@@ -32,8 +32,7 @@ private:
     string getCurrentTime();
 
 public:
-    TicketRepository(const string& filepath = "../data/tickets.txt")
-        : filename(filepath) {}
+    TicketRepository(const string& filepath = "../data/tickets.txt");
 
     Ticket createTicket(
         const string& showtimeId,

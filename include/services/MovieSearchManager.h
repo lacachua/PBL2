@@ -33,5 +33,5 @@ public:
     MovieSearchManager();
     void loadMovies(const DLL<MovieDetail>& movieList);  // ✅ Thay đổi parameter
     vector<SearchResult> searchMovies(const string& query, int limit = 5);
-    int getMovieCount() const { return movies.getSize(); }  // ✅ Đổi từ size() sang getSize()
+    int getMovieCount() const;  // ✅ Đổi từ size() sang getSize()
 };

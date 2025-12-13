@@ -252,6 +252,14 @@ void GlobalSearchBar::clear() {
     suggestions.clear();
 }
 
+bool GlobalSearchBar::isInputActive() const {
+    return isActive;
+}
+
+string GlobalSearchBar::getInput() const {
+    return inputString;
+}
+
 void GlobalSearchBar::setPosition(Vector2f position) {
     originalPosition = position;
     inputBox.setPosition(position);

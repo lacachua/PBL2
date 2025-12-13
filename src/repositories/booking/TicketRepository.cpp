@@ -6,6 +6,9 @@
 #include <fstream>
 #include <sstream>
 
+TicketRepository::TicketRepository(const string& filepath)
+    : filename(filepath) {}
+
 string TicketRepository::generateTicketId() {
     ifstream file(filename);
     int maxId = 0;
