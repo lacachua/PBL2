@@ -15,5 +15,5 @@ vuvannguyen1@gmail.net|24f1eba07df13783|Nguyễn Vũ Đẹp Trai|01/01/2025|0335
 test@gmail.com|85c23cd3e08d3d74|Test User|01/01/2000|0901234567|1761396484|customer|active
 vanvu1@gmail.com|24f1eba07df13783|Nguyễn Văn Vũ Đây|07/06/2006|0335912027|1762671535|customer|active
 vanvu41ht1@gmail.com|24f1eba07df13783|Nguyễn Văn Vũ|07/06/2006|0335912027|1761982643|customer|active
-vanvu41ht2@gmail.com|24f1eba07df13783|Nguyễn Văn A|07/06/2006|0335912027|1762482328|customer|locked
 staff01@cinexine.vn|e2ab2cb39b56a19b|STAFF|01/01/1995|0901111111|1760000001|staff|active
+vanvu41ht2@gmail.com|24f1eba07df13783|Nguyễn Văn A|07/06/2006|0335912027|1762482328|customer|locked

@@ -1,0 +1,162 @@
+#include "repositories/booking/TicketRepository.h"
+
+#include <chrono>
+#include <cstdio>
+#include <ctime>
+#include <fstream>
+#include <sstream>
+
+string TicketRepository::generateTicketId() {
+    ifstream file(filename);
+    int maxId = 0;
+
+    if (file.is_open()) {
+        string line;
+        getline(file, line);
+        while (getline(file, line)) {
+            if (line.empty()) continue;
+
+            stringstream ss(line);
+            string ticketId;
+            getline(ss, ticketId, '|');
+
+            if (ticketId.length() > 1 && ticketId[0] == 'T') {
+                try {
+                    int id = stoi(ticketId.substr(1));
+                    if (id > maxId) maxId = id;
+                } catch (...) {
+                }
+            }
+        }
+        file.close();
+    }
+
+    maxId++;
+    char buffer[10];
+    snprintf(buffer, sizeof(buffer), "T%04d", maxId);
+    return string(buffer);
+}
+
+string TicketRepository::getCurrentDate() {
+    auto now = chrono::system_clock::now();
+    time_t now_c = chrono::system_clock::to_time_t(now);
+    tm* localTime = localtime(&now_c);
+    char buffer[11];
+    strftime(buffer, sizeof(buffer), "%d/%m/%Y", localTime);
+    return string(buffer);
+}
+
+string TicketRepository::getCurrentTime() {
+    auto now = chrono::system_clock::now();
+    time_t now_c = chrono::system_clock::to_time_t(now);
+    tm* localTime = localtime(&now_c);
+    char buffer[9];
+    strftime(buffer, sizeof(buffer), "%H:%M:%S", localTime);
+    return string(buffer);
+}
+
+Ticket TicketRepository::createTicket(
+    const string& showtimeId,
+    const string& title,
+    const string& date,
+    const string& time,
+    const string& roomName,
+    const string& booked,
+    const string& comboName,
+    int price,
+    const string& email,
+    const string& fullName
+) {
+    Ticket ticket;
+    ticket.ticketId = generateTicketId();
+    ticket.showtimeId = showtimeId;
+    ticket.title = title;
+    ticket.date = date;
+    ticket.time = time;
+    ticket.roomName = roomName;
+    ticket.booked = booked;
+    ticket.comboName = comboName;
+    ticket.price = price;
+    ticket.email = email;
+    ticket.fullName = fullName;
+    ticket.bookedDate = getCurrentDate();
+    ticket.bookedTime = getCurrentTime();
+    saveTicket(ticket);
+    return ticket;
+}
+
+void TicketRepository::saveTicket(const Ticket& ticket) {
+    // Mở file với binary mode để đảm bảo UTF-8 được lưu đúng
+    ofstream file(filename, ios::app | ios::binary);
+    if (!file.is_open()) return;
+
+    // Nếu file trống, ghi header với UTF-8 BOM
+    file.seekp(0, ios::end);
+    if (file.tellp() == 0) {
+        const char bom[] = {(char)0xEF, (char)0xBB, (char)0xBF};
+        file.write(bom, 3);
+        file << "ticketId|showtimeId|title|date|time|roomName|booked|comboName|price|email|fullName|bookedDate|bookedTime\n";
+    }
+
+    file << ticket.ticketId << "|"
+         << ticket.showtimeId << "|"
+         << ticket.title << "|"
+         << ticket.date << "|"
+         << ticket.time << "|"
+         << ticket.roomName << "|"
+         << ticket.booked << "|"
+         << ticket.comboName << "|"
+         << ticket.price << "|"
+         << ticket.email << "|"
+         << ticket.fullName << "|"
+         << ticket.bookedDate << "|"
+         << ticket.bookedTime << "\n";
+
+    file.close();
+}
+
+String TicketRepository::getTitleUtf8(const Ticket& t) { return String::fromUtf8(t.title.begin(), t.title.end()); }
+String TicketRepository::getRoomUtf8(const Ticket& t) { return String::fromUtf8(t.roomName.begin(), t.roomName.end()); }
+String TicketRepository::getFullNameUtf8(const Ticket& t) { return String::fromUtf8(t.fullName.begin(), t.fullName.end()); }
+String TicketRepository::getComboUtf8(const Ticket& t) { return String::fromUtf8(t.comboName.begin(), t.comboName.end()); }
+String TicketRepository::getDateUtf8(const Ticket& t) { return String::fromUtf8(t.date.begin(), t.date.end()); }
+String TicketRepository::getTimeUtf8(const Ticket& t) { return String::fromUtf8(t.time.begin(), t.time.end()); }
+String TicketRepository::getBookedUtf8(const Ticket& t) { return String::fromUtf8(t.booked.begin(), t.booked.end()); }
+
+String TicketRepository::getComboForHistoryUtf8(const Ticket& t) {
+    if (t.comboName.empty() || t.comboName == "Không có") {
+        return String::fromUtf8(t.comboName.begin(), t.comboName.end());
+    }
+
+    string comboStr = t.comboName;
+    string result;
+    int comboCount = 0;
+    size_t pos = 0;
+
+    while (pos < comboStr.length()) {
+        size_t commaPos = comboStr.find(',', pos);
+        if (commaPos == string::npos) commaPos = comboStr.length();
+
+        string item = comboStr.substr(pos, commaPos - pos);
+
+        size_t start = item.find_first_not_of(" \t");
+        size_t end = item.find_last_not_of(" \t");
+        if (start != string::npos) {
+            item = item.substr(start, end - start + 1);
+        }
+
+        if (comboCount < 2) {
+            if (comboCount > 0) result += ", ";
+            result += item;
+        }
+
+        comboCount++;
+        pos = commaPos + 1;
+    }
+
+    if (comboCount > 2) {
+        result += "...";
+    }
+
+    return String::fromUtf8(result.begin(), result.end());
+}
