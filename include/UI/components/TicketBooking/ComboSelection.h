@@ -1,6 +1,6 @@
 #pragma once
 #include <SFML/Graphics.hpp>
-#include "UI/components/TicketBooking/ComboRepository.h"
+#include "repositories/booking/ComboRepository.h"
 #include "data-structures/DLL.h"
 using namespace sf;
 using namespace std;

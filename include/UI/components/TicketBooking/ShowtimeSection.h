@@ -1,7 +1,7 @@
 #pragma once
 #include <SFML/Graphics.hpp>
 #include "UI/components/Button.h"
-#include "UI/components/TicketBooking/ShowtimeRepository.h"
+#include "repositories/booking/ShowtimeRepository.h"
 #include "data-structures/DLL.h"
 using namespace sf;
 

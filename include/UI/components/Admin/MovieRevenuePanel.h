@@ -11,7 +11,7 @@
 #include "repositories/admin/AdminTicketRepository.h"
 #include "UI/components/Admin/DropdownBox.h"
 #include "UI/components/Admin/RoundRectButton.h"
-#include "UI/components/TicketBooking/ShowtimeRepository.h"
+#include "repositories/booking/ShowtimeRepository.h"
 
 struct MovieRevenueEntry {
     std::string title;

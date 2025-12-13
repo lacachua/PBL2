@@ -1,6 +1,6 @@
 #pragma once
 #include <SFML/Graphics.hpp>
-#include "TicketRepository.h"
+#include "repositories/booking/TicketRepository.h"
 #include "BookingState.h"  // For BookingData struct
 #include "../Button.h"
 #include "core/AppState.h"

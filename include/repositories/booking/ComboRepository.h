@@ -1,6 +1,9 @@
 #pragma once
+
 #include <SFML/System/String.hpp>
+
 #include "data-structures/DLL.h"
+
 using namespace sf;
 using namespace std;
 

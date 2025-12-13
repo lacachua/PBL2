@@ -2,7 +2,7 @@
 #include <SFML/Graphics.hpp>
 #include <string>
 #include <vector>
-#include "UI/components/TicketBooking/TicketRepository.h"
+#include "repositories/booking/TicketRepository.h"
 #include <filesystem>
 using namespace sf;
 using namespace std;

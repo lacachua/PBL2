@@ -2,7 +2,7 @@
 
 #include <string>
 #include "data-structures/DLL.h"
-#include "UI/components/TicketBooking/TicketRepository.h"
+#include "repositories/booking/TicketRepository.h"
 
 class AdminTicketRepository {
 private:

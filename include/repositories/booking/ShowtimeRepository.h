@@ -1,6 +1,9 @@
 #pragma once
+
 #include <SFML/Graphics.hpp>
+
 #include "data-structures/DLL.h"
+
 using namespace sf;
 
 struct Showtime {
@@ -14,5 +17,5 @@ struct Showtime {
 
 class ShowtimeRepository {
 public:
-    DLL<Showtime> loadFromFile(const String&);
+    DLL<Showtime> loadFromFile(const String& path);
 };

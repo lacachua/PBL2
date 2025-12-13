@@ -1,11 +1,14 @@
 #pragma once
-#include <string>
-#include <fstream>
-#include <sstream>
+
 #include <chrono>
-#include <iomanip>
 #include <ctime>
-#include <SFML/System/String.hpp>   // cần include
+#include <fstream>
+#include <iomanip>
+#include <sstream>
+#include <string>
+
+#include <SFML/System/String.hpp>
+
 using namespace std;
 using namespace sf;
 
@@ -44,7 +47,8 @@ private:
                     try {
                         int id = stoi(ticketId.substr(1));
                         if (id > maxId) maxId = id;
-                    } catch (...) {}
+                    } catch (...) {
+                    }
                 }
             }
             file.close();
@@ -110,17 +114,16 @@ public:
     void saveTicket(const Ticket& ticket) {
         // Mở file với binary mode để đảm bảo UTF-8 được lưu đúng
         ofstream file(filename, ios::app | ios::binary);
-        if (!file.is_open()) return;    
-        
+        if (!file.is_open()) return;
+
         // Nếu file trống, ghi header với UTF-8 BOM
         file.seekp(0, ios::end);
         if (file.tellp() == 0) {
-            // Write UTF-8 BOM
-            const char bom[] = { (char)0xEF, (char)0xBB, (char)0xBF };
+            const char bom[] = {(char)0xEF, (char)0xBB, (char)0xBF};
             file.write(bom, 3);
             file << "ticketId|showtimeId|title|date|time|roomName|booked|comboName|price|email|fullName|bookedDate|bookedTime\n";
         }
-        
+
         file << ticket.ticketId << "|"
              << ticket.showtimeId << "|"
              << ticket.title << "|"
@@ -137,9 +140,7 @@ public:
         file.close();
     }
 
-    // =======================
     // Getters trả về dạng UTF-8 (sf::String)
-    // =======================
     static String getTitleUtf8(const Ticket& t) { return String::fromUtf8(t.title.begin(), t.title.end()); }
     static String getRoomUtf8(const Ticket& t) { return String::fromUtf8(t.roomName.begin(), t.roomName.end()); }
     static String getFullNameUtf8(const Ticket& t) { return String::fromUtf8(t.fullName.begin(), t.fullName.end()); }
@@ -147,48 +148,43 @@ public:
     static String getDateUtf8(const Ticket& t) { return String::fromUtf8(t.date.begin(), t.date.end()); }
     static String getTimeUtf8(const Ticket& t) { return String::fromUtf8(t.time.begin(), t.time.end()); }
     static String getBookedUtf8(const Ticket& t) { return String::fromUtf8(t.booked.begin(), t.booked.end()); }
-    
-    // ✅ Format combo for purchase history (max 2 combos, then "...")
+
+    // Format combo for purchase history (max 2 combos, then "...")
     static String getComboForHistoryUtf8(const Ticket& t) {
         if (t.comboName.empty() || t.comboName == "Không có") {
             return String::fromUtf8(t.comboName.begin(), t.comboName.end());
         }
-        
-        // Parse combo string: "Combo A x2, Combo B x1, Combo C x3"
+
         string comboStr = t.comboName;
         string result;
         int comboCount = 0;
         size_t pos = 0;
-        
+
         while (pos < comboStr.length()) {
-            // Find next comma
             size_t commaPos = comboStr.find(',', pos);
             if (commaPos == string::npos) commaPos = comboStr.length();
-            
-            // Extract this combo item
+
             string item = comboStr.substr(pos, commaPos - pos);
-            
-            // Trim whitespace
+
             size_t start = item.find_first_not_of(" \t");
             size_t end = item.find_last_not_of(" \t");
             if (start != string::npos) {
                 item = item.substr(start, end - start + 1);
             }
-            
+
             if (comboCount < 2) {
                 if (comboCount > 0) result += ", ";
                 result += item;
             }
-            
+
             comboCount++;
             pos = commaPos + 1;
         }
-        
-        // Add "..." if more than 2 combos
+
         if (comboCount > 2) {
             result += "...";
         }
-        
+
         return String::fromUtf8(result.begin(), result.end());
     }
 };

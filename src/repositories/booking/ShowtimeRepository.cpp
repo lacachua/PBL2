@@ -1,4 +1,5 @@
-#include "UI/components/TicketBooking/ShowtimeRepository.h"
+#include "repositories/booking/ShowtimeRepository.h"
+
 #include <fstream>
 #include <sstream>
 
@@ -30,7 +31,6 @@ DLL<Showtime> ShowtimeRepository::loadFromFile(const String& path) {
         getline(ss, token, '|');
         s.time = token;
 
-        // Price
         if (getline(ss, token, '|')) {
             try {
                 s.price = stoi(token);

@@ -3,8 +3,8 @@
 #include <string>
 #include <vector>
 #include <memory>
-#include "UI/components/TicketBooking/TicketRepository.h"
-#include "UI/components/TicketBooking/ShowtimeSeatRepository.h"
+#include "repositories/booking/TicketRepository.h"
+#include "repositories/booking/ShowtimeSeatRepository.h"
 #include "services/VoucherManager.h"
 #include "repositories/UserRepository.h"
 

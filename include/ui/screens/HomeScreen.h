@@ -1,4 +1,4 @@
-// #pragma once
+﻿// #pragma once
 // #include "UI/components/TextButton.h"
 // #include "core/AppState.h"
 // #include "UI/components/SearchBox.h"
@@ -43,7 +43,7 @@
 
 #pragma once
 #include "BaseScreen.h"
-#include "models/MovieRepository.h"
+#include "repositories/MovieRepository.h"
 #include "core/AppState.h"
 #include "UI/components/PosterSlider/PosterSlider.h"
 #include <memory>
@@ -61,14 +61,14 @@ private:
 public:
     HomeScreen(Font&, RenderWindow&);
     void update(Vector2f, bool, AppState&) override;
-    void handleEvent(Vector2f, bool, AppState&, const Event* event = nullptr);  // ✅ Thêm Event parameter
+    void handleEvent(Vector2f, bool, AppState&, const Event* event = nullptr);  // âœ… ThÃªm Event parameter
     void draw(RenderWindow&) override;
-    void drawHeaderOnly(RenderWindow&);  // ✅ Vẽ chỉ header không có slider
+    void drawHeaderOnly(RenderWindow&);  // âœ… Váº½ chá»‰ header khÃ´ng cÃ³ slider
 
-    // ✅ setter để App.cpp báo user đã đăng nhập
+    // âœ… setter Ä‘á»ƒ App.cpp bÃ¡o user Ä‘Ã£ Ä‘Äƒng nháº­p
     void setLoggedUser(const string& username);
     
-    // ✅ Getters để App lấy thông tin phim đã chọn
+    // âœ… Getters Ä‘á»ƒ App láº¥y thÃ´ng tin phim Ä‘Ã£ chá»n
     MovieRepository* getRepository() const { return repo.get(); }
     int getSelectedMovieIndex() const { 
         // Check if movie selected from global search first
@@ -82,3 +82,4 @@ public:
         if (repo) repo->setSelectedIndex(-1);
     }
 };
+
