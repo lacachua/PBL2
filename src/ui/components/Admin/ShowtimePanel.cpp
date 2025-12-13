@@ -1,9 +1,9 @@
 #include "UI/components/Admin/ShowtimePanel.h"
 
 #include "UI/components/Admin/RoundedRectRenderer.h"
+#include "repositories/admin/TextTableRepository.h"
 #include <algorithm>
 #include <cctype>
-#include <fstream>
 #include <iomanip>
 #include <iostream>
 #include <set>
@@ -243,15 +243,14 @@ void ShowtimePanel::loadData() {
 }
 
 void ShowtimePanel::loadMovies() {
-    ifstream file(moviesFile);
-    if (!file.is_open()) {
+    TextTableRepository repo;
+    const vector<string> lines = repo.readDataLinesSkipHeader(moviesFile);
+    if (lines.empty()) {
         cerr << "[ShowtimePanel] Cannot open movies file: " << moviesFile << "\n";
         return;
     }
 
-    string line;
-    getline(file, line);
-    while (getline(file, line)) {
+    for (const auto& line : lines) {
         auto parts = splitLine(line, '|');
         if (parts.size() < 7) continue;
         MovieInfo info;
@@ -266,15 +265,14 @@ void ShowtimePanel::loadMovies() {
 }
 
 void ShowtimePanel::loadRooms() {
-    ifstream file(roomsFile);
-    if (!file.is_open()) {
+    TextTableRepository repo;
+    const vector<string> lines = repo.readDataLinesSkipHeader(roomsFile);
+    if (lines.empty()) {
         cerr << "[ShowtimePanel] Cannot open rooms file: " << roomsFile << "\n";
         return;
     }
 
-    string line;
-    getline(file, line);
-    while (getline(file, line)) {
+    for (const auto& line : lines) {
         auto parts = splitLine(line, '|');
         if (parts.size() < 2) continue;
         string id = trim(parts[0]);
@@ -286,17 +284,12 @@ void ShowtimePanel::loadRooms() {
 }
 
 void ShowtimePanel::loadHistory() {
-    ifstream file(historyFile);
-    if (!file.is_open()) {
-        return;
-    }
+    TextTableRepository repo;
+    const vector<string> lines = repo.readDataLinesSkipHeader(historyFile);
+    if (lines.empty()) return;
 
-    string line;
-    while (getline(file, line)) {
+    for (const auto& line : lines) {
         if (line.empty()) continue;
-        if (line.find("showtime_id") != string::npos) {
-            continue;
-        }
         auto parts = splitLine(line, '|');
         if (auto item = buildShowtime(parts)) {
             archivedIds.insert(item->showtimeId);
@@ -308,21 +301,15 @@ void ShowtimePanel::loadHistory() {
 }
 
 void ShowtimePanel::loadShowtimes() {
-    ifstream file(showtimeFile);
-    if (!file.is_open()) {
+    TextTableRepository repo;
+    const vector<string> lines = repo.readDataLinesSkipHeader(showtimeFile);
+    if (lines.empty()) {
         cerr << "[ShowtimePanel] Cannot open showtimes file: " << showtimeFile << "\n";
         return;
     }
 
-    string line;
-    bool firstLine = true;
     vector<TimelineItem> pendingHistory;
-    while (getline(file, line)) {
-        if (firstLine && line.find("showtime_id") != string::npos) {
-            firstLine = false;
-            continue;
-        }
-        firstLine = false;
+    for (const auto& line : lines) {
         auto parts = splitLine(line, '|');
         if (auto item = buildShowtime(parts)) {
             if (loadedShowtimeIds.insert(item->showtimeId).second) {
@@ -795,23 +782,12 @@ void ShowtimePanel::appendHistory(const vector<TimelineItem>& entries) {
         return;
     }
 
-    bool hasContent = false;
-    {
-        ifstream check(historyFile);
-        hasContent = check.good() && check.peek() != EOF;
-    }
-
-    ofstream file(historyFile, ios::app);
-    if (!file.is_open()) {
-        cerr << "[ShowtimePanel] Cannot append history file: " << historyFile << "\n";
-        return;
-    }
-
-    if (!hasContent) {
-        file << "showtime_id|movie_id|room_id|date|time|price\n";
-    }
-
+    vector<string> lines;
+    lines.reserve(entries.size());
     for (const auto& entry : entries) {
-        file << serializeShowtime(entry) << '\n';
+        lines.push_back(serializeShowtime(entry));
     }
+
+    TextTableRepository repo;
+    repo.appendDataLines(historyFile, "showtime_id|movie_id|room_id|date|time|price", lines);
 }

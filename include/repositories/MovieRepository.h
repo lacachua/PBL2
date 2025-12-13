@@ -61,6 +61,16 @@ public:
         loadMovies();
     }
 
+    // Returns movieId if not found
+    sf::String getMovieTitleById(const sf::String& movieId) const {
+        for (int i = 0; i < movies.getSize(); ++i) {
+            if (movies[i].movie_id == movieId) {
+                return movies[i].title;
+            }
+        }
+        return movieId;
+    }
+
     DLL<sf::String> getPosterPaths() override {
         DLL<sf::String> paths;
         for (int i = 0; i < movies.getSize(); i++)

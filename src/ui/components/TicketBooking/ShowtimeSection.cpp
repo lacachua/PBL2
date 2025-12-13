@@ -1,8 +1,9 @@
 #include "UI/components/TicketBooking/ShowtimeSection.h"
+#include "repositories/MovieRepository.h"
+#include "repositories/RoomRepository.h"
 #include <ctime>
 #include <cstdio>
 #include <sstream>
-#include <fstream>
 #include <algorithm>
 #include <vector>
 using namespace std;
@@ -271,55 +272,16 @@ void ShowtimeSection::draw(RenderWindow& window) {
     }
 }
 
-// =======================
-// Helper function để lấy tên phim từ movie_id
-// =======================
-static String getMovieTitleFromId(const String& movieId) {
-    ifstream file("../data/movies.txt");
-    if (!file.is_open()) return movieId;
-    
-    string line;
-    getline(file, line);
-    
-    while (getline(file, line)) {
-        stringstream ss(line);
-        string id, title;
-        
-        getline(ss, id, '|');
-        getline(ss, title, '|');
-        
-        if (String(id) == movieId) {
-            file.close();
-            return String::fromUtf8(title.begin(), title.end());
-        }
-    }
-    
-    file.close();
-    return movieId;
+namespace {
+MovieRepository& getMovieRepo() {
+    static MovieRepository repo("../data/movies.txt");
+    return repo;
 }
 
-static String getRoomNameFromId(const String& roomId) {
-    ifstream file("../data/rooms.txt");
-    if (!file.is_open()) return roomId;
-    
-    string line;
-    getline(file, line);
-    
-    while (getline(file, line)) {
-        stringstream ss(line);
-        string id, room_name;
-        
-        getline(ss, id, '|');
-        getline(ss, room_name, '|');
-        
-        if (String(id) == roomId) {
-            file.close();
-            return String::fromUtf8(room_name.begin(), room_name.end());
-        }
-    }
-    
-    file.close();
-    return roomId;
+RoomRepository& getRoomRepo() {
+    static RoomRepository repo("../data/rooms.txt");
+    return repo;
+}
 }
 
 // =======================
@@ -329,11 +291,11 @@ String ShowtimeSection::getSelectedMovieName() const {
     if (selectedShowtimeIndex >= 0 &&
         selectedShowtimeIndex < filteredShowtimes.getSize()) {
         String movieId = filteredShowtimes[selectedShowtimeIndex].movie_id;
-        return getMovieTitleFromId(movieId);
+        return getMovieRepo().getMovieTitleById(movieId);
     }
     // Nếu chưa chọn suất chiếu nhưng có filterMovieId thì vẫn lấy tên phim
     if (!filterMovieId.isEmpty()) {
-        return getMovieTitleFromId(filterMovieId);
+        return getMovieRepo().getMovieTitleById(filterMovieId);
     }
     return String();
 }
@@ -379,7 +341,7 @@ String ShowtimeSection::getSelectedRoomName() const {
     if (selectedShowtimeIndex >= 0 &&
         selectedShowtimeIndex < filteredShowtimes.getSize()) {
             String roomId = filteredShowtimes[selectedShowtimeIndex].room_id;
-            return getRoomNameFromId(roomId);
+            return getRoomRepo().getRoomNameById(roomId);
         }
     return String();
 }

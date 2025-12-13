@@ -1,12 +1,13 @@
 #include "UI/components/Admin/OverviewPanel.h"
 
+#include "repositories/UserRepository.h"
+
 #include <algorithm>
 #include <array>
 #include <cmath>
 #include <cstdio>
 #include <ctime>
 #include <filesystem>
-#include <fstream>
 #include <map>
 #include <sstream>
 
@@ -129,26 +130,11 @@ void OverviewPanel::loadTickets() {
 
 void OverviewPanel::loadRegistrations() {
     registrationTimes.clear();
-    std::ifstream file(usersFilePath);
-    std::string line;
-    std::getline(file, line);
-    while (std::getline(file, line)) {
-        std::stringstream ss(line);
-        std::string email, passwordHash, fullName, birthDate, phone, registeredAt, role, status;
-        std::getline(ss, email, '|');
-        std::getline(ss, passwordHash, '|');
-        std::getline(ss, fullName, '|');
-        std::getline(ss, birthDate, '|');
-        std::getline(ss, phone, '|');
-        std::getline(ss, registeredAt, '|');
-        std::getline(ss, role, '|');
-        std::getline(ss, status, '|');
 
-        if (!registeredAt.empty()) {
-            try {
-                registrationTimes[email] = std::stoll(registeredAt);
-            } catch (...) {}
-        }
+    UserRepository repo(usersFilePath);
+    const std::vector<User> users = repo.getAllUsers();
+    for (const auto& user : users) {
+        registrationTimes[user.getEmail()] = user.getRegisteredAt();
     }
 }
 

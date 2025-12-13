@@ -1,11 +1,12 @@
 #include "UI/components/Admin/MovieRevenuePanel.h"
 
+#include "repositories/booking/ComboRepository.h"
+
 #include <algorithm>
 #include <array>
 #include <cmath>
 #include <cstdio>
 #include <filesystem>
-#include <fstream>
 #include <map>
 #include <sstream>
 #include <unordered_set>
@@ -223,21 +224,22 @@ void MovieRevenuePanel::loadShowtimePrices() {
 void MovieRevenuePanel::loadComboPrices() {
     comboPrices.clear();
 
-    std::ifstream file(combosFilePath);
-    std::string line;
-    std::getline(file, line); // skip header
-    while (std::getline(file, line)) {
-        if (line.empty()) continue;
-        std::stringstream ss(line);
-        std::string id, name, priceStr;
-        std::getline(ss, id, '|');
-        std::getline(ss, name, '|');
-        std::getline(ss, priceStr, '|');
-        try {
-            comboPrices[name] = std::stoi(priceStr);
-        } catch (...) {
-            comboPrices[name] = 0;
+    auto toUtf8 = [](const sf::String& value) {
+        const sf::U8String u8 = value.toUtf8();
+        std::string out;
+        out.reserve(u8.size());
+        for (auto ch : u8) {
+            out.push_back(static_cast<char>(ch));
         }
+        return out;
+    };
+
+    ComboRepository repo;
+    DLL<Combo> combos = repo.loadFromFile(toSfString(combosFilePath));
+    Node<Combo>* node = combos.getHead();
+    while (node) {
+        comboPrices[toUtf8(node->data.name)] = node->data.price;
+        node = node->next;
     }
 }
 
