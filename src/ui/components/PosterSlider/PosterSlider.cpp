@@ -5,6 +5,23 @@
 using namespace std;
 using namespace sf;
 
+namespace {
+float calcDotStepDurationSeconds(int remainingSteps) {
+    // Arrow animation feels ~0.4s per slide in this project.
+    // For dot jumps, keep the same animation style but increase speed when far away.
+    // Speedup factor is capped to avoid becoming too fast/jerky.
+    const float base = 0.4f;
+    const int speedupCap = 4;
+    int speedup = std::min(std::max(remainingSteps, 1), speedupCap);
+    return base / static_cast<float>(speedup);
+}
+
+float calcDotTotalDurationSeconds(int steps) {
+    steps = std::max(1, steps);
+    return calcDotStepDurationSeconds(steps) * static_cast<float>(steps);
+}
+}
+
 PosterSlider::PosterSlider(Font& f, RenderWindow& window)
     : font(f),
       leftButton(f, "<", 60.f, 100.f, 48),
@@ -113,29 +130,29 @@ void PosterSlider::handleEvent(const Vector2f& mousePos, bool mousePressed, AppS
     if (animator.isAnimating() || slides.getSize() == 0 || !justClicked) return;
 
     if (leftButton.isClicked(mousePos, true)) {
+        dotNavActive = false;
         targetIndex = (currentIndex - 1 + slides.getSize()) % slides.getSize();
         animator.start(slides[currentIndex].getPosterSprite().getPosition().x, -1);  // Force left direction
     }
     else if (rightButton.isClicked(mousePos, true)) {
+        dotNavActive = false;
         targetIndex = (currentIndex + 1) % slides.getSize();
         animator.start(slides[currentIndex].getPosterSprite().getPosition().x, 1);  // Force right direction
     }
     else {
         for (int i = 0; i < dots.getSize(); i++) {
             if (dots[i].getGlobalBounds().contains(mousePos)) {
-                targetIndex = i;
-                
-                // Determine direction based on target position
-                int direction;
-                if (i > currentIndex) {
-                    direction = 1;  // Always go RIGHT to higher index
-                } else if (i < currentIndex) {
-                    direction = -1;  // Always go LEFT to lower index
-                } else {
-                    return;  // Same dot, do nothing
-                }
-                
-                animator.start(slides[currentIndex].getPosterSprite().getPosition().x, direction);
+                if (i == currentIndex) return;
+
+                // Dot navigation: one continuous multi-slide animation (no pauses), forced direction.
+                dotNavActive = false;
+                dotNavFinalTarget = i;
+                dotNavDirection = (dotNavFinalTarget > currentIndex) ? 1 : -1;
+
+                targetIndex = dotNavFinalTarget;
+                int steps = std::abs(dotNavFinalTarget - currentIndex);
+                float totalDuration = calcDotTotalDurationSeconds(steps);
+                animator.start(slides[currentIndex].getPosterSprite().getPosition().x, dotNavDirection, totalDuration, steps);
                 return;
             }
         }

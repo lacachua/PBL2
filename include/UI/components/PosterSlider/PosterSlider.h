@@ -24,6 +24,12 @@ private:
     bool clickedDot = false;
     bool wasMousePressed = false;
 
+    // Dot navigation: arrow-like sliding, but faster when the target is far.
+    // No wrap-around direction flips: direction is based on (target > current).
+    bool dotNavActive = false;
+    int dotNavFinalTarget = 0;
+    int dotNavDirection = 0; // +1 or -1
+
     PosterAnimator animator;
     PosterLoader loader;
 

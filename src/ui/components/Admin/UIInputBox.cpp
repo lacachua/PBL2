@@ -201,15 +201,40 @@ void UIInputBox::render(sf::RenderTarget& target) {
         textX += 24.f; // Icon width + spacing
     }
     
-    // Draw text or placeholder
-    if (text_.empty() && !focused_) {
-        target.draw(*placeholderObj_);
+    // Clip text/cursor to the input box (prevents overflow)
+    if (auto* win = dynamic_cast<sf::RenderWindow*>(&target)) {
+        sf::View oldView = win->getView();
+        const auto ws = win->getSize();
+        sf::FloatRect box(position_, {config_.width, config_.height});
+        sf::View clipView;
+        clipView.setCenter({box.position.x + box.size.x / 2.f, box.position.y + box.size.y / 2.f});
+        clipView.setSize({box.size.x, box.size.y});
+        clipView.setViewport(sf::FloatRect(
+            {box.position.x / static_cast<float>(ws.x), box.position.y / static_cast<float>(ws.y)},
+            {box.size.x / static_cast<float>(ws.x), box.size.y / static_cast<float>(ws.y)}
+        ));
+        win->setView(clipView);
+
+        // Draw text or placeholder
+        if (text_.empty() && !focused_) {
+            win->draw(*placeholderObj_);
+        } else {
+            win->draw(*textObj_);
+            if (focused_ && cursorVisible_) {
+                win->draw(cursor_);
+            }
+        }
+
+        win->setView(oldView);
     } else {
-        target.draw(*textObj_);
-        
-        // Draw cursor
-        if (focused_ && cursorVisible_) {
-            target.draw(cursor_);
+        // Fallback (no clipping) for non-window targets
+        if (text_.empty() && !focused_) {
+            target.draw(*placeholderObj_);
+        } else {
+            target.draw(*textObj_);
+            if (focused_ && cursorVisible_) {
+                target.draw(cursor_);
+            }
         }
     }
 }
@@ -243,12 +268,20 @@ void UIInputBox::updateVisuals() {
     
     // Text position (vertically centered)
     float textY = position_.y + (config_.height - static_cast<float>(config_.fontSize)) / 2.f - 3.f;
-    textObj_->setPosition({textX, textY});
+
+    // Horizontal scrolling: keep the tail visible when input is too long
+    sf::FloatRect textBounds = textObj_->getLocalBounds();
+    float available = config_.width - 2.f * config_.padding - (config_.showSearchIcon ? 24.f : 0.f);
+    float scrolledX = textX;
+    if (textBounds.size.x > available) {
+        scrolledX += (available - textBounds.size.x);
+    }
+
+    textObj_->setPosition({scrolledX, textY});
     placeholderObj_->setPosition({textX, textY});
     
     // Cursor position (after text)
-    sf::FloatRect textBounds = textObj_->getLocalBounds();
-    float cursorX = textX + textBounds.size.x + 2.f;
+    float cursorX = scrolledX + textBounds.size.x + 2.f;
     float cursorY = position_.y + 6.f;
     cursor_.setPosition({cursorX, cursorY});
 }

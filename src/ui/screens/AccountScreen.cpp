@@ -59,13 +59,17 @@ void AccountScreen::updatePositions(Vector2u windowSize) {
     
     float sidebarWidth = windowW * 0.22f;
     float sidebarX = 0.f;
-    float sidebarY = 125.f;
-    
-    sidebarBg.setSize({sidebarWidth, windowH - sidebarY});
-    sidebarBg.setPosition({sidebarX, sidebarY});
+    // Keep the top header (BaseScreen TextButtons) intact; align sidebar with the main card.
+    float cardY = 125.f;
+    float cardWidth = 1010.f;
+    float cardHeight = 766.f;
+
+    // Sidebar should match the main card height ("khớp với bảng thông tin").
+    sidebarBg.setSize({sidebarWidth, cardHeight});
+    sidebarBg.setPosition({sidebarX, cardY});
     
     float menuItemWidth = sidebarWidth * 0.85f;
-    float menuStartY = sidebarY + 100.f;
+    float menuStartY = cardY + 100.f;
     float menuSpacing = 90.f;
     float menuX = sidebarX + (sidebarWidth - menuItemWidth) / 2.f;
     
@@ -75,9 +79,7 @@ void AccountScreen::updatePositions(Vector2u windowSize) {
     
     float baseLeft = sidebarWidth + 30.f;
     float rightMargin = 50.f;
-    float cardY = sidebarY;
-    float cardWidth = 1010.f;
-    float cardHeight = 766.f;
+    // cardY/cardWidth/cardHeight declared above
     
     float available = max(0.f, windowW - baseLeft - rightMargin);
     float cardX = baseLeft + max(0.f, (available - cardWidth) / 2.f);

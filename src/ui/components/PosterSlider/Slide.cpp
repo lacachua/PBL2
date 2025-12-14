@@ -18,6 +18,13 @@ void Slide::setPosition(Vector2f pos) {
     detail_button.setPosition(detailButton_pos);
 }
 
+void Slide::setAlpha(std::uint8_t alpha) {
+    Color c = poster_sprite.getColor();
+    c.a = alpha;
+    poster_sprite.setColor(c);
+    detail_button.setAlpha(alpha);
+}
+
 void Slide::draw(RenderWindow& window) {
     window.draw(poster_sprite);
     detail_button.draw(window);

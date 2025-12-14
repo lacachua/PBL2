@@ -172,11 +172,11 @@ void ProfileInfoCard::layoutElements() {
     const float labelHeight = 20.f;
     const float labelInputGap = config_.labelInputGap;
     const float rowGap = config_.rowGap;
-    const float col1X = position_.x;
+    const float col1X = position_.x + padding;
     const float col2X = col1X + config_.fieldWidth + 24.f + 12.f;
-    float currentY = position_.y;
+    float currentY = position_.y + padding;
     
-    // Section 1: Personal Info Title
+    // Section 1: Personal Info Title (aligned with other tabs)
     personalInfoTitle_.setPosition({col1X, currentY});
     currentY += 45.f;
     
@@ -498,24 +498,51 @@ void ProfileInfoCard::update(Vector2f mousePos, bool mousePressed) {
 }
 
 void ProfileInfoCard::draw(RenderWindow& window) {
+    auto drawTextClippedToBox = [&](const RectangleShape& box, Text& textObj) {
+        // Horizontal scrolling: keep the tail visible when text is too long
+        FloatRect textBounds = textObj.getLocalBounds();
+        FloatRect boxBounds = box.getGlobalBounds();
+        float paddingX = 10.f;
+        float available = std::max(0.f, boxBounds.size.x - 2.f * paddingX);
+        float x = boxBounds.position.x + paddingX;
+        if (textBounds.size.x > available) {
+            x += (available - textBounds.size.x);
+        }
+        textObj.setPosition({x, textObj.getPosition().y});
+
+        // Clip to the box rectangle (prevents overflow)
+        View oldView = window.getView();
+        const auto ws = window.getSize();
+        View clipView;
+        clipView.setCenter({boxBounds.position.x + boxBounds.size.x / 2.f, boxBounds.position.y + boxBounds.size.y / 2.f});
+        clipView.setSize({boxBounds.size.x, boxBounds.size.y});
+        clipView.setViewport(FloatRect(
+            {boxBounds.position.x / static_cast<float>(ws.x), boxBounds.position.y / static_cast<float>(ws.y)},
+            {boxBounds.size.x / static_cast<float>(ws.x), boxBounds.size.y / static_cast<float>(ws.y)}
+        ));
+        window.setView(clipView);
+        window.draw(textObj);
+        window.setView(oldView);
+    };
+
     // Section 1: Personal Info
     window.draw(personalInfoTitle_);
     
     window.draw(fullNameLabel_);
     window.draw(fullNameBox_);
-    window.draw(fullNameText_);
+    drawTextClippedToBox(fullNameBox_, fullNameText_);
     
     window.draw(phoneLabel_);
     window.draw(phoneBox_);
-    window.draw(phoneText_);
+    drawTextClippedToBox(phoneBox_, phoneText_);
     
     window.draw(birthDateLabel_);
     window.draw(birthDateBox_);
-    window.draw(birthDateText_);
+    drawTextClippedToBox(birthDateBox_, birthDateText_);
     
     window.draw(emailLabel_);
     window.draw(emailBox_);
-    window.draw(emailText_);
+    drawTextClippedToBox(emailBox_, emailText_);
     
     saveInfoBtn_.draw(window);
     

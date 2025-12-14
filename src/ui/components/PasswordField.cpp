@@ -135,18 +135,33 @@ void PasswordField::update(sf::Vector2f mousePos) {
 
 void PasswordField::draw(sf::RenderWindow& window) {
     window.draw(box_);
-    
+
+    // Clip text + cursor to the box (prevents overflow)
+    sf::View oldView = window.getView();
+    const auto ws = window.getSize();
+    sf::FloatRect box = box_.getGlobalBounds();
+    sf::View clipView;
+    clipView.setCenter({box.position.x + box.size.x / 2.f, box.position.y + box.size.y / 2.f});
+    clipView.setSize({box.size.x, box.size.y});
+    clipView.setViewport(sf::FloatRect(
+        {box.position.x / static_cast<float>(ws.x), box.position.y / static_cast<float>(ws.y)},
+        {box.size.x / static_cast<float>(ws.x), box.size.y / static_cast<float>(ws.y)}
+    ));
+    window.setView(clipView);
+
     // Draw placeholder or actual text
     if (input_.empty()) {
         window.draw(placeholderText_);
     } else {
         window.draw(displayText_);
     }
-    
+
     // Draw cursor when active
     if (active_ && cursorVisible_) {
         window.draw(cursor_);
     }
+
+    window.setView(oldView);
     
     // Draw eye icon
     if (texturesLoaded_ && eyeSprite_) {
@@ -234,13 +249,21 @@ void PasswordField::updateDisplay() {
         displayText_.setString(std::string(input_.length(), '*'));
     }
     
-    // Position text
+    // Position text (Google-like horizontal scrolling when overflow)
     float textY = pos.y + (size.y - displayText_.getCharacterSize()) / 2.f - 2.f;
-    displayText_.setPosition({pos.x + TEXT_PADDING, textY});
+
+    float textX = pos.x + TEXT_PADDING;
+    float reservedRight = (texturesLoaded_ ? (EYE_ICON_SIZE + EYE_PADDING * 2.f) : 0.f);
+    float available = std::max(0.f, size.x - TEXT_PADDING * 2.f - reservedRight);
+    sf::FloatRect textBounds = displayText_.getLocalBounds();
+    if (textBounds.size.x > available) {
+        textX += (available - textBounds.size.x);
+    }
+
+    displayText_.setPosition({textX, textY});
     placeholderText_.setPosition({pos.x + TEXT_PADDING, textY});
     
     // Position cursor after text
-    sf::FloatRect textBounds = displayText_.getLocalBounds();
     float cursorX = displayText_.getPosition().x + textBounds.size.x + 2.f;
     float cursorY = pos.y + (size.y - cursor_.getSize().y) / 2.f;
     cursor_.setPosition({cursorX, cursorY});

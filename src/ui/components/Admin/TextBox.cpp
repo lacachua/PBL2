@@ -208,28 +208,49 @@ void TextBox::render(RenderWindow& window) {
         // Re-center vertically inside the textbox each frame
         auto bounds = displayText->getLocalBounds();
         float baselineOffset = background.getPosition().y + (height - bounds.size.y) / 2.f - bounds.position.y;
-        displayText->setPosition({background.getPosition().x + horizontalPadding, baselineOffset});
 
+        // Horizontal scrolling: keep the tail visible when text is too long
+        float textX = background.getPosition().x + horizontalPadding;
+        float available = width - 2.f * horizontalPadding;
+        if (bounds.size.x > available) {
+            textX += (available - bounds.size.x);
+        }
+        displayText->setPosition({textX, baselineOffset});
+
+        // Clip text (and cursor) to the textbox rectangle
+        View oldView = window.getView();
+        const auto ws = window.getSize();
+        FloatRect box = background.getGlobalBounds();
+        View clipView;
+        clipView.setCenter({box.position.x + box.size.x / 2.f, box.position.y + box.size.y / 2.f});
+        clipView.setSize({box.size.x, box.size.y});
+        clipView.setViewport(FloatRect(
+            {box.position.x / static_cast<float>(ws.x), box.position.y / static_cast<float>(ws.y)},
+            {box.size.x / static_cast<float>(ws.x), box.size.y / static_cast<float>(ws.y)}
+        ));
+        window.setView(clipView);
         window.draw(*displayText);
-    }
 
-    // Blink cursor without altering text or placeholder
-    if (isFocused && displayText) {
-        float elapsed = cursorClock.getElapsedTime().asSeconds();
-        if (elapsed >= 1.f) {
-            cursorClock.restart();
-            elapsed = cursorClock.getElapsedTime().asSeconds();
+        // Blink cursor without altering text or placeholder
+        if (isFocused) {
+            float elapsed = cursorClock.getElapsedTime().asSeconds();
+            if (elapsed >= 1.f) {
+                cursorClock.restart();
+                elapsed = cursorClock.getElapsedTime().asSeconds();
+            }
+
+            if (elapsed < 0.5f) {
+                auto b2 = displayText->getLocalBounds();
+                float cursorX = displayText->getPosition().x + b2.position.x + b2.size.x;
+                float cursorY = background.getPosition().y + (height - cursor.getSize().y) / 2.f;
+                cursor.setSize({cursor.getSize().x, height - 16.f});
+                cursor.setPosition({cursorX + 2.f, cursorY});
+                cursor.setFillColor(focusColor);
+                window.draw(cursor);
+            }
         }
 
-        if (elapsed < 0.5f) {
-            auto bounds = displayText->getLocalBounds();
-            float cursorX = displayText->getPosition().x + bounds.position.x + bounds.size.x;
-            float cursorY = background.getPosition().y + (height - cursor.getSize().y) / 2.f;
-            cursor.setSize({cursor.getSize().x, height - 16.f});
-            cursor.setPosition({cursorX + 2.f, cursorY});
-            cursor.setFillColor(focusColor);
-            window.draw(cursor);
-        }
+        window.setView(oldView);
     }
 }
 

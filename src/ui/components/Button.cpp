@@ -98,6 +98,24 @@ void Button::setColors(Color normal, Color hover, Color textCol) {
     if (text) text->setFillColor(textCol);
 }
 
+void Button::setAlpha(std::uint8_t alpha) {
+    {
+        Color c = box.getFillColor();
+        c.a = alpha;
+        box.setFillColor(c);
+    }
+    {
+        Color c = box.getOutlineColor();
+        c.a = alpha;
+        box.setOutlineColor(c);
+    }
+    if (text) {
+        Color c = text->getFillColor();
+        c.a = alpha;
+        text->setFillColor(c);
+    }
+}
+
 Vector2f Button::getPosition() const {
     return box.getPosition();
 }

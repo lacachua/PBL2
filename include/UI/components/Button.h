@@ -1,5 +1,6 @@
 #pragma once
 #include <SFML/Graphics.hpp>
+#include <cstdint>
 #include <memory>
 using namespace sf;
 using namespace std;
@@ -31,6 +32,7 @@ class Button {
         void setOutlineThickness(float);
         void setOutlineColor(Color);
         void setColors(Color normal, Color hover, Color textColor);
+        void setAlpha(std::uint8_t alpha);
 
         Vector2f getPosition() const;
         Vector2f getSize() const;
