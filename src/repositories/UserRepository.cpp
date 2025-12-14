@@ -123,6 +123,7 @@ bool UserRepository::addUser(const User& user) {
     }
     
     users.insert(key, user);
+    saveToFile();
     return true;
 }
 
@@ -135,6 +136,7 @@ bool UserRepository::updateUser(const User& user) {
     
     // Update existing user (email remains the same - PRIMARY KEY)
     users.insert(key, user);
+    saveToFile();
     return true;
 }
 
@@ -143,6 +145,7 @@ bool UserRepository::lockUser(const string& email) {
     if (!user) return false;
     
     user->lock();
+    saveToFile();
     return true;
 }
 
@@ -151,6 +154,7 @@ bool UserRepository::unlockUser(const string& email) {
     if (!user) return false;
     
     user->unlock();
+    saveToFile();
     return true;
 }
 
@@ -162,6 +166,7 @@ bool UserRepository::deleteUser(const string& email) {
     }
     
     users.remove(key);
+    saveToFile();
     return true;
 }
 

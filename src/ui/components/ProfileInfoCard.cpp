@@ -1,4 +1,5 @@
 #include "UI/components/ProfileInfoCard.h"
+#include "UI/screens/BaseScreen.h"
 #include "utils/PasswordHasher.h"
 #include "utils/Validator.h"
 
@@ -278,6 +279,7 @@ void ProfileInfoCard::showPwdMessage(const wstring& msg, bool isError) {
 void ProfileInfoCard::saveInfoChange() {
     if (!currentUser_) return;
     
+    const string oldFullName = currentUser_->getFullName();
     string newFullName = wstring_to_utf8(fullNameInput_);
     string newBirthDate = wstring_to_utf8(birthDateInput_);
     string newPhone = wstring_to_utf8(phoneInput_);
@@ -323,6 +325,16 @@ void ProfileInfoCard::saveInfoChange() {
     currentUser_->setFullName(newFullName);
     currentUser_->setBirthDate(newBirthDate);
     currentUser_->setPhone(newPhone);
+
+    // Persist immediately to users.txt
+    if (authService_ && authService_->getRepository()) {
+        authService_->getRepository()->saveToFile();
+    }
+
+    // If this is the logged-in user, update the greeting immediately
+    if (newFullName != oldFullName && BaseScreen::getLoggedInUserEmail() == currentEmail_) {
+        BaseScreen::setLoggedInUser(newFullName, currentEmail_);
+    }
     
     userDataLoaded_ = false;
     setUser(currentEmail_);
@@ -358,6 +370,11 @@ void ProfileInfoCard::savePasswordChange() {
     }
     
     currentUser_->setPasswordHash(PasswordHasher::hashPassword(newPwd));
+
+    // Persist immediately to users.txt
+    if (authService_ && authService_->getRepository()) {
+        authService_->getRepository()->saveToFile();
+    }
     
     showPwdMessage(L"Đổi mật khẩu thành công!", false);
     
