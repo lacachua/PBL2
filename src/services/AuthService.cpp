@@ -7,7 +7,7 @@ AuthService::AuthService(const string& filePath)
     : currentUserEmail(""), loggedIn(false) {
     repository = make_unique<UserRepository>(filePath);
     voucherManager = make_unique<VoucherManager>();
-    ensureDefaultAdminAndStaff();
+    ensureDefaultAdmin();
 }
 
 AuthService::~AuthService() {
@@ -134,20 +134,6 @@ bool AuthService::isAdmin() const {
     return hasRole(AppRole::Admin);
 }
 
-bool AuthService::isStaffOrAbove() const {
-    if (!isLoggedIn()) {
-        return false;
-    }
-    
-    User* user = const_cast<AuthService*>(this)->getCurrentUser();
-    if (!user) {
-        return false;
-    }
-    
-    AppRole role = user->getRole();
-    return (role == AppRole::Admin || role == AppRole::Staff);
-}
-
 User* AuthService::getUser(const string& email) {
     return repository->findByEmail(email);
 }
@@ -197,7 +183,7 @@ void AuthService::ensureSampleUser() {
     }
 }
 
-void AuthService::ensureDefaultAdminAndStaff() {
+void AuthService::ensureDefaultAdmin() {
     // Create default admin if not exists
     if (!repository->exists("admin@cinexine.vn")) {
         registerUser(
@@ -209,19 +195,6 @@ void AuthService::ensureDefaultAdminAndStaff() {
             AppRole::Admin
         );
         cout << "[AuthService] Created default admin: admin@cinexine.vn / admin123\n";
-    }
-    
-    // Create default staff if not exists
-    if (!repository->exists("staff01@cinexine.vn")) {
-        registerUser(
-            "staff01@cinexine.vn",
-            "staff123",  // ⚠️ CHANGE THIS IN PRODUCTION!
-            "Nguyễn Văn Nhân Viên",
-            "01/01/1995",
-            "0901111111",
-            AppRole::Staff
-        );
-        cout << "[AuthService] Created default staff: staff01@cinexine.vn / staff123\n";
     }
     
     // Ensure sample user exists (backward compatibility)

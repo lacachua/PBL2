@@ -5,9 +5,85 @@
 #include <ctime>
 #include <fstream>
 #include <sstream>
+#include <unordered_map>
 
 TicketRepository::TicketRepository(const string& filepath)
     : filename(filepath) {}
+
+namespace {
+static std::unordered_map<std::string, std::string> loadComboIdToName() {
+    std::unordered_map<std::string, std::string> out;
+
+    std::ifstream file("../data/combo.txt", std::ios::binary);
+    if (!file.is_open()) return out;
+
+    std::string data((std::istreambuf_iterator<char>(file)), {});
+    file.close();
+
+    if (data.size() >= 3 &&
+        (unsigned char)data[0] == 0xEF &&
+        (unsigned char)data[1] == 0xBB &&
+        (unsigned char)data[2] == 0xBF) {
+        data.erase(0, 3);
+    }
+
+    std::stringstream ss(data);
+    std::string line;
+    std::getline(ss, line); // header
+
+    while (std::getline(ss, line)) {
+        if (line.empty()) continue;
+        std::stringstream ls(line);
+        std::string id, name, price;
+        std::getline(ls, id, '|');
+        std::getline(ls, name, '|');
+        std::getline(ls, price, '|');
+        if (!id.empty() && !name.empty()) {
+            out[id] = name;
+        }
+    }
+
+    return out;
+}
+
+static std::string trimCopy(const std::string& source) {
+    size_t start = source.find_first_not_of(" \t\n\r");
+    size_t end = source.find_last_not_of(" \t\n\r");
+    if (start == std::string::npos) return "";
+    return source.substr(start, end - start + 1);
+}
+
+static std::string formatComboTokenForDisplay(const std::string& raw,
+                                              const std::unordered_map<std::string, std::string>& idToName) {
+    std::string token = trimCopy(raw);
+    if (token.empty()) return token;
+    if (token == "Không có") return token;
+
+    // Direction B: CBxx:xN
+    size_t pos = token.find(":x");
+    if (pos != std::string::npos && pos > 0) {
+        std::string id = token.substr(0, pos);
+        std::string qtyStr = token.substr(pos + 2);
+        int qty = 0;
+        try {
+            qty = std::stoi(qtyStr);
+        } catch (...) {
+            qty = 0;
+        }
+
+        auto it = idToName.find(id);
+        if (it != idToName.end()) {
+            if (qty > 0) {
+                return it->second + " x" + std::to_string(qty);
+            }
+            return it->second;
+        }
+    }
+
+    // Legacy: "Name xN"
+    return token;
+}
+}
 
 string TicketRepository::generateTicketId() {
     ifstream file(filename);
@@ -98,7 +174,7 @@ void TicketRepository::saveTicket(const Ticket& ticket) {
     if (file.tellp() == 0) {
         const char bom[] = {(char)0xEF, (char)0xBB, (char)0xBF};
         file.write(bom, 3);
-        file << "ticketId|showtimeId|title|date|time|roomName|booked|comboName|price|email|fullName|bookedDate|bookedTime\n";
+        file << "ticket_id|showtime_id|title|date|time|room_name|booked|combo_ids|price|email|fullName|booked_date|booked_time\n";
     }
 
     file << ticket.ticketId << "|"
@@ -131,6 +207,8 @@ String TicketRepository::getComboForHistoryUtf8(const Ticket& t) {
         return String::fromUtf8(t.comboName.begin(), t.comboName.end());
     }
 
+    static const std::unordered_map<std::string, std::string> comboIdToName = loadComboIdToName();
+
     string comboStr = t.comboName;
     string result;
     int comboCount = 0;
@@ -150,7 +228,7 @@ String TicketRepository::getComboForHistoryUtf8(const Ticket& t) {
 
         if (comboCount < 2) {
             if (comboCount > 0) result += ", ";
-            result += item;
+            result += formatComboTokenForDisplay(item, comboIdToName);
         }
 
         comboCount++;

@@ -35,7 +35,6 @@ string User::getRoleString() const {
     switch (role) {
         case AppRole::Guest: return "guest";
         case AppRole::Customer: return "customer";
-        case AppRole::Staff: return "staff";
         case AppRole::Admin: return "admin";
         default: return "guest";
     }
@@ -50,7 +49,8 @@ AppRole User::parseRole(const string& roleStr) {
     transform(lower.begin(), lower.end(), lower.begin(), ::tolower);
     
     if (lower == "admin") return AppRole::Admin;
-    if (lower == "staff") return AppRole::Staff;
+    // Legacy: Staff role removed. Treat as Customer.
+    if (lower == "staff") return AppRole::Customer;
     if (lower == "customer") return AppRole::Customer;
     return AppRole::Guest;
 }

@@ -213,12 +213,18 @@ void MovieRevenuePanel::loadShowtimePrices() {
     showtimeSeatPrices.clear();
 
     ShowtimeRepository repo;
-    DLL<Showtime> showtimes = repo.loadFromFile(toSfString(showtimesFilePath));
-    Node<Showtime>* node = showtimes.getHead();
-    while (node) {
-        showtimeSeatPrices[node->data.showtime_id.toAnsiString()] = node->data.price;
-        node = node->next;
-    }
+    const auto consume = [&](const std::string& path) {
+        DLL<Showtime> showtimes = repo.loadFromFile(toSfString(path));
+        Node<Showtime>* node = showtimes.getHead();
+        while (node) {
+            showtimeSeatPrices[node->data.showtime_id.toAnsiString()] = node->data.price;
+            node = node->next;
+        }
+    };
+
+    consume(showtimesFilePath);
+    // Also load history so older tickets can resolve seat price
+    consume(resolveDataPath("data/showtimes_history.txt"));
 }
 
 void MovieRevenuePanel::loadComboPrices() {
@@ -238,7 +244,9 @@ void MovieRevenuePanel::loadComboPrices() {
     DLL<Combo> combos = repo.loadFromFile(toSfString(combosFilePath));
     Node<Combo>* node = combos.getHead();
     while (node) {
+        // Support both name-based (legacy) and id-based (Direction B) lookups
         comboPrices[toUtf8(node->data.name)] = node->data.price;
+        comboPrices[toUtf8(node->data.id)] = node->data.price;
         node = node->next;
     }
 }
@@ -498,6 +506,7 @@ std::string MovieRevenuePanel::ellipsize(const std::string& text, std::size_t ma
 
 long long MovieRevenuePanel::computeComboRevenue(const std::string& comboList) const {
     if (comboList.empty()) return 0;
+    if (comboList == "Không có") return 0;
     long long total = 0;
     std::size_t start = 0;
     while (start < comboList.size()) {
@@ -508,14 +517,26 @@ long long MovieRevenuePanel::computeComboRevenue(const std::string& comboList) c
         item = trim(item);
         if (!item.empty()) {
             int quantity = 1;
-            std::size_t xPos = item.rfind('x');
-            if (xPos != std::string::npos) {
+            // Direction B: "CBxx:xN" (preferred)
+            std::size_t dirPos = item.find(":x");
+            if (dirPos != std::string::npos) {
                 try {
-                    quantity = std::max(1, std::stoi(trim(item.substr(xPos + 1))));
+                    quantity = std::max(1, std::stoi(trim(item.substr(dirPos + 2))));
                 } catch (...) {
                     quantity = 1;
                 }
-                item = trim(item.substr(0, xPos));
+                item = trim(item.substr(0, dirPos));
+            } else {
+                // Legacy: "Name xN"
+                std::size_t xPos = item.rfind('x');
+                if (xPos != std::string::npos) {
+                    try {
+                        quantity = std::max(1, std::stoi(trim(item.substr(xPos + 1))));
+                    } catch (...) {
+                        quantity = 1;
+                    }
+                    item = trim(item.substr(0, xPos));
+                }
             }
             auto it = comboPrices.find(item);
             if (it != comboPrices.end()) {

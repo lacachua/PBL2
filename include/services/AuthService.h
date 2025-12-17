@@ -30,7 +30,6 @@ public:
 
     bool hasRole(AppRole) const;
     bool isAdmin() const;
-    bool isStaffOrAbove() const;
 
     User* getUser(const string&);
     bool emailExists(const string&);
@@ -40,7 +39,7 @@ public:
     UserRepository* getRepository();
 
     void ensureSampleUser();
-    void ensureDefaultAdminAndStaff();
+    void ensureDefaultAdmin();
 
 private:
     unique_ptr<UserRepository> repository;

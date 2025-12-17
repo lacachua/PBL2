@@ -89,10 +89,6 @@ void AdminScreen::switchPanel(AppState newState) {
             voucherPanel = make_unique<VoucherPanel>(font, panelWidth, panelHeight);
             voucherPanel->setPosition(Vector2f(280, 20));
             break;
-        case AppState::ADMIN_STAFF:
-            cout << "[AdminScreen] Panel not implemented yet\n";
-            break;
-            
         default:
             break;
     }

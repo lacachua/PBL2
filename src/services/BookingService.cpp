@@ -77,7 +77,12 @@ string BookingService::formatCombosForStorage(const vector<BookingInfo::ComboIte
     string result;
     for (size_t i = 0; i < combos.size(); i++) {
         if (i > 0) result += ", ";
-        result += combos[i].comboName + " x" + to_string(combos[i].quantity);
+        if (!combos[i].comboId.empty()) {
+            result += combos[i].comboId + ":x" + to_string(combos[i].quantity);
+        } else {
+            // Fallback (legacy) if comboId isn't provided
+            result += combos[i].comboName + " x" + to_string(combos[i].quantity);
+        }
     }
     return result;
 }

@@ -12,6 +12,7 @@ struct ComboItem {
 };
 
 struct ComboOrder {
+    String id;
     String name;
     int quantity;
     int price;

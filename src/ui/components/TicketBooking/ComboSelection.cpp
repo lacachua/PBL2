@@ -115,6 +115,7 @@ DLL<ComboOrder> ComboSelection::getSelectedCombos() const {
         const auto& ci = comboItems[i];
         if (ci.quantity > 0) {
             ComboOrder o;
+            o.id       = ci.combo.id;
             o.name     = ci.combo.name;
             o.quantity = ci.quantity;
             o.price    = ci.combo.price;

@@ -47,6 +47,58 @@ static string formatDateToDDMMYYYY(const string& dateStr) {
     return dateStr;
 }
 
+static long long parseDateKeyFlexible(const string& dateStr) {
+    // Supports dd/mm/yyyy, yyyy-mm-dd, yyyymmdd
+    if (dateStr.size() >= 10 && dateStr[2] == '/' && dateStr[5] == '/') {
+        try {
+            int day = stoi(dateStr.substr(0, 2));
+            int month = stoi(dateStr.substr(3, 2));
+            int year = stoi(dateStr.substr(6, 4));
+            return static_cast<long long>(year) * 10000LL + static_cast<long long>(month) * 100LL + day;
+        } catch (...) {
+            return 0;
+        }
+    }
+    if (dateStr.size() >= 10 && dateStr[4] == '-' && dateStr[7] == '-') {
+        try {
+            int year = stoi(dateStr.substr(0, 4));
+            int month = stoi(dateStr.substr(5, 2));
+            int day = stoi(dateStr.substr(8, 2));
+            return static_cast<long long>(year) * 10000LL + static_cast<long long>(month) * 100LL + day;
+        } catch (...) {
+            return 0;
+        }
+    }
+    if (dateStr.size() >= 8) {
+        try {
+            int year = stoi(dateStr.substr(0, 4));
+            int month = stoi(dateStr.substr(4, 2));
+            int day = stoi(dateStr.substr(6, 2));
+            return static_cast<long long>(year) * 10000LL + static_cast<long long>(month) * 100LL + day;
+        } catch (...) {
+            return 0;
+        }
+    }
+    return 0;
+}
+
+static long long parseTimeKey(const string& timeStr) {
+    // Supports HH:MM:SS or HH:MM
+    int h = 0, m = 0, s = 0;
+    try {
+        if (timeStr.size() >= 5) {
+            h = stoi(timeStr.substr(0, 2));
+            m = stoi(timeStr.substr(3, 2));
+            if (timeStr.size() >= 8) {
+                s = stoi(timeStr.substr(6, 2));
+            }
+        }
+    } catch (...) {
+        return 0;
+    }
+    return static_cast<long long>(h) * 10000LL + static_cast<long long>(m) * 100LL + s;
+}
+
 static String formatPriceToString(int price) {
     string digits = to_string(price);
     string formatted;
@@ -156,11 +208,15 @@ void PurchaseHistoryView::loadTickets(bool preservePage) {
         }
     }
     
-    // Sort by booked date/time (newest first)
+    // Sort by booked date/time (newest first) using numeric keys
     sort(userTickets.begin(), userTickets.end(), [](const Ticket& a, const Ticket& b) {
-        if (a.bookedDate != b.bookedDate)
-            return a.bookedDate > b.bookedDate;
-        return a.bookedTime > b.bookedTime;
+        const long long aDate = parseDateKeyFlexible(a.bookedDate);
+        const long long bDate = parseDateKeyFlexible(b.bookedDate);
+        if (aDate != bDate) return aDate > bDate;
+        const long long aTime = parseTimeKey(a.bookedTime);
+        const long long bTime = parseTimeKey(b.bookedTime);
+        if (aTime != bTime) return aTime > bTime;
+        return a.ticketId > b.ticketId;
     });
     
     hasLoadedTickets = true;

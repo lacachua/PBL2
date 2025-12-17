@@ -36,6 +36,7 @@ struct BookingInfo {
     
     // Combos
     struct ComboItem {
+        std::string comboId;
         std::string comboName;
         int price = 0;
         int quantity = 0;

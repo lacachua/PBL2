@@ -216,7 +216,6 @@ void AdminProfilePanel::updateHeroContents() {
 wstring AdminProfilePanel::getRoleLabel(AppRole role) const {
     switch (role) {
         case AppRole::Admin: return L"Quản trị viên";
-        case AppRole::Staff: return L"Nhân viên";
         case AppRole::Customer: return L"Khách hàng";
         default: return L"Khách";
     }

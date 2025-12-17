@@ -99,7 +99,6 @@ void AdminSidebar::initializeMenuItems() {
     
     // Group 3: TÀI KHOẢN
     menuItems.push_back(MenuItem("TÀI KHOẢN", AppState::ADMIN_DASHBOARD, true, false));
-    menuItems.push_back(MenuItem("Quản lý nhân viên", AppState::ADMIN_STAFF));
     menuItems.push_back(MenuItem("Quản lý khách hàng", AppState::ADMIN_CUSTOMERS));
     
     // Group 4: HỆ THỐNG

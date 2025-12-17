@@ -1,10 +1,12 @@
 #include "UI/components/Admin/TicketPanel.h"
 #include <algorithm>
 #include <array>
+#include <fstream>
 #include <sstream>
 #include "UI/components/Admin/AdminSidebar.h"
 #include <vector>
 #include <regex>
+#include <unordered_map>
 
 using sf::Color;
 using sf::Event;
@@ -55,6 +57,84 @@ static string trimCopy(const string& source) {
     return source.substr(start, end - start + 1);
 }
 
+static long long parseBookedKey(const std::string& bookedDate, const std::string& bookedTime) {
+    // bookedDate: dd/mm/yyyy
+    // bookedTime: HH:MM:SS
+    if (bookedDate.size() < 10 || bookedTime.size() < 8) return 0;
+    try {
+        int day = std::stoi(bookedDate.substr(0, 2));
+        int month = std::stoi(bookedDate.substr(3, 2));
+        int year = std::stoi(bookedDate.substr(6, 4));
+        int hour = std::stoi(bookedTime.substr(0, 2));
+        int minute = std::stoi(bookedTime.substr(3, 2));
+        int second = std::stoi(bookedTime.substr(6, 2));
+
+        long long dateKey = static_cast<long long>(year) * 10000LL + static_cast<long long>(month) * 100LL + day;
+        long long timeKey = static_cast<long long>(hour) * 10000LL + static_cast<long long>(minute) * 100LL + second;
+        return dateKey * 1000000LL + timeKey;
+    } catch (...) {
+        return 0;
+    }
+}
+
+static std::unordered_map<std::string, std::string> loadComboIdToName() {
+    std::unordered_map<std::string, std::string> out;
+    std::ifstream file("../data/combo.txt", std::ios::binary);
+    if (!file.is_open()) return out;
+
+    std::string data((std::istreambuf_iterator<char>(file)), {});
+    file.close();
+
+    if (data.size() >= 3 &&
+        (unsigned char)data[0] == 0xEF &&
+        (unsigned char)data[1] == 0xBB &&
+        (unsigned char)data[2] == 0xBF) {
+        data.erase(0, 3);
+    }
+
+    std::stringstream ss(data);
+    std::string line;
+    std::getline(ss, line); // header
+    while (std::getline(ss, line)) {
+        if (line.empty()) continue;
+        std::stringstream ls(line);
+        std::string id, name, price;
+        std::getline(ls, id, '|');
+        std::getline(ls, name, '|');
+        std::getline(ls, price, '|');
+        if (!id.empty() && !name.empty()) {
+            out[id] = name;
+        }
+    }
+    return out;
+}
+
+static string formatComboTokenForAdminDisplay(const string& tokenRaw,
+                                              const std::unordered_map<std::string, std::string>& idToName) {
+    string token = trimCopy(tokenRaw);
+    if (token.empty()) return token;
+    if (token == "Không có") return token;
+
+    size_t pos = token.find(":x");
+    if (pos != string::npos && pos > 0) {
+        string id = token.substr(0, pos);
+        string qtyStr = token.substr(pos + 2);
+        int qty = 0;
+        try {
+            qty = std::stoi(qtyStr);
+        } catch (...) {
+            qty = 0;
+        }
+        auto it = idToName.find(id);
+        if (it != idToName.end()) {
+            if (qty > 0) return it->second + " x" + std::to_string(qty);
+            return it->second;
+        }
+    }
+
+    return token;
+}
+
 static string formatCurrency(int amount) {
     if (amount <= 0) return "0 đ";
     string digits = to_string(amount);
@@ -93,11 +173,13 @@ static string formatComboDisplay(const string& combosRaw) {
     string trimmed = trimCopy(combosRaw);
     if (trimmed.empty() || trimmed == "Không có") return "Không có";
 
+    static const std::unordered_map<std::string, std::string> comboIdToName = loadComboIdToName();
+
     stringstream ss(trimmed);
     string token;
     vector<string> items;
     while (getline(ss, token, ',')) {
-        string item = trimCopy(token);
+        string item = formatComboTokenForAdminDisplay(token, comboIdToName);
         if (!item.empty()) items.push_back(item);
     }
     if (items.empty()) return "Không có";
@@ -278,6 +360,11 @@ void TicketPanel::refreshTickets() {
         ordered.push_back(tickets[i]);
     }
     sort(ordered.begin(), ordered.end(), [](const Ticket& a, const Ticket& b) {
+        long long ka = parseBookedKey(a.bookedDate, a.bookedTime);
+        long long kb = parseBookedKey(b.bookedDate, b.bookedTime);
+        if (ka != 0 && kb != 0 && ka != kb) {
+            return ka > kb;
+        }
         return a.ticketId > b.ticketId;
     });
 

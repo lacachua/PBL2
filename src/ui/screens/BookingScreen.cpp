@@ -239,6 +239,7 @@ void BookingScreen::update(Vector2f mousePos, bool mousePressed, AppState& state
                     for (int i = 0; i < selectedCombosDLL.getSize(); i++) {
                         auto combo = selectedCombosDLL[i];
                         BookingData::ComboItem item;
+                        item.comboId = toUtf8String(combo.id);
                         item.comboName = toUtf8String(combo.name);
                         item.price = combo.price;
                         item.quantity = combo.quantity;
@@ -260,14 +261,19 @@ void BookingScreen::update(Vector2f mousePos, bool mousePressed, AppState& state
                 
                 // ====== TẠO VÉ VÀ LƯU VÀO DATABASE ======
                 
-                // Format combo string cho database (old format)
+                // Format combo string cho database (Direction B: combo_id:xN)
                 string combosStr = "Không có";
                 if (!bookingData.selectedCombos.empty()) {
                     combosStr = "";
                     for (size_t i = 0; i < bookingData.selectedCombos.size(); i++) {
                         if (i > 0) combosStr += ", ";
-                        combosStr += bookingData.selectedCombos[i].comboName 
-                                   + " x" + to_string(bookingData.selectedCombos[i].quantity);
+                        if (!bookingData.selectedCombos[i].comboId.empty()) {
+                            combosStr += bookingData.selectedCombos[i].comboId
+                                       + ":x" + to_string(bookingData.selectedCombos[i].quantity);
+                        } else {
+                            combosStr += bookingData.selectedCombos[i].comboName
+                                       + " x" + to_string(bookingData.selectedCombos[i].quantity);
+                        }
                     }
                 }
                 

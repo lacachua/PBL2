@@ -10,7 +10,7 @@ using std::string;
 using std::stringstream;
 
 namespace {
-const char* TICKET_HEADER = "ticket_id|showtime_id|title|date|time|room_name|booked|combo_name|price|email|fullName|booked_date|booked_time";
+const char* TICKET_HEADER = "ticket_id|showtime_id|title|date|time|room_name|booked|combo_ids|price|email|fullName|booked_date|booked_time";
 }
 
 AdminTicketRepository::AdminTicketRepository(const string& path)
