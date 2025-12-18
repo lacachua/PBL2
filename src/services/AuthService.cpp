@@ -169,20 +169,6 @@ UserRepository* AuthService::getRepository() {
     return repository.get();
 }
 
-void AuthService::ensureSampleUser() {
-    // Backward compatibility - create a sample customer
-    if (!repository->exists("test@gmail.com")) {
-        registerUser(
-            "test@gmail.com",
-            "12345678",
-            "Test User",
-            "01/01/2000",
-            "0901234567",
-            AppRole::Customer
-        );
-    }
-}
-
 void AuthService::ensureDefaultAdmin() {
     // Create default admin if not exists
     if (!repository->exists("admin@cinexine.vn")) {
@@ -196,7 +182,4 @@ void AuthService::ensureDefaultAdmin() {
         );
         cout << "[AuthService] Created default admin: admin@cinexine.vn / admin123\n";
     }
-    
-    // Ensure sample user exists (backward compatibility)
-    ensureSampleUser();
 }

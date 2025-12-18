@@ -16,7 +16,6 @@ App::App()
     ShowtimeCleanupService::maintainShowtimes("../data/showtimes.txt", 5);
 
     authService = make_unique<AuthService>("../data/users.txt");
-    authService->ensureSampleUser();
 
     homeScreen = make_unique<HomeScreen>(font, window);
     loginScreen = make_unique<LoginScreen>(font, *authService);
