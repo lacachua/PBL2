@@ -38,6 +38,10 @@ private:
 
         const std::size_t mid = MinDegree - 1;
 
+        // Save the promoted key/value before mutating vectors
+        const Key promotedKey = fullChild->keys[mid];
+        const Value promotedValue = fullChild->values[mid];
+
         // Move keys and values to new child
         for (std::size_t i = 0; i < MinDegree - 1; ++i) {
             newChild->keys.push_back(fullChild->keys[mid + 1 + i]);
@@ -56,8 +60,8 @@ private:
         fullChild->values.resize(mid);
 
         parent->children.insert(parent->children.begin() + childIndex + 1, newChild);
-        parent->keys.insert(parent->keys.begin() + childIndex, fullChild->keys[mid]);
-        parent->values.insert(parent->values.begin() + childIndex, fullChild->values[mid]);
+        parent->keys.insert(parent->keys.begin() + childIndex, promotedKey);
+        parent->values.insert(parent->values.begin() + childIndex, promotedValue);
     }
 
     void insertNonFull(Node* node, const Key& key, const Value& value) {

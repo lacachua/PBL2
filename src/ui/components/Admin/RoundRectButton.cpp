@@ -62,7 +62,6 @@ void RoundRectButton::update(const sf::Vector2f& mousePos, bool mouseDown, const
         pressed = true;
         fillColor = activeColor;
     } else if (contains) {
-        pressed = false;
         fillColor = hoverColor;
     } else {
         if (!mouseDown) {

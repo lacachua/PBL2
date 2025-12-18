@@ -30,7 +30,7 @@ void UserPanel::setupUI() {
 
     const std::string titleUtf8 = "Quản lý khách hàng";
     titleText = make_unique<Text>(font, sf::String::fromUtf8(titleUtf8.begin(), titleUtf8.end()), 26);
-    titleText->setFillColor(tableHeaderColor);
+    titleText->setFillColor(Color(27, 38, 59));
     titleText->setStyle(sf::Text::Bold);
 
     tableBodyBg.setSize(Vector2f(TABLE_WIDTH, TABLE_HEIGHT));
@@ -85,7 +85,7 @@ void UserPanel::layoutElements() {
     background.setPosition(position);
 
     if (titleText) {
-        titleText->setPosition(Vector2f(position.x + 32.f, position.y + 24.f));
+        titleText->setPosition(Vector2f(position.x + 40.f, position.y + 20.f));
     }
 
     const float buttonRowY = position.y + 88.f;

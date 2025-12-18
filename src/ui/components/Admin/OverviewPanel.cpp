@@ -1,5 +1,7 @@
 #include "UI/components/Admin/OverviewPanel.h"
 
+#include "repositories/booking/ComboRepository.h"
+#include "repositories/booking/ShowtimeRepository.h"
 #include "repositories/UserRepository.h"
 
 #include <algorithm>
@@ -23,6 +25,8 @@ OverviewPanel::OverviewPanel(sf::Font& fontRef, float w, float h)
       position(0.f, 0.f),
       ticketsFilePath(resolveDataPath("data/tickets.txt")),
       usersFilePath(resolveDataPath("data/users.txt")),
+    showtimesFilePath(resolveDataPath("data/showtimes.txt")),
+    combosFilePath(resolveDataPath("data/combo.txt")),
       background(Vector2f(w, h)),
       revenueTodayCard(font, {250.f, 110.f}, cardOutlineCyan),
       newCustomersCard(font, {250.f, 110.f}, cardOutlineGreen),
@@ -110,6 +114,8 @@ void OverviewPanel::initializeUI() {
 void OverviewPanel::loadData() {
     if (dataLoaded) return;  // Không load lại nếu đã có dữ liệu
     
+    loadShowtimePrices();
+    loadComboPrices();
     loadTickets();
     loadRegistrations();
     calculateDailyRevenue();
@@ -138,6 +144,47 @@ void OverviewPanel::loadRegistrations() {
     }
 }
 
+void OverviewPanel::loadShowtimePrices() {
+    showtimeSeatPrices.clear();
+
+    ShowtimeRepository repo;
+    const auto consume = [&](const std::string& path) {
+        DLL<Showtime> showtimes = repo.loadFromFile(toSfString(path));
+        Node<Showtime>* node = showtimes.getHead();
+        while (node) {
+            showtimeSeatPrices[node->data.showtime_id.toAnsiString()] = node->data.price;
+            node = node->next;
+        }
+    };
+
+    consume(showtimesFilePath);
+    consume(resolveDataPath("data/showtimes_history.txt"));
+}
+
+void OverviewPanel::loadComboPrices() {
+    comboPrices.clear();
+
+    auto toUtf8 = [](const sf::String& value) {
+        const sf::U8String u8 = value.toUtf8();
+        std::string out;
+        out.reserve(u8.size());
+        for (auto ch : u8) {
+            out.push_back(static_cast<char>(ch));
+        }
+        return out;
+    };
+
+    ComboRepository repo;
+    DLL<Combo> combos = repo.loadFromFile(toSfString(combosFilePath));
+    Node<Combo>* node = combos.getHead();
+    while (node) {
+        // Support both legacy name and Direction B combo_id tokens
+        comboPrices[toUtf8(node->data.name)] = node->data.price;
+        comboPrices[toUtf8(node->data.id)] = node->data.price;
+        node = node->next;
+    }
+}
+
 void OverviewPanel::calculateDailyRevenue() {
     std::time_t now = std::time(nullptr);
     std::tm* local = std::localtime(&now);
@@ -150,7 +197,11 @@ void OverviewPanel::calculateDailyRevenue() {
     Node<Ticket>* node = ticketsCache.getHead();
     while (node) {
         if (node->data.bookedDate == today) {
-            total += node->data.price;
+            const Ticket& ticket = node->data;
+            const int seatCount = std::max(1, countSeats(ticket.booked));
+            const long long comboRevenue = computeComboRevenue(ticket.comboName);
+            const long long ticketRevenue = computeTicketRevenue(ticket, seatCount, comboRevenue);
+            total += ticketRevenue + comboRevenue;
         }
         node = node->next;
     }
@@ -188,8 +239,11 @@ void OverviewPanel::calculateMonthlyStats() {
         if (ticket.bookedDate.size() >= 7) {
             std::string month = ticket.bookedDate.substr(3);
             if (month == currentMonth) {
-                revenue += ticket.price;
-                ticketsCount += std::max(1, countSeats(ticket.booked));
+                const int seatCount = std::max(1, countSeats(ticket.booked));
+                const long long comboRevenue = computeComboRevenue(ticket.comboName);
+                const long long ticketRevenue = computeTicketRevenue(ticket, seatCount, comboRevenue);
+                revenue += (ticketRevenue + comboRevenue);
+                ticketsCount += seatCount;
             }
         }
         node = node->next;
@@ -232,9 +286,12 @@ void OverviewPanel::calculateTopMovies() {
     
     Node<Ticket>* node = ticketsCache.getHead();
     while (node) {
-        int seats = std::max(1, countSeats(node->data.booked));
-        ticketCounts[node->data.title] += seats;
-        revenueCounts[node->data.title] += node->data.price;
+        const Ticket& ticket = node->data;
+        const int seats = std::max(1, countSeats(ticket.booked));
+        const long long comboRevenue = computeComboRevenue(ticket.comboName);
+        const long long ticketRevenue = computeTicketRevenue(ticket, seats, comboRevenue);
+        ticketCounts[ticket.title] += seats;
+        revenueCounts[ticket.title] += (ticketRevenue + comboRevenue);
         node = node->next;
     }
 
@@ -255,11 +312,16 @@ void OverviewPanel::calculateMonthlyTrend() {
     std::map<std::pair<int, int>, long long> revenueByMonth;
     Node<Ticket>* node = ticketsCache.getHead();
     while (node) {
-        if (node->data.bookedDate.size() >= 10) {
+        const Ticket& ticket = node->data;
+        if (ticket.bookedDate.size() >= 10) {
             try {
-                int month = std::stoi(node->data.bookedDate.substr(3, 2));
-                int year = std::stoi(node->data.bookedDate.substr(6, 4));
-                revenueByMonth[{year, month}] += node->data.price;
+                int month = std::stoi(ticket.bookedDate.substr(3, 2));
+                int year = std::stoi(ticket.bookedDate.substr(6, 4));
+
+                const int seats = std::max(1, countSeats(ticket.booked));
+                const long long comboRevenue = computeComboRevenue(ticket.comboName);
+                const long long ticketRevenue = computeTicketRevenue(ticket, seats, comboRevenue);
+                revenueByMonth[{year, month}] += (ticketRevenue + comboRevenue);
             } catch (...) {}
         }
         node = node->next;
@@ -301,6 +363,77 @@ int OverviewPanel::countSeats(const std::string& seatList) const {
         start = end + 1;
     }
     return count;
+}
+
+std::string OverviewPanel::trim(const std::string& text) const {
+    const std::size_t start = text.find_first_not_of(" \t\n\r");
+    if (start == std::string::npos) return "";
+    const std::size_t end = text.find_last_not_of(" \t\n\r");
+    return text.substr(start, end - start + 1);
+}
+
+long long OverviewPanel::computeComboRevenue(const std::string& comboList) const {
+    if (comboList.empty()) return 0;
+    if (comboList == "Không có") return 0;
+
+    long long total = 0;
+    std::size_t start = 0;
+    while (start < comboList.size()) {
+        std::size_t end = comboList.find(',', start);
+        std::string item = (end == std::string::npos)
+            ? comboList.substr(start)
+            : comboList.substr(start, end - start);
+        item = trim(item);
+
+        if (!item.empty()) {
+            int quantity = 1;
+
+            // Direction B: "CBxx:xN" (preferred)
+            std::size_t dirPos = item.find(":x");
+            if (dirPos != std::string::npos) {
+                try {
+                    quantity = std::max(1, std::stoi(trim(item.substr(dirPos + 2))));
+                } catch (...) {
+                    quantity = 1;
+                }
+                item = trim(item.substr(0, dirPos));
+            } else {
+                // Legacy: "Name xN"
+                std::size_t xPos = item.rfind('x');
+                if (xPos != std::string::npos) {
+                    try {
+                        quantity = std::max(1, std::stoi(trim(item.substr(xPos + 1))));
+                    } catch (...) {
+                        quantity = 1;
+                    }
+                    item = trim(item.substr(0, xPos));
+                }
+            }
+
+            auto it = comboPrices.find(item);
+            if (it != comboPrices.end()) {
+                total += static_cast<long long>(it->second) * quantity;
+            }
+        }
+
+        if (end == std::string::npos) break;
+        start = end + 1;
+    }
+    return total;
+}
+
+long long OverviewPanel::computeTicketRevenue(const Ticket& ticket, int seatCount, long long comboRevenue) const {
+    if (seatCount <= 0) return 0;
+    auto it = showtimeSeatPrices.find(ticket.showtimeId);
+    if (it != showtimeSeatPrices.end() && it->second > 0) {
+        return static_cast<long long>(it->second) * seatCount;
+    }
+
+    const long long base = static_cast<long long>(ticket.price) - comboRevenue;
+    if (base <= 0) {
+        return static_cast<long long>(ticket.price);
+    }
+    return base;
 }
 
 std::string OverviewPanel::toCurrency(long long amount) const {

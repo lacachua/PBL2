@@ -3,6 +3,7 @@
 #include <sstream>
 #include <iomanip>
 #include <algorithm>
+#include <unordered_set>
 #include <iostream>
 
 // Static members initialization
@@ -10,11 +11,119 @@ deque<MovieData> ShowtimeCleanupService::movieQueue;
 vector<ShowtimeData> ShowtimeCleanupService::tempShowtimes;
 
 void ShowtimeCleanupService::maintainShowtimes(const string& showtimesPath, int daysToGenerate) {
-    // Step 1: Remove expired showtimes
-    removeExpiredShowtimes(showtimesPath);
-    
-    // Step 2: Add new showtimes if needed
-    addNewShowtimes(showtimesPath, daysToGenerate);
+    // Hard requirement: only keep showtimes for today and the next 4 days.
+    // Also remove any expired showtimes (past time).
+    const int windowDays = max(1, min(daysToGenerate, 5));
+
+    time_t now = time(nullptr);
+    tm* nowTm = localtime(&now);
+    const string todayStr = formatDate(nowTm);
+    const int currentTimeMinutes = getCurrentTimeInMinutes();
+
+    const time_t endTime = now + (static_cast<time_t>(windowDays - 1) * 24 * 60 * 60);
+    tm* endTm = localtime(&endTime);
+    const string endStr = formatDate(endTm);
+
+    vector<ShowtimeData> existingShowtimes = loadShowtimes(showtimesPath);
+    const size_t originalCount = existingShowtimes.size();
+
+    vector<ShowtimeData> kept;
+    kept.reserve(existingShowtimes.size());
+    for (const auto& st : existingShowtimes) {
+        if (st.date < todayStr || st.date > endStr) continue;
+        if (isExpired(st)) continue;
+        kept.push_back(st);
+    }
+
+    // Build date presence map for the window
+    unordered_set<string> presentDates;
+    for (const auto& st : kept) {
+        presentDates.insert(st.date);
+    }
+
+    // Generate missing dates within the window
+    vector<MovieData> movies = loadMovies("../data/movies.txt");
+    vector<string> rooms = loadRooms("../data/rooms.txt");
+
+    if (!movies.empty() && !rooms.empty()) {
+        movieQueue.clear();
+        for (const auto& movie : movies) {
+            movieQueue.push_back(movie);
+        }
+
+        vector<ShowtimeData> generated;
+
+        for (int dayOffset = 0; dayOffset < windowDays; dayOffset++) {
+            time_t futureTime = now + (static_cast<time_t>(dayOffset) * 24 * 60 * 60);
+            tm* futureTm = localtime(&futureTime);
+            const string dateStr = formatDate(futureTm);
+
+            if (presentDates.count(dateStr)) continue;
+
+            const bool isToday = (dateStr == todayStr);
+            int dailyCounter = 1;
+
+            tempShowtimes.clear();
+            for (size_t r = 0; r < rooms.size(); r++) {
+                const string& roomId = rooms[r];
+
+                int baseMinute = START_HOUR * 60 + (static_cast<int>(r) * ROOM_OFFSET);
+                int currentMinute = roundUpToNext10(baseMinute);
+                const int endDayMinute = END_HOUR * 60;
+
+                if (isToday) {
+                    int minStartMinute = roundUpToNext10(currentTimeMinutes + 30);
+                    if (currentMinute < minStartMinute) {
+                        currentMinute = minStartMinute;
+                    }
+                }
+
+                while (currentMinute < endDayMinute) {
+                    MovieData movie = selectNextMovie(currentMinute, roomId, dateStr);
+                    if (movie.id.empty()) break;
+
+                    int showtimeEndMinute = currentMinute + movie.duration;
+                    if (showtimeEndMinute > endDayMinute) break;
+
+                    ShowtimeData newSt;
+                    string dateCompact = dateStr;
+                    dateCompact.erase(remove(dateCompact.begin(), dateCompact.end(), '-'), dateCompact.end());
+                    stringstream ss;
+                    ss << "SUATCHIEU_" << dateCompact << "_"
+                       << setfill('0') << setw(4) << dailyCounter++;
+                    newSt.showtime_id = ss.str();
+                    newSt.movie_id = movie.id;
+                    newSt.room_id = roomId;
+                    newSt.date = dateStr;
+                    newSt.time = minutesToTime(currentMinute);
+                    newSt.price = getPriceByTime(currentMinute / 60);
+
+                    generated.push_back(newSt);
+                    tempShowtimes.push_back(newSt);
+
+                    currentMinute = roundUpToNext10(showtimeEndMinute + BUFFER_MINUTES);
+                }
+            }
+
+            presentDates.insert(dateStr);
+        }
+
+        kept.insert(kept.end(), generated.begin(), generated.end());
+    }
+
+    // Sort for stable output
+    sort(kept.begin(), kept.end(), [&](const ShowtimeData& a, const ShowtimeData& b) {
+        if (a.date != b.date) return a.date < b.date;
+        return timeToMinutes(a.time) < timeToMinutes(b.time);
+    });
+
+    const bool changed = (kept.size() != originalCount);
+    if (changed) {
+        // Clear RoomPanel cache to avoid stale schedule display.
+        remove("../data/room_schedule_cache.txt");
+    }
+
+    saveShowtimes(showtimesPath, kept);
 }
 
 void ShowtimeCleanupService::forceRegenerate(const string& showtimesPath, int daysToGenerate) {

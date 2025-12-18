@@ -88,7 +88,7 @@ void ShowtimePanel::setPosition(sf::Vector2f pos) {
     background.setPosition(pos);
 
     if (titleText) {
-        titleText->setPosition(sf::Vector2f(pos.x + 40.f, pos.y + 28.f));
+        titleText->setPosition(sf::Vector2f(pos.x + 40.f, pos.y + 20.f));
     }
 
     const float controlsTop = pos.y + 110.f;
@@ -334,8 +334,27 @@ void ShowtimePanel::loadShowtimes() {
 }
 
 void ShowtimePanel::refreshDropdowns() {
+    const string todayStr = getTodayDateString();
+    const auto endStr = [&]() {
+        using namespace std::chrono;
+        auto now = system_clock::now() + hours(24 * 4);
+        time_t raw = system_clock::to_time_t(now);
+        tm local{};
+#ifdef _WIN32
+        localtime_s(&local, &raw);
+#else
+        localtime_r(&raw, &local);
+#endif
+        ostringstream oss;
+        oss << setw(4) << setfill('0') << (local.tm_year + 1900) << '-'
+            << setw(2) << setfill('0') << (local.tm_mon + 1) << '-'
+            << setw(2) << setfill('0') << local.tm_mday;
+        return oss.str();
+    }();
+
     set<string> uniqueDates;
     for (const auto& item : allShowtimes) {
+        if (item.date < todayStr || item.date > endStr) continue;
         uniqueDates.insert(item.date);
     }
     dateOptions.assign(uniqueDates.begin(), uniqueDates.end());

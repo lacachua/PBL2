@@ -31,7 +31,7 @@ void VoucherPanel::setupUI() {
     
     // Title
     titleText = make_unique<Text>(font, toUtf8("Quản lý Voucher"), 26);
-    titleText->setFillColor(tableHeaderColor);
+    titleText->setFillColor(Color(27, 38, 59));
     titleText->setStyle(Text::Bold);
     
     // Left panel (Voucher Definitions)
@@ -119,7 +119,7 @@ void VoucherPanel::layoutElements() {
     
     // Title
     if (titleText) {
-        titleText->setPosition(Vector2f(position.x + 32.f, position.y + 20.f));
+        titleText->setPosition(Vector2f(position.x + 40.f, position.y + 20.f));
     }
     
     // Panels

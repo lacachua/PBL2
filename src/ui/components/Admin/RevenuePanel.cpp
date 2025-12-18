@@ -15,8 +15,8 @@ RevenuePanel::RevenuePanel(sf::Font& fontRef, float w, float h, StatsMode initia
       height(h),
       position(0.f, 0.f),
       background(Vector2f(w, h)),
-      overviewPanel(fontRef, w - contentPadding * 2.f, h - contentPadding * 2.f),
-      movieRevenuePanel(fontRef, w - contentPadding * 2.f, h - contentPadding * 2.f),
+            overviewPanel(fontRef, w, h),
+            movieRevenuePanel(fontRef, w, h),
       mode(initialMode) {
     background.setFillColor(kBackgroundColor);
     layoutComponents();
@@ -27,7 +27,7 @@ void RevenuePanel::layoutComponents() {
     background.setSize(Vector2f(width, height));
     background.setPosition(position);
 
-    const Vector2f contentPos(position.x + contentPadding, position.y + contentPadding);
+    const Vector2f contentPos(position.x, position.y);
     overviewPanel.setPosition(contentPos);
     movieRevenuePanel.setPosition(contentPos);
 }

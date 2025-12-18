@@ -33,6 +33,12 @@ private:
     // Data paths
     std::string ticketsFilePath;
     std::string usersFilePath;
+    std::string showtimesFilePath;
+    std::string combosFilePath;
+
+    // Revenue helpers
+    std::unordered_map<std::string, int> showtimeSeatPrices;
+    std::unordered_map<std::string, int> comboPrices;
 
     // Data caches
     std::unordered_map<std::string, long long> registrationTimes;
@@ -70,6 +76,8 @@ private:
     void loadData();
     void loadTickets();
     void loadRegistrations();
+    void loadShowtimePrices();
+    void loadComboPrices();
 
     void calculateDailyRevenue();
     void calculateMonthlyStats();
@@ -77,6 +85,9 @@ private:
     void calculateMonthlyTrend();
 
     int countSeats(const std::string& seatList) const;
+    std::string trim(const std::string& text) const;
+    long long computeComboRevenue(const std::string& comboList) const;
+    long long computeTicketRevenue(const Ticket& ticket, int seatCount, long long comboRevenue) const;
     std::string toCurrency(long long amount) const;
     long long roundUpNice(long long value) const;
     sf::String toSfString(const std::string& text) const;

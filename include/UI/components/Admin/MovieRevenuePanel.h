@@ -4,6 +4,7 @@
 #include <memory>
 #include <string>
 #include <unordered_map>
+#include <unordered_set>
 #include <vector>
 
 #include "data-structures/BTree.h"
@@ -52,6 +53,7 @@ private:
     BTree<long long, Ticket> ticketTree;
     std::unordered_map<std::string, int> showtimeSeatPrices;
     std::unordered_map<std::string, int> comboPrices;
+    std::unordered_set<std::string> knownMovieTitles;
 
     DLL<Ticket> filteredTickets;
     std::vector<MovieRevenueEntry> movieStats;
@@ -59,6 +61,7 @@ private:
 
     // Paths
     std::string ticketsFilePath;
+    std::string moviesFilePath;
     std::string showtimesFilePath;
     std::string combosFilePath;
 
@@ -87,8 +90,10 @@ private:
     // Helpers
     std::string resolveDataPath(const std::string& relative) const;
     void initializeUI();
+    void layoutComponents();
 
     void loadData();
+    void loadMovies();
     void loadTickets();
     void loadShowtimePrices();
     void loadComboPrices();
