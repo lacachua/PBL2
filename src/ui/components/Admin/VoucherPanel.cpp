@@ -67,7 +67,7 @@ void VoucherPanel::setupUI() {
     setupButton(btnDeleteVoucher, "Xóa", Color(220, 53, 69), Color(240, 73, 89), {80.f, BUTTON_HEIGHT});
     setupButton(btnDistribute, "Phát đồng loạt", Color(255, 152, 0), Color(255, 172, 40), {150.f, BUTTON_HEIGHT});
     setupButton(btnViewUsers, "Xem người nhận", Color(108, 117, 125), Color(128, 137, 145), {150.f, BUTTON_HEIGHT});
-    setupButton(btnRefresh, "", Color(27, 38, 59), Color(47, 58, 79), {48.f, 48.f});
+    setupButton(btnRefresh, "", Color(20, 118, 172), Color(30, 138, 192), {48.f, 48.f});
     
     // Setup buttons - Right panel
     setupButton(btnAddToUser, "Thêm người nhận", Color(40, 167, 69), Color(60, 187, 89), {160.f, BUTTON_HEIGHT});
@@ -84,8 +84,8 @@ void VoucherPanel::setupUI() {
     }
     
     // Notification
-    notificationBg.setSize(Vector2f(400.f, 52.f));
-    notificationText = make_unique<Text>(font, "", 16);
+    notificationBg.setSize(Vector2f(400.f, 60.f));
+    notificationText = make_unique<Text>(font, "", 18);
     notificationText->setFillColor(Color::White);
     
     // Popup
@@ -195,7 +195,7 @@ void VoucherPanel::layoutElements() {
     // Reload sprite
     if (reloadSprite) {
         FloatRect bounds = reloadSprite->getLocalBounds();
-        float scale = 24.f / max(bounds.size.x, bounds.size.y);
+        float scale = 0.1f;
         reloadSprite->setScale(Vector2f(scale, scale));
         reloadSprite->setPosition(Vector2f(
             btnRefresh.box.getPosition().x + (btnRefresh.box.getSize().x - bounds.size.x * scale) / 2.f,
@@ -427,7 +427,7 @@ void VoucherPanel::handleEvent(const Event& event, const RenderWindow& window) {
             
             if (btnRefresh.box.getGlobalBounds().contains(mousePos)) {
                 refreshData();
-                showNotification("Đã làm mới dữ liệu", successColor);
+                showNotification("Đã tải lại dữ liệu", dangerColor);
                 return;
             }
             
@@ -1083,7 +1083,7 @@ void VoucherPanel::renderNotification(RenderWindow& window) {
         return;
     }
     
-    Vector2f notifPos(position.x + width - 420.f, position.y + 20.f);
+    Vector2f notifPos(position.x + width - notificationBg.getSize().x - 30.f, position.y + 20.f);
     notificationBg.setPosition(notifPos);
     notificationBg.setFillColor(notificationColor);
     

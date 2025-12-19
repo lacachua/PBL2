@@ -12,7 +12,8 @@ using namespace sf;
 // Forward declaration to avoid circular dependency
 struct MovieDetail {
     String movie_id;
-    wstring title, age_rating, country, language, genres, duration_min, release_date, director, cast, synopsis, posterPath, status;
+    wstring title, age_rating, country, language, genres, duration_min, release_date, director, cast, synopsis, posterPath;
+    wstring status; // Optional (may be missing in movies.txt)
 };
 
 // Structure to hold search results with movie index

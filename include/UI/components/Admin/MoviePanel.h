@@ -2,7 +2,6 @@
 
 #include <SFML/Graphics.hpp>
 #include "UI/components/Admin/TextBox.h"
-#include "UI/components/Admin/DropdownBox.h"
 #include "repositories/admin/AdminMovieRepository.h"
 #include "UI/components/Button.h"
 #include "data-structures/DLL.h"
@@ -16,7 +15,7 @@ using namespace std;
  * @brief Movie CRUD Panel với layout chính xác theo spec
  * 
  * Layout: (x=340, y=120), size=(1320x680)
- * Table columns: ID(100), Tên phim(400), Thời lượng(140), Ngày chiếu(180), Trạng thái(180)
+ * Table columns: ID(100), Tên phim(400), Thời lượng(140), Ngày chiếu(180)
  */
 class MoviePanel {
 private:
@@ -65,7 +64,6 @@ private:
     RectangleShape popupOverlay;
     unique_ptr<Text> popupTitle;
     DLL<unique_ptr<TextBox>> inputBoxes;
-    unique_ptr<DropdownBox> statusDropdown; // For movie status selection
     unique_ptr<Button> btnPopupSave;
     unique_ptr<Button> btnPopupCancel;
     
@@ -106,8 +104,8 @@ private:
     static constexpr float COL_DURATION_WIDTH = 120.f;
     static constexpr float COL_DATE_X = 640.f;   // Adjusted
     static constexpr float COL_DATE_WIDTH = 150.f;
-    static constexpr float COL_STATUS_X = 800.f; // Adjusted
-    static constexpr float COL_STATUS_WIDTH = 150.f;
+    static constexpr float COL_STATUS_X = 800.f;   // Adjusted
+    static constexpr float COL_STATUS_WIDTH = 300.f;
     
     // Colors
     Color bgColor = Color(244, 246, 250);      // #F4F6FA

@@ -97,10 +97,10 @@ void ComboPanel::setupUI() {
     reloadSprite.setTexture(reloadTexture);
     reloadSprite.setScale({0.1, 0.1});
 
-    notificationBg.setSize(Vector2f(360, 56));
-    notificationBg.setFillColor(Color(20, 118, 172, 230));
+    notificationBg.setSize(Vector2f(400, 60));
+    notificationBg.setFillColor(Color(211, 47, 47, 230));
     notificationTextObj = make_unique<Text>(font);
-    notificationTextObj->setCharacterSize(16);
+    notificationTextObj->setCharacterSize(18);
     notificationTextObj->setFillColor(Color::White);
 }
 
@@ -118,7 +118,7 @@ void ComboPanel::setPosition(Vector2f pos) {
     btnAddBg.setPosition(Vector2f(pos.x + TABLE_X, pos.y + buttonRowY));
     btnEditBg.setPosition(Vector2f(btnAddBg.getPosition().x + btnAddBg.getSize().x + spacing, pos.y + buttonRowY));
     btnDeleteBg.setPosition(Vector2f(btnEditBg.getPosition().x + btnEditBg.getSize().x + spacing, pos.y + buttonRowY));
-    reloadButtonBg.setPosition(Vector2f(btnDeleteBg.getPosition().x + btnDeleteBg.getSize().x + spacing, pos.y + buttonRowY));
+    reloadButtonBg.setPosition(Vector2f(pos.x + TABLE_X + TABLE_WIDTH - reloadButtonBg.getSize().x, pos.y + buttonRowY));
 
     auto centerText = [](unique_ptr<Text>& textObj, const RectangleShape& rect) {
         if (!textObj) return;
@@ -481,7 +481,7 @@ void ComboPanel::renderNotification(RenderWindow& window) {
     if (notificationText.empty()) return;
     if (notificationClock.getElapsedTime().asSeconds() > 3.f) return;
 
-    notificationBg.setPosition(Vector2f(position.x + width - notificationBg.getSize().x - 40, position.y + 30));
+    notificationBg.setPosition(Vector2f(position.x + width - notificationBg.getSize().x - 30.f, position.y + 20.f));
     window.draw(notificationBg);
 
     notificationTextObj->setString(String::fromUtf8(notificationText.begin(), notificationText.end()));

@@ -77,10 +77,47 @@ void ShowtimePanel::setupUI() {
     reloadSprite = make_unique<sf::Sprite>(reloadTexture);
     reloadSprite->setScale({0.1f, 0.1f});
 
+    notificationBg.setSize(sf::Vector2f(400.f, 60.f));
+    notificationBg.setFillColor(sf::Color(211, 47, 47, 230));
+    notificationText = make_unique<sf::Text>(font);
+    notificationText->setCharacterSize(18);
+    notificationText->setFillColor(sf::Color::White);
+
     dateDropdown = make_unique<DropdownBox>(font, "Ngày chiếu", position.x + TABLE_X, position.y + 110.f, 260.f, 48.f);
     roomDropdown = make_unique<DropdownBox>(font, "Phòng chiếu", position.x + TABLE_X + 300.f, position.y + 110.f, 260.f, 48.f);
     dateDropdown->setMaxVisibleOptions(4);
     roomDropdown->setMaxVisibleOptions(4);
+}
+
+void ShowtimePanel::showNotification(const std::string& message) {
+    notificationMessage = message;
+    notificationVisible = !message.empty();
+    if (notificationVisible) {
+        notificationClock.restart();
+    }
+    if (notificationText) {
+        notificationText->setString(sf::String::fromUtf8(message.begin(), message.end()));
+    }
+}
+
+void ShowtimePanel::renderNotification(sf::RenderWindow& window) {
+    if (!notificationVisible) return;
+    if (notificationClock.getElapsedTime().asSeconds() > 3.0f) {
+        notificationVisible = false;
+        return;
+    }
+
+    notificationBg.setPosition(sf::Vector2f(position.x + width - notificationBg.getSize().x - 30.f, position.y + 20.f));
+    window.draw(notificationBg);
+
+    if (notificationText) {
+        sf::FloatRect bounds = notificationText->getLocalBounds();
+        notificationText->setPosition(sf::Vector2f(
+            notificationBg.getPosition().x + (notificationBg.getSize().x - bounds.size.x) / 2.f - bounds.position.x,
+            notificationBg.getPosition().y + (notificationBg.getSize().y - bounds.size.y) / 2.f - bounds.position.y
+        ));
+        window.draw(*notificationText);
+    }
 }
 
 void ShowtimePanel::setPosition(sf::Vector2f pos) {
@@ -151,6 +188,7 @@ void ShowtimePanel::update(sf::Vector2f mousePos, bool mousePressed) {
     if (reloadPressed && !mousePressed) {
         if (reloadButtonBg.getGlobalBounds().contains(mousePos)) {
             loadData();
+            showNotification("Đã tải lại dữ liệu");
         }
         reloadPressed = false;
     }
@@ -224,6 +262,8 @@ void ShowtimePanel::render(sf::RenderWindow& window) {
     if (roomDropdown) {
         roomDropdown->draw(window);
     }
+
+    renderNotification(window);
 }
 
 void ShowtimePanel::loadData() {

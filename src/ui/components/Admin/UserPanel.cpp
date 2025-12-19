@@ -44,7 +44,7 @@ void UserPanel::setupUI() {
     setupButton(btnViewInfo, "Xem thông tin", Color(20, 118, 172), Color(34, 156, 218), {172.f, 44.f});
     setupButton(btnLock, "Khóa tài khoản", Color(233, 164, 0), Color(247, 186, 40), {186.f, 44.f});
     setupButton(btnDelete, "Xóa tài khoản", Color(211, 47, 47), Color(226, 83, 83), {176.f, 44.f});
-    setupButton(btnRefresh, "", Color(27, 38, 59), Color(40, 55, 79), {48.f, 48.f});
+    setupButton(btnRefresh, "", Color(20, 118, 172), Color(30, 138, 192), {48.f, 48.f});
 
     if (!reloadTexture.loadFromFile("../assets/elements/reload.png")) {
         std::cerr << "[UserPanel] Warning: Failed to load reload icon.\n";
@@ -56,11 +56,11 @@ void UserPanel::setupUI() {
         reloadSprite.emplace(reloadTexture);
     }
 
-    notificationBg.setSize(Vector2f(320.f, 52.f));
+    notificationBg.setSize(Vector2f(400.f, 60.f));
     notificationBg.setFillColor(notificationColor);
     notificationBg.setOutlineThickness(0.f);
 
-    notificationText = make_unique<Text>(font, "", 16);
+    notificationText = make_unique<Text>(font, "", 18);
     notificationText->setFillColor(Color::White);
 
     layoutElements();
@@ -118,9 +118,7 @@ void UserPanel::layoutElements() {
 
     if (reloadSprite) {
         const FloatRect bounds = reloadSprite->getLocalBounds();
-        const float maxDim = std::max(bounds.size.x, bounds.size.y);
-        const float available = btnRefresh.box.getSize().x - 16.f;
-        const float scale = (maxDim > 0.f) ? (available / maxDim) : 1.f;
+        const float scale = 0.1f;
         reloadSprite->setScale(Vector2f(scale, scale));
         reloadSprite->setPosition(Vector2f(
             btnRefresh.box.getPosition().x + (btnRefresh.box.getSize().x - bounds.size.x * scale) / 2.f,
@@ -367,7 +365,7 @@ void UserPanel::handleEvent(const Event& event, const RenderWindow& window) {
 
             if (btnRefresh.box.getGlobalBounds().contains(mousePos)) {
                 refreshData();
-                showNotification("Đã làm mới danh sách khách hàng.", Color(33, 150, 83));
+                showNotification("Đã tải lại dữ liệu", Color(211, 47, 47));
                 return;
             }
 

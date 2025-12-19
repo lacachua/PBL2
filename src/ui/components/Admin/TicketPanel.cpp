@@ -292,10 +292,10 @@ void TicketPanel::setupUI() {
     detailCloseText->setFillColor(Color::White);
     detailCloseText->setString(utf8("Đã hiểu"));
 
-    notificationBg.setSize(Vector2f(360.f, 52.f));
-    notificationBg.setFillColor(Color(20, 118, 172, 220));
+    notificationBg.setSize(Vector2f(400.f, 60.f));
+    notificationBg.setFillColor(Color(211, 47, 47, 230));
     notificationText = make_unique<Text>(font);
-    notificationText->setCharacterSize(15);
+    notificationText->setCharacterSize(18);
     notificationText->setFillColor(Color::White);
 }
 
@@ -314,7 +314,7 @@ void TicketPanel::setPosition(Vector2f pos) {
     Vector2f deletePos(viewPos.x + btnView->getSize().x + 18.f, buttonRowY);
     btnDelete->setPosition(deletePos);
 
-    Vector2f reloadPos(deletePos.x + btnDelete->getSize().x + 18.f, buttonRowY);
+    Vector2f reloadPos(pos.x + TABLE_X + TABLE_WIDTH - btnReload->getSize().x, buttonRowY);
     btnReload->setPosition(reloadPos);
 
     // center reload sprite in reload button
@@ -348,7 +348,6 @@ void TicketPanel::setPosition(Vector2f pos) {
     ));
 
     notificationBg.setPosition(Vector2f(pos.x + width - notificationBg.getSize().x - 30.f, pos.y + 20.f));
-    if (notificationText) notificationText->setPosition(Vector2f(notificationBg.getPosition().x + 20.f, notificationBg.getPosition().y + 15.f));
 }
 
 void TicketPanel::refreshTickets() {
@@ -393,7 +392,7 @@ void TicketPanel::updateButtonStates() {
 
 void TicketPanel::handleReload() {
     refreshTickets();
-    showNotification("Đã tải lại danh sách vé");
+    showNotification("Đã tải lại dữ liệu");
 }
 
 void TicketPanel::handleDelete() {
@@ -566,7 +565,7 @@ void TicketPanel::update(Vector2f mousePos, bool /*mousePressed*/) {
 
     hoveredRow = hitTestRow(mousePos);
 
-    if (notificationVisible && notificationClock.getElapsedTime().asSeconds() > 2.5f) {
+    if (notificationVisible && notificationClock.getElapsedTime().asSeconds() > 3.0f) {
         notificationVisible = false;
     }
 }
@@ -675,6 +674,12 @@ void TicketPanel::renderTable(RenderWindow& window) {
 void TicketPanel::renderNotification(RenderWindow& window) {
     if (!notificationVisible || !notificationText) return;
     window.draw(notificationBg);
+
+    FloatRect bounds = notificationText->getLocalBounds();
+    notificationText->setPosition(Vector2f(
+        notificationBg.getPosition().x + (notificationBg.getSize().x - bounds.size.x) / 2.f - bounds.position.x,
+        notificationBg.getPosition().y + (notificationBg.getSize().y - bounds.size.y) / 2.f - bounds.position.y
+    ));
     window.draw(*notificationText);
 }
 

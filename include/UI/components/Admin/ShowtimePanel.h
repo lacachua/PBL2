@@ -57,6 +57,12 @@ private:
     bool reloadHovered = false;
     bool reloadPressed = false;
 
+    sf::RectangleShape notificationBg;
+    std::unique_ptr<sf::Text> notificationText;
+    std::string notificationMessage;
+    bool notificationVisible = false;
+    sf::Clock notificationClock;
+
     std::vector<TimelineItem> allShowtimes;
     std::vector<TimelineItem> filteredShowtimes;
     std::unordered_set<std::string> archivedIds;
@@ -102,6 +108,9 @@ private:
     void handleScroll(float delta, const sf::RenderWindow& window);
     void renderTable(sf::RenderWindow& window);
     void renderEmptyState(sf::RenderWindow& window);
+
+    void showNotification(const std::string& message);
+    void renderNotification(sf::RenderWindow& window);
 
     static std::vector<std::string> splitLine(const std::string& line, char delimiter);
     static std::string trim(const std::string& text);

@@ -16,6 +16,22 @@ DLL<String> PosterProviderFromTXT::getPosterPaths() {
     string line;
     getline(file, line);
 
+    // Determine poster_path column index from header for schema flexibility.
+    int posterColIndex = -1;
+    if (!line.empty()) {
+        stringstream hs(line);
+        string h;
+        int idx = 0;
+        while (getline(hs, h, '|')) {
+            if (h == "poster_path") {
+                posterColIndex = idx;
+                break;
+            }
+            idx++;
+        }
+    }
+    if (posterColIndex < 0) posterColIndex = 11; // legacy fallback
+
     while (getline(file, line)) {
         if (line.empty()) continue;
 
@@ -25,7 +41,7 @@ DLL<String> PosterProviderFromTXT::getPosterPaths() {
         string posterPath;
 
         while (getline(ss, token, '|')) {
-            if (col == 11) {
+            if (col == posterColIndex) {
                 posterPath = token;
                 break;
             }

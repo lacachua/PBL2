@@ -52,6 +52,12 @@ private:
     bool reloadHovered = false;
     bool reloadPressed = false;
 
+    RectangleShape notificationBg;
+    unique_ptr<Text> notificationText;
+    string notificationMessage;
+    bool notificationVisible = false;
+    Clock notificationClock;
+
     vector<RoomRow> rows;
     vector<RoomInfo> rooms;
     unordered_map<string, vector<ShowtimeSlot>> roomSchedules;
@@ -87,6 +93,9 @@ private:
                                chrono::system_clock::time_point now);
     void updateRoomStatuses();
     void renderTable(RenderWindow& window);
+
+    void showNotification(const string& message);
+    void renderNotification(RenderWindow& window);
 
     Color bgColor = Color(244, 246, 250);
     Color headerColor = Color(20, 118, 172);

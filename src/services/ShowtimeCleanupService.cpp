@@ -4,7 +4,23 @@
 #include <iomanip>
 #include <algorithm>
 #include <unordered_set>
+#include <unordered_map>
 #include <iostream>
+
+namespace {
+// tickets.txt has: ticket_id|showtime_id|title|date|time|...
+bool parseTicketLine(const std::string& line, std::string& outShowtimeId, std::string& outDateYyyyMmDd) {
+    if (line.empty()) return false;
+    std::stringstream ss(line);
+    std::string ticketId;
+    if (!std::getline(ss, ticketId, '|')) return false;
+    if (!std::getline(ss, outShowtimeId, '|')) return false;
+    std::string title;
+    if (!std::getline(ss, title, '|')) return false;
+    if (!std::getline(ss, outDateYyyyMmDd, '|')) return false;
+    return !outShowtimeId.empty() && outDateYyyyMmDd.size() >= 10;
+}
+}
 
 // Static members initialization
 deque<MovieData> ShowtimeCleanupService::movieQueue;
@@ -24,96 +40,259 @@ void ShowtimeCleanupService::maintainShowtimes(const string& showtimesPath, int 
     tm* endTm = localtime(&endTime);
     const string endStr = formatDate(endTm);
 
+    // Load locked showtime IDs (future tickets) so we never delete/modify booked future showtimes.
+    const unordered_set<string> lockedShowtimeIds = loadLockedShowtimeIdsFromTickets("../data/tickets.txt", todayStr);
+
+    // Load valid movies once; used to filter out invalid movie IDs from existing showtimes
+    vector<MovieData> movies = loadMovies("../data/movies.txt");
+    unordered_set<string> validMovieIds;
+    validMovieIds.reserve(movies.size());
+    for (const auto& movie : movies) {
+        if (!movie.id.empty()) {
+            validMovieIds.insert(movie.id);
+        }
+    }
+
     vector<ShowtimeData> existingShowtimes = loadShowtimes(showtimesPath);
     const size_t originalCount = existingShowtimes.size();
 
-    vector<ShowtimeData> kept;
-    kept.reserve(existingShowtimes.size());
+    // Keep only locked showtimes within the window; regenerate everything else.
+    vector<ShowtimeData> lockedKept;
+    lockedKept.reserve(existingShowtimes.size());
     for (const auto& st : existingShowtimes) {
         if (st.date < todayStr || st.date > endStr) continue;
-        if (isExpired(st)) continue;
-        kept.push_back(st);
+        if (lockedShowtimeIds.count(st.showtime_id) == 0) continue;
+        lockedKept.push_back(st);
     }
 
-    // Build date presence map for the window
-    unordered_set<string> presentDates;
-    for (const auto& st : kept) {
-        presentDates.insert(st.date);
-    }
-
-    // Generate missing dates within the window
-    vector<MovieData> movies = loadMovies("../data/movies.txt");
+    // If there are no movies/rooms, just save locked ones.
     vector<string> rooms = loadRooms("../data/rooms.txt");
+    if (movies.empty() || rooms.empty()) {
+        saveShowtimes(showtimesPath, lockedKept);
+        return;
+    }
 
-    if (!movies.empty() && !rooms.empty()) {
-        movieQueue.clear();
-        for (const auto& movie : movies) {
-            movieQueue.push_back(movie);
+    // Build movie lookup and derive status relative to today based on start/end dates.
+    auto toYmd = [](const string& ddmmyyyy) -> string {
+        string dd, mm, yy;
+        stringstream ss(ddmmyyyy);
+        getline(ss, dd, '/');
+        getline(ss, mm, '/');
+        getline(ss, yy, '/');
+        if (dd.empty() || mm.empty() || yy.empty()) return "";
+        if (dd.size() == 1) dd = "0" + dd;
+        if (mm.size() == 1) mm = "0" + mm;
+        return yy + "-" + mm + "-" + dd;
+    };
+    time_t now2 = time(nullptr);
+    const time_t future4 = now2 + (static_cast<time_t>(4) * 24 * 60 * 60);
+    tm* future4Tm = localtime(&future4);
+    const string todayPlus4 = formatDate(future4Tm);
+
+    vector<MovieData> playable;
+    playable.reserve(movies.size());
+    for (auto m : movies) {
+        if (m.end_date.empty()) {
+            // Backfill end_date if missing
+            // Reuse helper already available in this file
+            // (status will be derived below)
         }
 
-        vector<ShowtimeData> generated;
+        // Derive status from dates
+        string startYmd = toYmd(m.release_date);
+        string endYmd = toYmd(m.end_date);
+        if (startYmd.empty() || endYmd.empty()) {
+            // If bad date, treat as currently showing
+            m.status = "Đang chiếu";
+        } else if (todayStr < startYmd) {
+            m.status = "Sắp chiếu";
+        } else if (todayStr >= endYmd) {
+            m.status = "Ngừng chiếu";
+        } else {
+            m.status = "Đang chiếu";
+        }
 
-        for (int dayOffset = 0; dayOffset < windowDays; dayOffset++) {
-            time_t futureTime = now + (static_cast<time_t>(dayOffset) * 24 * 60 * 60);
-            tm* futureTm = localtime(&futureTime);
-            const string dateStr = formatDate(futureTm);
+        if (m.status == "Ngừng chiếu") continue;
+        playable.push_back(m);
+    }
 
-            if (presentDates.count(dateStr)) continue;
+    // Initialize Round-Robin queue stable by status priority then id.
+    stable_sort(playable.begin(), playable.end(), [](const MovieData& a, const MovieData& b) {
+        int pa = statusPriority(a.status);
+        int pb = statusPriority(b.status);
+        if (pa != pb) return pa > pb;
+        return a.id < b.id;
+    });
+    movieQueue.clear();
+    for (const auto& m : playable) movieQueue.push_back(m);
 
-            const bool isToday = (dateStr == todayStr);
-            int dailyCounter = 1;
+    // Group locked showtimes by date+room and sort by time.
+    struct LockedBlock { int start; int end; ShowtimeData st; };
+    unordered_map<string, vector<LockedBlock>> lockedByRoomDate;
+    lockedByRoomDate.reserve(lockedKept.size() * 2);
+    unordered_set<string> usedShowtimeIds;
+    usedShowtimeIds.reserve(lockedKept.size() * 2);
 
-            tempShowtimes.clear();
-            for (size_t r = 0; r < rooms.size(); r++) {
-                const string& roomId = rooms[r];
+    // Duration lookup by movie_id (fallback 120)
+    unordered_map<string, int> durationById;
+    durationById.reserve(movies.size());
+    for (const auto& m : movies) durationById[m.id] = (m.duration > 0 ? m.duration : 120);
 
-                int baseMinute = START_HOUR * 60 + (static_cast<int>(r) * ROOM_OFFSET);
-                int currentMinute = roundUpToNext10(baseMinute);
-                const int endDayMinute = END_HOUR * 60;
+    for (const auto& st : lockedKept) {
+        int start = timeToMinutes(st.time);
+        int dur = 120;
+        auto it = durationById.find(st.movie_id);
+        if (it != durationById.end()) dur = it->second;
+        int end = start + dur;
+        string key = st.date + "|" + st.room_id;
+        lockedByRoomDate[key].push_back({start, end, st});
+        usedShowtimeIds.insert(st.showtime_id);
+    }
+    for (auto& kv : lockedByRoomDate) {
+        auto& vec = kv.second;
+        sort(vec.begin(), vec.end(), [](const LockedBlock& a, const LockedBlock& b) {
+            return a.start < b.start;
+        });
+    }
 
-                if (isToday) {
-                    int minStartMinute = roundUpToNext10(currentTimeMinutes + 30);
-                    if (currentMinute < minStartMinute) {
-                        currentMinute = minStartMinute;
+    vector<ShowtimeData> regenerated;
+    regenerated.reserve(rooms.size() * 40);
+
+    for (int dayOffset = 0; dayOffset < windowDays; dayOffset++) {
+        time_t futureTime = now + (static_cast<time_t>(dayOffset) * 24 * 60 * 60);
+        tm* futureTm = localtime(&futureTime);
+        const string dateStr = formatDate(futureTm);
+        const bool isToday = (dateStr == todayStr);
+
+        // Determine eligible movies for THIS show date based on rule:
+        // - "Đang chiếu": always eligible if show date in [start,end)
+        // - "Sắp chiếu": only if start_date within next 4 days AND show date >= start_date
+        vector<MovieData> dayEligible;
+        dayEligible.reserve(playable.size());
+        for (const auto& m : playable) {
+            string startYmd = toYmd(m.release_date);
+            string endYmd = toYmd(m.end_date);
+            if (!startYmd.empty() && dateStr < startYmd) {
+                // show date before start
+                continue;
+            }
+            if (!endYmd.empty() && dateStr >= endYmd) {
+                // show date at/after end
+                continue;
+            }
+
+            if (m.status == "Đang chiếu") {
+                dayEligible.push_back(m);
+            } else if (m.status == "Sắp chiếu") {
+                // start date must be within next 4 days
+                if (!startYmd.empty() && startYmd <= todayPlus4) {
+                    dayEligible.push_back(m);
+                }
+            }
+        }
+        if (dayEligible.empty()) continue;
+
+        // Re-init queue each day for fairness across days
+        stable_sort(dayEligible.begin(), dayEligible.end(), [](const MovieData& a, const MovieData& b) {
+            int pa = statusPriority(a.status);
+            int pb = statusPriority(b.status);
+            if (pa != pb) return pa > pb;
+            return a.id < b.id;
+        });
+        movieQueue.clear();
+        for (const auto& m : dayEligible) movieQueue.push_back(m);
+
+        int dailyCounter = getNextCounter(lockedKept, dateStr);
+
+        // Seed tempShowtimes with ALL locked showtimes for this date (cross-room conflict checking)
+        tempShowtimes.clear();
+        for (const auto& st : lockedKept) {
+            if (st.date == dateStr) tempShowtimes.push_back(st);
+        }
+        for (size_t r = 0; r < rooms.size(); r++) {
+            const string& roomId = rooms[r];
+            const int endDayMinute = END_HOUR * 60;
+            int baseMinute = START_HOUR * 60 + (static_cast<int>(r) * ROOM_OFFSET);
+            int currentMinute = roundUpToNext10(baseMinute);
+
+            if (isToday) {
+                int minStartMinute = roundUpToNext10(currentTimeMinutes + 30);
+                if (currentMinute < minStartMinute) currentMinute = minStartMinute;
+            }
+
+            string roomDateKey = dateStr + "|" + roomId;
+            const auto itBlocks = lockedByRoomDate.find(roomDateKey);
+            const vector<LockedBlock>* blocks = (itBlocks == lockedByRoomDate.end()) ? nullptr : &itBlocks->second;
+            size_t blockIndex = 0;
+
+            while (currentMinute < endDayMinute) {
+                // Skip over locked blocks if current is inside/at them
+                if (blocks) {
+                    while (blockIndex < blocks->size() && (*blocks)[blockIndex].end + BUFFER_MINUTES <= currentMinute) {
+                        blockIndex++;
+                    }
+                    if (blockIndex < blocks->size()) {
+                        const auto& b = (*blocks)[blockIndex];
+                        if (currentMinute >= b.start && currentMinute < b.end + BUFFER_MINUTES) {
+                            currentMinute = roundUpToNext10(b.end + BUFFER_MINUTES);
+                            continue;
+                        }
                     }
                 }
 
-                while (currentMinute < endDayMinute) {
-                    MovieData movie = selectNextMovie(currentMinute, roomId, dateStr);
-                    if (movie.id.empty()) break;
+                MovieData movie = selectNextMovie(currentMinute, roomId, dateStr);
+                if (movie.id.empty()) break;
 
-                    int showtimeEndMinute = currentMinute + movie.duration;
-                    if (showtimeEndMinute > endDayMinute) break;
+                int showtimeEndMinute = currentMinute + movie.duration;
+                if (showtimeEndMinute > endDayMinute) break;
 
-                    ShowtimeData newSt;
-                    string dateCompact = dateStr;
-                    dateCompact.erase(remove(dateCompact.begin(), dateCompact.end(), '-'), dateCompact.end());
-                    stringstream ss;
-                    ss << "SUATCHIEU_" << dateCompact << "_"
-                       << setfill('0') << setw(4) << dailyCounter++;
-                    newSt.showtime_id = ss.str();
-                    newSt.movie_id = movie.id;
-                    newSt.room_id = roomId;
-                    newSt.date = dateStr;
-                    newSt.time = minutesToTime(currentMinute);
-                    newSt.price = getPriceByTime(currentMinute / 60);
-
-                    generated.push_back(newSt);
-                    tempShowtimes.push_back(newSt);
-
-                    currentMinute = roundUpToNext10(showtimeEndMinute + BUFFER_MINUTES);
+                // Ensure it doesn't overlap next locked block in this room
+                if (blocks && blockIndex < blocks->size()) {
+                    const auto& b = (*blocks)[blockIndex];
+                    if (showtimeEndMinute + BUFFER_MINUTES > b.start) {
+                        // Not enough space before locked showtime, jump to after locked
+                        currentMinute = roundUpToNext10(b.end + BUFFER_MINUTES);
+                        continue;
+                    }
                 }
+
+                ShowtimeData st;
+                string dateCompact = dateStr;
+                dateCompact.erase(remove(dateCompact.begin(), dateCompact.end(), '-'), dateCompact.end());
+                // Ensure unique showtime_id (avoid collisions with locked)
+                while (true) {
+                    stringstream ss;
+                    ss << "SUATCHIEU_" << dateCompact << "_" << setfill('0') << setw(4) << dailyCounter++;
+                    st.showtime_id = ss.str();
+                    if (!usedShowtimeIds.count(st.showtime_id)) {
+                        usedShowtimeIds.insert(st.showtime_id);
+                        break;
+                    }
+                }
+                st.movie_id = movie.id;
+                st.room_id = roomId;
+                st.date = dateStr;
+                st.time = minutesToTime(currentMinute);
+                st.price = getPriceByTime(currentMinute / 60);
+
+                regenerated.push_back(st);
+                tempShowtimes.push_back(st);
+
+                currentMinute = roundUpToNext10(showtimeEndMinute + BUFFER_MINUTES);
             }
-
-            presentDates.insert(dateStr);
         }
-
-        kept.insert(kept.end(), generated.begin(), generated.end());
     }
+
+    // Merge locked + regenerated, sort, and write.
+    vector<ShowtimeData> kept;
+    kept.reserve(lockedKept.size() + regenerated.size());
+    kept.insert(kept.end(), lockedKept.begin(), lockedKept.end());
+    kept.insert(kept.end(), regenerated.begin(), regenerated.end());
 
     // Sort for stable output
     sort(kept.begin(), kept.end(), [&](const ShowtimeData& a, const ShowtimeData& b) {
         if (a.date != b.date) return a.date < b.date;
+        if (a.room_id != b.room_id) return a.room_id < b.room_id;
         return timeToMinutes(a.time) < timeToMinutes(b.time);
     });
 
@@ -124,6 +303,54 @@ void ShowtimeCleanupService::maintainShowtimes(const string& showtimesPath, int 
     }
 
     saveShowtimes(showtimesPath, kept);
+}
+
+unordered_set<string> ShowtimeCleanupService::loadLockedShowtimeIdsFromTickets(const string& ticketsPath, const string& todayStr) {
+    unordered_set<string> locked;
+    ifstream file(ticketsPath);
+    if (!file.is_open()) return locked;
+
+    string line;
+    getline(file, line); // header
+
+    while (getline(file, line)) {
+        string showtimeId;
+        string ticketDate;
+        if (!parseTicketLine(line, showtimeId, ticketDate)) continue;
+        // lock only future/today tickets
+        if (ticketDate >= todayStr) {
+            locked.insert(showtimeId);
+        }
+    }
+    return locked;
+}
+
+int ShowtimeCleanupService::statusPriority(const string& status) {
+    // Higher is better.
+    // Exclude "Ngừng chiếu" by returning -1.
+    if (status == "Ngừng chiếu") return -1;
+    if (status == "Đang chiếu") return 2;
+    if (status == "Sắp chiếu") return 1;
+    return 0; // unknown/empty
+}
+
+bool ShowtimeCleanupService::isReleaseOnOrBeforeShowDate(const string& releaseDateDdMmYyyy, const string& showDateYyyyMmDd) {
+    // Very small helper: compare by converting dd/mm/yyyy -> yyyy-mm-dd
+    if (releaseDateDdMmYyyy.size() < 8 || showDateYyyyMmDd.size() < 10) return true;
+    string dd, mm, yyyy;
+    {
+        stringstream ss(releaseDateDdMmYyyy);
+        getline(ss, dd, '/');
+        getline(ss, mm, '/');
+        getline(ss, yyyy, '/');
+    }
+    if (dd.empty() || mm.empty() || yyyy.empty()) return true;
+    string normalized = yyyy + "-";
+    if (mm.size() == 1) normalized += "0";
+    normalized += mm + "-";
+    if (dd.size() == 1) normalized += "0";
+    normalized += dd;
+    return normalized <= showDateYyyyMmDd;
 }
 
 void ShowtimeCleanupService::forceRegenerate(const string& showtimesPath, int daysToGenerate) {
@@ -263,10 +490,18 @@ vector<MovieData> ShowtimeCleanupService::loadMovies(const string& moviesPath) {
     getline(file, line); // Skip header
     
     while (getline(file, line)) {
+        if (line.empty()) continue;
+
         stringstream ss(line);
         string token;
         MovieData movie;
-        
+
+        // Legacy 12 cols:
+        // movie_id|title|age_rating|country|language|genres|duration_min|release_date|director|cast|synopsis|poster_path
+        // Legacy 13 cols:
+        // ...|poster_path|status
+        // New 14 cols:
+        // movie_id|title|age_rating|country|language|genres|duration_min|release_date|end_date|director|cast|synopsis|poster_path|status
         getline(ss, movie.id, '|');        // 0: movie_id
         getline(ss, movie.title, '|');     // 1: title
         getline(ss, token, '|');           // 2: age_rating (skip)
@@ -279,17 +514,30 @@ vector<MovieData> ShowtimeCleanupService::loadMovies(const string& moviesPath) {
         } catch (...) {
             movie.duration = 120;
         }
-        getline(ss, token, '|');           // 7: release_date (skip)
-        getline(ss, token, '|');           // 8: director (skip)
-        getline(ss, token, '|');           // 9: cast (skip)
-        getline(ss, token, '|');           // 10: synopsis (skip)
-        getline(ss, token, '|');           // 11: poster_path (skip)
-        getline(ss, movie.status, '|');    // 12: status
-        
-        // Chỉ lấy phim "Đang chiếu" hoặc "Sắp chiếu"
-        if (movie.status.find("chiếu") != string::npos || 
-            movie.status.find("chieu") != string::npos ||
-            movie.status == "Đang chiếu" || movie.status == "Sắp chiếu") {
+        getline(ss, movie.release_date, '|'); // 7: release_date (start_date)
+
+        // Try read next token; in new schema this is end_date, in legacy this is director.
+        string maybeEndOrDirector;
+        getline(ss, maybeEndOrDirector, '|');
+
+        // Heuristic: end_date should contain '/' (dd/mm/yyyy). If not, treat as legacy.
+        if (maybeEndOrDirector.find('/') != string::npos) {
+            movie.end_date = maybeEndOrDirector;
+            getline(ss, token, '|'); // director
+            getline(ss, token, '|'); // cast
+            getline(ss, token, '|'); // synopsis
+            getline(ss, token, '|'); // poster_path
+            if (getline(ss, token, '|')) movie.status = token; else movie.status.clear();
+        } else {
+            movie.end_date.clear();
+            // legacy consumed director already
+            getline(ss, token, '|'); // cast
+            getline(ss, token, '|'); // synopsis
+            getline(ss, token, '|'); // poster_path
+            if (getline(ss, token, '|')) movie.status = token; else movie.status.clear();
+        }
+
+        if (!movie.id.empty()) {
             movies.push_back(movie);
         }
     }
@@ -341,7 +589,7 @@ bool ShowtimeCleanupService::hasConflict(const string& movieId, int startMinute,
 
 MovieData ShowtimeCleanupService::selectNextMovie(int startMinute, const string& roomId, const string& date) {
     if (movieQueue.empty()) {
-        return {"", "", 120, ""};
+        return {"", "", 120, "", "", ""};
     }
     
     size_t queueSize = movieQueue.size();

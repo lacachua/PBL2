@@ -73,7 +73,27 @@ void AdminMovieRepository::loadFromFile() {
         }
 
         vector<string> rowData = splitString(line, '|');
-        if (rowData.size() >= 5) {
+        // Accept legacy:
+        // 12 cols: ...|poster_path
+        // 13 cols: ...|poster_path|status
+        // New:
+        // 14 cols: ...|release_date|end_date|...|poster_path|status
+        if (rowData.size() >= 12) {
+            if (rowData.size() == 12) {
+                // Insert end_date at index 8, and append status
+                rowData.insert(rowData.begin() + 8, "");
+                rowData.push_back("");
+            } else if (rowData.size() == 13) {
+                // Insert end_date at index 8
+                string status = rowData.back();
+                rowData.pop_back();
+                rowData.insert(rowData.begin() + 8, "");
+                rowData.push_back(status);
+            }
+
+            while (rowData.size() < 14) rowData.push_back("");
+            if (rowData.size() > 14) rowData.resize(14);
+
             data.push_back(rowData);
         }
     }
@@ -87,7 +107,7 @@ void AdminMovieRepository::saveToFile() {
         return;
     }
 
-    file << "movie_id|title|age_rating|country|language|genres|duration_min|release_date|director|cast|synopsis|poster_path|status\n";
+    file << "movie_id|title|age_rating|country|language|genres|duration_min|release_date|end_date|director|cast|synopsis|poster_path|status\n";
 
     for (const auto& row : data) {
         for (size_t i = 0; i < row.size(); i++) {
@@ -111,11 +131,11 @@ void AdminMovieRepository::addRecord(const vector<string>& record) {
         fullRecord.insert(fullRecord.begin(), generateNewId());
     }
 
-    while (fullRecord.size() < 13) {
+    while (fullRecord.size() < 14) {
         fullRecord.push_back("");
     }
-    if (fullRecord.size() > 13) {
-        fullRecord.resize(13);
+    if (fullRecord.size() > 14) {
+        fullRecord.resize(14);
     }
 
     data.push_back(fullRecord);
@@ -125,8 +145,9 @@ void AdminMovieRepository::updateRecord(int index, const vector<string>& record)
     if (index < 0 || index >= (int)data.size()) return;
 
     vector<string> updatedRecord = record;
-    if (updatedRecord.size() < 13) {
-        updatedRecord.resize(13);
+    if (updatedRecord.size() < 14) {
+        updatedRecord.resize(14);
+        updatedRecord[13] = "";
     }
     if (!data[index].empty()) {
         updatedRecord[0] = data[index][0];

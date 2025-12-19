@@ -11,7 +11,6 @@ struct MovieInfo {
     string id;
     string title;
     int duration;  // phút
-    string status; // "Đang chiếu" hoặc "Sắp chiếu"
 };
 
 // Suất chiếu được tạo

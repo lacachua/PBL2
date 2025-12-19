@@ -21,7 +21,11 @@ void MovieRepository::loadMovies() {
             cols.push_back(token);
         }
 
-        if (cols.size() < 13) continue;
+        // Supported formats:
+        // - 12 cols: movie_id|title|age_rating|country|language|genres|duration_min|release_date|director|cast|synopsis|poster_path
+        // - 13 cols: ...|poster_path|status
+        // - 14 cols: movie_id|title|age_rating|country|language|genres|duration_min|release_date|end_date|director|cast|synopsis|poster_path|status
+        if (cols.size() < 12) continue;
 
         MovieDetail m;
         m.movie_id      = sf::String(cols[0]);
@@ -32,11 +36,28 @@ void MovieRepository::loadMovies() {
         m.genres        = sf::String::fromUtf8(cols[5].begin(), cols[5].end());
         m.duration_min  = sf::String::fromUtf8(cols[6].begin(), cols[6].end());
         m.release_date  = sf::String::fromUtf8(cols[7].begin(), cols[7].end());
-        m.director      = sf::String::fromUtf8(cols[8].begin(), cols[8].end());
-        m.cast          = sf::String::fromUtf8(cols[9].begin(), cols[9].end());
-        m.synopsis      = sf::String::fromUtf8(cols[10].begin(), cols[10].end());
-        m.posterPath    = sf::String::fromUtf8(cols[11].begin(), cols[11].end());
-        m.status        = sf::String::fromUtf8(cols[12].begin(), cols[12].end());
+
+        // 14-col format inserts end_date at index 8
+        const bool hasEndDate = (cols.size() >= 14);
+        const size_t directorIdx = hasEndDate ? 9 : 8;
+        const size_t castIdx     = hasEndDate ? 10 : 9;
+        const size_t synIdx      = hasEndDate ? 11 : 10;
+        const size_t posterIdx   = hasEndDate ? 12 : 11;
+        const size_t statusIdx   = hasEndDate ? 13 : 12;
+
+        if (cols.size() > posterIdx) {
+            m.director   = sf::String::fromUtf8(cols[directorIdx].begin(), cols[directorIdx].end());
+            m.cast       = sf::String::fromUtf8(cols[castIdx].begin(), cols[castIdx].end());
+            m.synopsis   = sf::String::fromUtf8(cols[synIdx].begin(), cols[synIdx].end());
+            m.posterPath = sf::String::fromUtf8(cols[posterIdx].begin(), cols[posterIdx].end());
+        }
+
+        // Optional status (index depends on schema)
+        if (cols.size() > statusIdx) {
+            m.status = sf::String::fromUtf8(cols[statusIdx].begin(), cols[statusIdx].end());
+        } else {
+            m.status = L"";
+        }
 
         movies.push_back(m);
     }

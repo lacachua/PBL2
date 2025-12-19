@@ -4,6 +4,73 @@
 #include <iostream>
 #include <stdexcept>
 #include <array>
+#include <ctime>
+
+namespace {
+bool parseDdMmYyyy(const std::string& s, int& d, int& m, int& y) {
+    d = m = y = 0;
+    std::stringstream ss(s);
+    std::string dd, mm, yy;
+    if (!std::getline(ss, dd, '/')) return false;
+    if (!std::getline(ss, mm, '/')) return false;
+    if (!std::getline(ss, yy, '/')) return false;
+    try {
+        d = std::stoi(dd);
+        m = std::stoi(mm);
+        y = std::stoi(yy);
+    } catch (...) {
+        return false;
+    }
+    return d >= 1 && d <= 31 && m >= 1 && m <= 12 && y >= 1900;
+}
+
+std::string formatDdMmYyyy(int d, int m, int y) {
+    std::stringstream out;
+    out << std::setfill('0') << std::setw(2) << d << "/" << std::setfill('0') << std::setw(2) << m << "/" << y;
+    return out.str();
+}
+
+std::string addOneMonthDdMmYyyy(const std::string& start) {
+    int d, m, y;
+    if (!parseDdMmYyyy(start, d, m, y)) return "";
+    std::tm t{};
+    t.tm_mday = d;
+    t.tm_mon = m - 1;
+    t.tm_year = y - 1900;
+    t.tm_hour = 12;
+    std::time_t tt = std::mktime(&t);
+    if (tt == (std::time_t)-1) return "";
+    // Add 1 month using tm normalization
+    t.tm_mon += 1;
+    tt = std::mktime(&t);
+    if (tt == (std::time_t)-1) return "";
+    std::tm* out = std::localtime(&tt);
+    return formatDdMmYyyy(out->tm_mday, out->tm_mon + 1, out->tm_year + 1900);
+}
+
+// Compare dd/mm/yyyy by converting to yyyymmdd int (simple, sufficient for this UI)
+int dateKeyDdMmYyyy(const std::string& s) {
+    int d, m, y;
+    if (!parseDdMmYyyy(s, d, m, y)) return 0;
+    return y * 10000 + m * 100 + d;
+}
+
+std::string todayDdMmYyyy() {
+    std::time_t now = std::time(nullptr);
+    std::tm* t = std::localtime(&now);
+    return formatDdMmYyyy(t->tm_mday, t->tm_mon + 1, t->tm_year + 1900);
+}
+
+std::string computeStatus(const std::string& start, const std::string& end) {
+    const int today = dateKeyDdMmYyyy(todayDdMmYyyy());
+    const int s = dateKeyDdMmYyyy(start);
+    const int e = dateKeyDdMmYyyy(end);
+    if (s == 0 || e == 0) return "Đang chiếu";
+    if (today < s) return "Sắp chiếu";
+    if (today >= e) return "Ngừng chiếu";
+    return "Đang chiếu";
+}
+}
 
 MoviePanel::MoviePanel(Font& font, float width, float height)
         : font(font), width(width), height(height), currentPopup(NONE),
@@ -81,9 +148,9 @@ void MoviePanel::setupUI() {
     
     // Notification setup
     notificationBg.setSize(Vector2f(400, 60));
-    notificationBg.setFillColor(Color(20, 118, 172, 230));
+    notificationBg.setFillColor(Color(211, 47, 47, 230));
     notificationTextObj = make_unique<Text>(font);
-    notificationTextObj->setCharacterSize(15);
+    notificationTextObj->setCharacterSize(18);
     notificationTextObj->setFillColor(Color::White);
 }
 
@@ -103,7 +170,7 @@ void MoviePanel::setPosition(Vector2f pos) {
     btnAddBg.setPosition(Vector2f(pos.x + TABLE_X, pos.y + buttonRowY));
     btnEditBg.setPosition(Vector2f(btnAddBg.getPosition().x + btnAddBg.getSize().x + spacing, pos.y + buttonRowY));
     btnDeleteBg.setPosition(Vector2f(btnEditBg.getPosition().x + btnEditBg.getSize().x + spacing, pos.y + buttonRowY));
-    float reloadX = btnDeleteBg.getPosition().x + btnDeleteBg.getSize().x + spacing;
+    float reloadX = pos.x + TABLE_X + TABLE_WIDTH - reloadButtonBg.getSize().x;
     float reloadY = pos.y + buttonRowY;
 
     reloadButtonBg.setPosition({reloadX, reloadY});
@@ -147,7 +214,7 @@ void MoviePanel::openAddPopup() {
     const float inputStartY = popupY + 100;
     const float inputSpacing = 76.f;
     
-    // Fields definition (11 TextBox fields + 1 Dropdown)
+    // Fields definition (11 TextBox fields)
     vector<pair<string, string>> fields = {
         // Left column (0-5)
         {"Tên phim*", "Nhập tên phim"},
@@ -162,7 +229,6 @@ void MoviePanel::openAddPopup() {
         {"Diễn viên*", "Danh sách diễn viên"},
         {"Tóm tắt*", "Mô tả phim"},
         {"Poster", "../assets/posters/..."}
-        // Trạng thái will be dropdown (handled separately)
     };
     
     inputBoxes.clear();
@@ -174,13 +240,7 @@ void MoviePanel::openAddPopup() {
         box->setPlaceholder(fields[i].second);
         inputBoxes.push_back(move(box));
     }
-    
-    // Status dropdown (right column, row 6)
-    float dropdownY = inputStartY + 5 * inputSpacing;
-    statusDropdown = make_unique<DropdownBox>(font, "Trạng thái*", rightColX, dropdownY, inputW, inputH);
-    vector<string> statusOptions = {"Đang chiếu", "Sắp chiếu", "Đã chiếu"};
-    statusDropdown->setOptions(statusOptions);
-    statusDropdown->setSelectedIndex(0); // Default: "Đang chiếu"
+
     
     // Popup buttons (RegisterScreen style: blue "Lưu", gray "Quay lại")
     const float btnW = 190.f;
@@ -205,7 +265,7 @@ void MoviePanel::openAddPopup() {
 
 void MoviePanel::openEditPopup() {
     if (selectedRow < 0) {
-        showSelectionWarning("Vui lòng chọn phim trước khi sửa.");
+        showNotification("Vui lòng chọn phim cần sửa");
         return;
     }
     
@@ -267,26 +327,20 @@ void MoviePanel::openEditPopup() {
         inputBoxes.push_back(move(box));
     }
     
-    // Status dropdown
-    float dropdownY = inputStartY + 5 * inputSpacing;
-    statusDropdown = make_unique<DropdownBox>(font, "Trạng thái*", rightColX, dropdownY, inputW, inputH);
-    vector<string> statusOptions = {"Đang chiếu", "Sắp chiếu", "Đã chiếu"};
-    statusDropdown->setOptions(statusOptions);
-    
     // Pre-fill values from selected record
-    if (record.size() >= 13) {
+    if (record.size() >= 12) {
         inputBoxes[0]->setValue(record[1]);   // title
         inputBoxes[1]->setValue(record[2]);   // age_rating
         inputBoxes[2]->setValue(record[3]);   // country
         inputBoxes[3]->setValue(record[4]);   // language
         inputBoxes[4]->setValue(record[5]);   // genres
         inputBoxes[5]->setValue(record[6]);   // duration_min
-        inputBoxes[6]->setValue(record[7]);   // release_date
-        inputBoxes[7]->setValue(record[8]);   // director
-        inputBoxes[8]->setValue(record[9]);   // cast
-        inputBoxes[9]->setValue(record[10]);  // synopsis
-        inputBoxes[10]->setValue(record[11]); // poster_path
-        statusDropdown->setSelectedValue(record[12]); // status (dropdown)
+        inputBoxes[6]->setValue(record[7]);   // release_date (start_date)
+        // record[8] is end_date (auto)
+        inputBoxes[7]->setValue(record.size() >= 10 ? record[9] : "");   // director
+        inputBoxes[8]->setValue(record.size() >= 11 ? record[10] : "");  // cast
+        inputBoxes[9]->setValue(record.size() >= 12 ? record[11] : "");  // synopsis
+        inputBoxes[10]->setValue(record.size() >= 13 ? record[12] : ""); // poster_path
     }
     
     // Buttons (same as Add popup)
@@ -312,7 +366,7 @@ void MoviePanel::openEditPopup() {
 
 void MoviePanel::openDeleteConfirm() {
     if (selectedRow < 0) {
-        showSelectionWarning("Vui lòng chọn phim trước khi xóa.");
+        showNotification("Vui lòng chọn phim cần xóa");
         return;
     }
     
@@ -369,13 +423,12 @@ void MoviePanel::openDeleteConfirm() {
 void MoviePanel::closePopup() {
     currentPopup = NONE;
     inputBoxes.clear();
-    statusDropdown.reset();
     btnPopupSave.reset();
     btnPopupCancel.reset();
 }
 
 void MoviePanel::handleAdd() {
-    if (inputBoxes.getSize() < 11) return;  // Changed from 12 to 11
+    if (inputBoxes.getSize() < 11) return;
     
     // Get all 11 field values from TextBoxes
     string title = inputBoxes[0]->getValue();
@@ -389,9 +442,9 @@ void MoviePanel::handleAdd() {
     string cast = inputBoxes[8]->getValue();
     string synopsis = inputBoxes[9]->getValue();
     string posterPath = inputBoxes[10]->getValue();
-    
-    // Get status from dropdown
-    string status = statusDropdown ? statusDropdown->getSelectedValue() : "Dang chieu";
+    // Auto end_date + status
+    string endDate = addOneMonthDdMmYyyy(releaseDate);
+    string status = computeStatus(releaseDate, endDate);
     
     // Validate required fields
     if (title.empty()) {
@@ -408,12 +461,13 @@ void MoviePanel::handleAdd() {
         language.empty() ? "Vietnamese" : language,    // 4. language
         genres.empty() ? "Action" : genres,            // 5. genres
         duration.empty() ? "120" : duration,          // 6. duration_min
-        releaseDate.empty() ? "01/01/2025" : releaseDate, // 7. release_date
-        director.empty() ? "Unknown" : director,      // 8. director
-        cast.empty() ? "Unknown" : cast,              // 9. cast
-        synopsis.empty() ? "Description" : synopsis,  // 10. synopsis
-        posterPath,                                    // 11. poster_path
-        status.empty() ? "Coming Soon" : status       // 12. status
+        releaseDate.empty() ? todayDdMmYyyy() : releaseDate, // 7. release_date (start_date)
+        endDate,                                       // 8. end_date
+        director.empty() ? "Unknown" : director,      // 9. director
+        cast.empty() ? "Unknown" : cast,              // 10. cast
+        synopsis.empty() ? "Description" : synopsis,  // 11. synopsis
+        posterPath,                                    // 12. poster_path
+        status                                         // 13. status
     };
     
     repository->addRecord(record);
@@ -425,7 +479,7 @@ void MoviePanel::handleAdd() {
 }
 
 void MoviePanel::handleEdit() {
-    if (selectedRow < 0 || inputBoxes.getSize() < 11) return;  // Changed from 12 to 11
+    if (selectedRow < 0 || inputBoxes.getSize() < 11) return;
     
     // Get all 11 field values from TextBoxes
     string title = inputBoxes[0]->getValue();
@@ -439,13 +493,14 @@ void MoviePanel::handleEdit() {
     string cast = inputBoxes[8]->getValue();
     string synopsis = inputBoxes[9]->getValue();
     string posterPath = inputBoxes[10]->getValue();
-    
-    // Get status from dropdown
-    string status = statusDropdown ? statusDropdown->getSelectedValue() : "Dang chieu";
+    string endDate = addOneMonthDdMmYyyy(releaseDate);
+    string status = computeStatus(releaseDate, endDate);
     
     // Get existing record
     vector<string> record = repository->getRecord(selectedRow);
     if (record.empty()) return;
+
+    if (record.size() < 14) record.resize(14);
     
     // Update all fields (keep ID at index 0)
     record[1] = title;
@@ -455,18 +510,19 @@ void MoviePanel::handleEdit() {
     record[5] = genres;
     record[6] = duration;
     record[7] = releaseDate;
-    record[8] = director;
-    record[9] = cast;
-    record[10] = synopsis;
-    record[11] = posterPath;
-    record[12] = status;
+    record[8] = endDate;
+    record[9] = director;
+    record[10] = cast;
+    record[11] = synopsis;
+    record[12] = posterPath;
+    record[13] = status;
     
     repository->updateRecord(selectedRow, record);
     repository->saveToFile();
     repository->loadFromFile();
     
     closePopup();
-    showNotification("Cap nhat thanh cong!");
+    showNotification("Đã cập nhật thành công!");
     selectedRow = -1;
 }
 
@@ -579,19 +635,43 @@ void MoviePanel::handleEvent(const Event& event, const RenderWindow& window) {
     }
     // Handle popup events
     if (currentPopup != NONE && currentPopup != DELETE_CONFIRM) {
+        if (const auto* keyEvent = event.getIf<Event::KeyPressed>()) {
+            if (keyEvent->code == Keyboard::Key::Tab) {
+                int direction = keyEvent->shift ? -1 : 1;
+                int focusedIndex = -1;
+                for (int i = 0; i < inputBoxes.getSize(); ++i) {
+                    if (inputBoxes[i] && inputBoxes[i]->getFocus()) {
+                        focusedIndex = i;
+                        break;
+                    }
+                }
+                if (focusedIndex < 0) {
+                    for (int i = 0; i < inputBoxes.getSize(); ++i) {
+                        if (inputBoxes[i]) {
+                            inputBoxes[i]->setFocus(i == 0);
+                        }
+                    }
+                } else {
+                    int nextIndex = focusedIndex;
+                    int total = inputBoxes.getSize();
+                    for (int attempt = 0; attempt < total; ++attempt) {
+                        nextIndex = (nextIndex + direction + total) % total;
+                        if (inputBoxes[nextIndex]) break;
+                    }
+                    if (inputBoxes[focusedIndex]) inputBoxes[focusedIndex]->setFocus(false);
+                    if (inputBoxes[nextIndex]) inputBoxes[nextIndex]->setFocus(true);
+                }
+                return;
+            }
+        }
+
         // Handle input boxes
         for (int i = 0; i < inputBoxes.getSize(); ++i) {
             if (inputBoxes[i]) {
                 inputBoxes[i]->handleEvent(event);
             }
         }
-        
-        // Handle dropdown
-        if (statusDropdown) {
-            Vector2i mousePixelPos = Mouse::getPosition(window);
-            Vector2f mousePos = window.mapPixelToCoords(mousePixelPos);
-            statusDropdown->handleEvent(event, mousePos);
-        }
+
     }
     
     // Handle mouse clicks
@@ -706,6 +786,7 @@ void MoviePanel::update(Vector2f mousePos, bool mousePressed) {
                 inputBoxes[i]->update(mousePos, mousePressed);
             }
         }
+
         
         // Update popup buttons
         if (btnPopupSave && btnPopupCancel) {
@@ -748,7 +829,7 @@ void MoviePanel::renderTable(RenderWindow& window) {
     };
 
     static const array<ColumnSpec, 5> columns = {{{"ID Phim", 0.10f},
-        {"Tên phim", 0.36f}, {"Thời lượng", 0.14f}, {"Ngày chiếu", 0.20f}, {"Trạng thái", 0.20f}}};
+        {"Tên phim", 0.36f}, {"Thời lượng", 0.16f}, {"Ngày chiếu", 0.18f}, {"Trạng thái", 0.20f}}};
 
     vector<float> columnWidths;
     columnWidths.reserve(columns.size());
@@ -815,14 +896,17 @@ void MoviePanel::renderTable(RenderWindow& window) {
         window.draw(rowBorder);
 
         const auto& row = allData[i];
-        if (row.size() < 13) continue;
+        if (row.size() < 12) continue;
+
+        string status = (row.size() >= 14) ? row[13] : "";
+        if (status.empty()) status = "Đang chiếu";
 
         array<string, 5> cellValues = {
             row[0],
             row[1],
             row[6] + " phút",
             row[7],
-            row[12]
+            status
         };
 
         for (size_t col = 0; col < columns.size(); ++col) {
@@ -858,11 +942,7 @@ void MoviePanel::renderPopup(RenderWindow& window) {
             inputBoxes[i]->render(window);
         }
     }
-    
-    // Draw dropdown
-    if (statusDropdown && (currentPopup == ADD || currentPopup == EDIT)) {
-        statusDropdown->draw(window);
-    }
+
     
     // Draw buttons
     if (btnPopupSave && btnPopupCancel) {
@@ -877,15 +957,15 @@ void MoviePanel::renderNotification(RenderWindow& window) {
         notificationVisible = false;
         return;
     }
-    
-    notificationBg.setPosition(Vector2f(1300, 50));
+
+    notificationBg.setPosition(Vector2f(position.x + width - notificationBg.getSize().x - 30.f, position.y + 20.f));
     window.draw(notificationBg);
     
     notificationTextObj->setString(String::fromUtf8(notificationText.begin(), notificationText.end()));
     FloatRect textBounds = notificationTextObj->getLocalBounds();
     notificationTextObj->setPosition(Vector2f(
-        1500 - textBounds.size.x / 2,
-        80 - textBounds.size.y / 2
+        notificationBg.getPosition().x + (notificationBg.getSize().x - textBounds.size.x) / 2.f - textBounds.position.x,
+        notificationBg.getPosition().y + (notificationBg.getSize().y - textBounds.size.y) / 2.f - textBounds.position.y
     ));
     window.draw(*notificationTextObj);
 }

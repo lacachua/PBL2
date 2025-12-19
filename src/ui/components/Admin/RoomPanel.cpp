@@ -14,6 +14,7 @@ namespace {
 const char* ROOMS_FILE = "../data/rooms.txt";
 const char* MOVIES_FILE = "../data/movies.txt";
 const char* SHOWTIMES_FILE = "../data/showtimes.txt";
+const char* SHOWTIMES_HISTORY_FILE = "../data/showtimes_history.txt";
 
 sf::String utf8(const string& text) {
     return sf::String::fromUtf8(text.begin(), text.end());
@@ -48,6 +49,43 @@ void RoomPanel::setupUI() {
     reloadTexture.setSmooth(true);
     reloadSprite = make_unique<Sprite>(reloadTexture);
     reloadSprite->setScale({0.1f, 0.1f});
+
+    notificationBg.setSize(Vector2f(400.f, 60.f));
+    notificationBg.setFillColor(Color(211, 47, 47, 230));
+    notificationText = make_unique<Text>(font);
+    notificationText->setCharacterSize(18);
+    notificationText->setFillColor(Color::White);
+}
+
+void RoomPanel::showNotification(const string& message) {
+    notificationMessage = message;
+    notificationVisible = !message.empty();
+    if (notificationVisible) {
+        notificationClock.restart();
+    }
+    if (notificationText) {
+        notificationText->setString(utf8(message));
+    }
+}
+
+void RoomPanel::renderNotification(RenderWindow& window) {
+    if (!notificationVisible) return;
+    if (notificationClock.getElapsedTime().asSeconds() > 3.0f) {
+        notificationVisible = false;
+        return;
+    }
+
+    notificationBg.setPosition(Vector2f(position.x + width - notificationBg.getSize().x - 30.f, position.y + 20.f));
+    window.draw(notificationBg);
+
+    if (notificationText) {
+        FloatRect bounds = notificationText->getLocalBounds();
+        notificationText->setPosition(Vector2f(
+            notificationBg.getPosition().x + (notificationBg.getSize().x - bounds.size.x) / 2.f - bounds.position.x,
+            notificationBg.getPosition().y + (notificationBg.getSize().y - bounds.size.y) / 2.f - bounds.position.y
+        ));
+        window.draw(*notificationText);
+    }
 }
 
 void RoomPanel::setPosition(Vector2f pos) {
@@ -70,6 +108,9 @@ void RoomPanel::loadData() {
     cacheDirty = false;
 
     loadShowtimes(SHOWTIMES_FILE, movies);
+    // Include history so rooms can still show the currently-playing movie even if the
+    // active showtimes file only contains upcoming entries.
+    loadShowtimes(SHOWTIMES_HISTORY_FILE, movies);
     roomSchedules = liveSchedules;
     loadCache();
     cacheDirty = removeExpiredCachedShows();
@@ -133,7 +174,6 @@ unordered_map<string, RoomPanel::MovieInfo> RoomPanel::loadMovies(const string& 
 }
 
 void RoomPanel::loadShowtimes(const string& path, const unordered_map<string, MovieInfo>& movies) {
-    liveSchedules.clear();
     ifstream file(path);
     if (!file.is_open()) {
         cerr << "[RoomPanel] Cannot open showtimes file: " << path << "\n";
@@ -159,7 +199,10 @@ void RoomPanel::loadShowtimes(const string& path, const unordered_map<string, Mo
         system_clock::time_point end = start + minutes(clampedDuration);
 
         ShowtimeSlot slot{start, end, movieTitle};
-        liveSchedules[roomId].push_back(slot);
+        auto& list = liveSchedules[roomId];
+        if (!hasSlot(list, slot)) {
+            list.push_back(slot);
+        }
     }
 
     for (auto& [roomId, slots] : liveSchedules) {
@@ -391,16 +434,28 @@ void RoomPanel::updateRoomStatuses() {
         auto it = roomSchedules.find(room.id);
         if (it != roomSchedules.end()) {
             const auto& slots = it->second;
-            for (const auto& slot : slots) {
-                if (now >= slot.start && now <= slot.end) {
-                    current = slot.movieTitle;
+            int currentIndex = -1;
+            for (size_t i = 0; i < slots.size(); ++i) {
+                // Current movie is playing when now is in [start, end)
+                if (now >= slots[i].start && now < slots[i].end) {
+                    currentIndex = static_cast<int>(i);
+                    current = slots[i].movieTitle;
                     break;
                 }
             }
-            for (const auto& slot : slots) {
-                if (slot.start > now) {
-                    upcoming = slot.movieTitle;
-                    break;
+
+            if (currentIndex >= 0) {
+                // Upcoming is the next showtime after the currently-playing one (same room)
+                if (static_cast<size_t>(currentIndex + 1) < slots.size()) {
+                    upcoming = slots[static_cast<size_t>(currentIndex + 1)].movieTitle;
+                }
+            } else {
+                // If nothing is playing now, upcoming is the first showtime that starts after now
+                for (const auto& slot : slots) {
+                    if (slot.start > now) {
+                        upcoming = slot.movieTitle;
+                        break;
+                    }
                 }
             }
         }
@@ -456,6 +511,7 @@ void RoomPanel::update(Vector2f mousePos, bool mousePressed) {
     if (reloadPressed && !mousePressed) {
         if (reloadHovered) {
             loadData();
+            showNotification("Đã tải lại dữ liệu");
         }
         reloadPressed = false;
     }
@@ -571,4 +627,6 @@ void RoomPanel::render(RenderWindow& window) {
     reloadSprite->setPosition(Vector2f(reloadButtonBg.getPosition().x + (reloadButtonBg.getSize().x - spriteWidth) / 2.f, reloadButtonBg.getPosition().y + (reloadButtonBg.getSize().y - spriteHeight) / 2.f));
     reloadSprite->setColor(Color::White);
     window.draw(*reloadSprite);
+
+    renderNotification(window);
 }

@@ -16,6 +16,43 @@ namespace {
         formatted += " VND";
         return formatted;
     }
+
+    float textWidth(sf::Text& text) {
+        const auto b = text.getLocalBounds();
+        return b.position.x + b.size.x;
+    }
+
+    sf::String ellipsizeToWidth(const sf::Font& font, const sf::String& input, unsigned int characterSize, float maxWidth) {
+        sf::Text probe(font);
+        probe.setCharacterSize(characterSize);
+        probe.setString(input);
+        if (textWidth(probe) <= maxWidth) {
+            return input;
+        }
+
+        const sf::String ellipsis = L"...";
+        sf::Text withEllipsis(font);
+        withEllipsis.setCharacterSize(characterSize);
+        withEllipsis.setString(ellipsis);
+        if (textWidth(withEllipsis) > maxWidth) {
+            return ellipsis;
+        }
+
+        sf::String result;
+        for (size_t i = 0; i < input.getSize(); ++i) {
+            result += input[i];
+            sf::Text t(font);
+            t.setCharacterSize(characterSize);
+            t.setString(result + ellipsis);
+            if (textWidth(t) > maxWidth) {
+                if (result.getSize() > 0) {
+                    result.erase(result.getSize() - 1, 1);
+                }
+                break;
+            }
+        }
+        return result + ellipsis;
+    }
 }
 
 SummaryPanel::SummaryPanel(Font& f) : font(f) {}
@@ -25,7 +62,7 @@ void SummaryPanel::draw(RenderWindow& window, const String& movieName, const Str
     float boxY = PanelY;
     float yPos = boxY + 20.f;
 
-    Text title(font, movieName, 22);
+    Text title(font, ellipsizeToWidth(font, movieName, 22, 360.f), 22);
     title.setFillColor(Color::White);
     title.setPosition({boxX + 20.f, yPos});
     window.draw(title);
@@ -93,7 +130,7 @@ void SummaryPanel::drawWithSeats(RenderWindow& window, const String& movieName, 
     float boxY = PanelY;
     float yPos = boxY + 20.f;
 
-    Text title(font, movieName, 22);
+    Text title(font, ellipsizeToWidth(font, movieName, 22, 360.f), 22);
     title.setFillColor(Color::White);
     title.setPosition({boxX + 20.f, yPos});
     window.draw(title);
@@ -166,7 +203,7 @@ void SummaryPanel::drawPayment(RenderWindow& window, const String& movieName, co
     float boxY = PanelY;
     float yPos = boxY + 20.f;
 
-    Text title(font, movieName, 22);
+    Text title(font, ellipsizeToWidth(font, movieName, 22, 360.f), 22);
     title.setFillColor(Color::White);
     title.setPosition({boxX + 20.f, yPos});
     window.draw(title);

@@ -26,8 +26,11 @@ vector<MovieInfo> ShowtimeGenerator::loadMovies(const string& moviesPath) {
         stringstream ss(line);
         string token;
         MovieInfo movie;
-        
-        // movie_id|title|age_rating|country|language|genres|duration_min|release_date|director|cast|synopsis|poster_path|status
+
+        // Legacy:
+        // movie_id|title|age_rating|country|language|genres|duration_min|release_date|director|cast|synopsis|poster_path
+        // New:
+        // movie_id|title|age_rating|country|language|genres|duration_min|release_date|end_date|director|cast|synopsis|poster_path|status
         getline(ss, movie.id, '|');        // 0: movie_id
         getline(ss, movie.title, '|');     // 1: title
         getline(ss, token, '|');           // 2: age_rating (skip)
@@ -41,15 +44,14 @@ vector<MovieInfo> ShowtimeGenerator::loadMovies(const string& moviesPath) {
             movie.duration = 120; // Default 2 hours
         }
         getline(ss, token, '|');           // 7: release_date (skip)
-        getline(ss, token, '|');           // 8: director (skip)
-        getline(ss, token, '|');           // 9: cast (skip)
-        getline(ss, token, '|');           // 10: synopsis (skip)
-        getline(ss, token, '|');           // 11: poster_path (skip)
-        getline(ss, movie.status, '|');    // 12: status
-        
-        // Chỉ lấy phim "Đang chiếu" hoặc "Sắp chiếu"
-        if (movie.status == "Đang chiếu" || movie.status == "Sắp chiếu" ||
-            movie.status == "Dang chieu" || movie.status == "Sap chieu") {
+        getline(ss, token, '|');           // 8: (end_date OR director) (skip)
+        getline(ss, token, '|');           // 9: (director OR cast) (skip)
+        getline(ss, token, '|');           // 10: (cast OR synopsis) (skip)
+        getline(ss, token, '|');           // 11: (synopsis OR poster_path) (skip)
+        getline(ss, token, '|');           // 12: (poster_path OR status) (skip)
+
+        // Status removed: every movie in movies.txt is eligible for showtime distribution.
+        if (!movie.id.empty()) {
             movies.push_back(movie);
         }
     }
@@ -103,7 +105,7 @@ bool ShowtimeGenerator::hasConflict(const string& movieId, int startMinute, int 
 
 MovieInfo ShowtimeGenerator::selectNextMovie(int startMinute, int endMinute, const string& roomId) {
     if (movieQueue.empty()) {
-        return {"", "", 120, ""};
+        return {"", "", 120};
     }
     
     size_t queueSize = movieQueue.size();

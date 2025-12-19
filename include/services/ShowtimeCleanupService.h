@@ -3,6 +3,7 @@
 #include <vector>
 #include <deque>
 #include <ctime>
+#include <unordered_set>
 
 using namespace std;
 
@@ -20,7 +21,9 @@ struct MovieData {
     string id;
     string title;
     int duration;  // phút
-    string status; // "Đang chiếu" hoặc "Sắp chiếu"
+    string release_date; // start_date (dd/mm/yyyy)
+    string end_date;     // dd/mm/yyyy
+    string status;       // optional persisted, but generator may derive
 };
 
 class ShowtimeCleanupService {
@@ -83,4 +86,9 @@ private:
     
     // Lấy giờ phút hiện tại tính bằng phút từ 00:00
     static int getCurrentTimeInMinutes();
+
+    // ===== SAFETY / STATUS HELPERS =====
+    static bool isReleaseOnOrBeforeShowDate(const string& releaseDateDdMmYyyy, const string& showDateYyyyMmDd);
+    static int statusPriority(const string& status);
+    static std::unordered_set<string> loadLockedShowtimeIdsFromTickets(const string& ticketsPath, const string& todayStr);
 };
