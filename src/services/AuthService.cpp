@@ -174,7 +174,7 @@ void AuthService::ensureDefaultAdmin() {
     if (!repository->exists("admin@cinexine.vn")) {
         registerUser(
             "admin@cinexine.vn",
-            "admin123",  // ⚠️ CHANGE THIS IN PRODUCTION!
+            "admin123",  // CHANGE THIS IN PRODUCTION!
             "Nguyễn Văn Quản Trị",
             "01/01/1990",
             "0900000000",

@@ -32,6 +32,8 @@ OverviewPanel::OverviewPanel(sf::Font& fontRef, float w, float h)
       newCustomersCard(font, {250.f, 110.f}, cardOutlineGreen),
       ticketsCard(font, {250.f, 110.f}, cardOutlineYellow),
       totalRevenueCard(font, {250.f, 110.f}, cardOutlineRed),
+            movieRevenueCard(font, {250.f, 110.f}, cardOutlineCyan),
+            comboRevenueCard(font, {250.f, 110.f}, cardOutlineYellow),
       ticketChartCard(Vector2f(0.f, 0.f)),
       revenueChartCard(Vector2f(0.f, 0.f)),
       movieTableCard(Vector2f(0.f, 0.f)),
@@ -58,7 +60,7 @@ void OverviewPanel::initializeUI() {
 
     float margin = 16.f;
     float cardGap = 12.f;
-    float statWidth = (width - margin * 2.f - cardGap * 3.f) / 4.f;
+    float statWidth = (width - margin * 2.f - cardGap * 2.f) / 3.f;
     float statHeight = 70.f;
     Vector2f statSize(statWidth, statHeight);
 
@@ -66,14 +68,22 @@ void OverviewPanel::initializeUI() {
     newCustomersCard.setSize(statSize);
     ticketsCard.setSize(statSize);
     totalRevenueCard.setSize(statSize);
+    movieRevenueCard.setSize(statSize);
+    comboRevenueCard.setSize(statSize);
 
-    revenueTodayCard.setPosition({position.x + margin, position.y + margin});
-    newCustomersCard.setPosition({revenueTodayCard.getPosition().x + statWidth + cardGap, position.y + margin});
-    ticketsCard.setPosition({newCustomersCard.getPosition().x + statWidth + cardGap, position.y + margin});
-    totalRevenueCard.setPosition({ticketsCard.getPosition().x + statWidth + cardGap, position.y + margin});
+    const float row1Y = position.y + margin;
+    const float row2Y = row1Y + statHeight + cardGap;
+
+    revenueTodayCard.setPosition({position.x + margin, row1Y});
+    newCustomersCard.setPosition({revenueTodayCard.getPosition().x + statWidth + cardGap, row1Y});
+    ticketsCard.setPosition({newCustomersCard.getPosition().x + statWidth + cardGap, row1Y});
+
+    totalRevenueCard.setPosition({position.x + margin, row2Y});
+    movieRevenueCard.setPosition({totalRevenueCard.getPosition().x + statWidth + cardGap, row2Y});
+    comboRevenueCard.setPosition({movieRevenueCard.getPosition().x + statWidth + cardGap, row2Y});
 
     // Layout: Tiêu đề ngoài khung, biểu đồ + bảng
-    float chartTop = position.y + margin + statHeight + 36.f;  // Thêm space cho tiêu đề
+    float chartTop = position.y + margin + (statHeight * 2.f + cardGap) + 36.f;  // Thêm space cho tiêu đề
     float chartGap = 36.f;  // Gap giữa 2 hàng (có tiêu đề)
     float totalChartHeight = height - chartTop - margin;
     float singleRowHeight = (totalChartHeight - chartGap) / 2.f;
@@ -197,11 +207,7 @@ void OverviewPanel::calculateDailyRevenue() {
     Node<Ticket>* node = ticketsCache.getHead();
     while (node) {
         if (node->data.bookedDate == today) {
-            const Ticket& ticket = node->data;
-            const int seatCount = std::max(1, countSeats(ticket.booked));
-            const long long comboRevenue = computeComboRevenue(ticket.comboName);
-            const long long ticketRevenue = computeTicketRevenue(ticket, seatCount, comboRevenue);
-            total += ticketRevenue + comboRevenue;
+            total += static_cast<long long>(node->data.price);
         }
         node = node->next;
     }
@@ -221,7 +227,9 @@ void OverviewPanel::calculateMonthlyStats() {
     std::strftime(buffer, sizeof(buffer), "%m/%Y", local);
     std::string currentMonth(buffer);
 
-    long long revenue = 0;
+    long long totalRevenue = 0;
+    long long movieRevenue = 0;
+    long long comboRevenue = 0;
     int ticketsCount = 0;
     std::time_t monthStart;
     {
@@ -240,9 +248,12 @@ void OverviewPanel::calculateMonthlyStats() {
             std::string month = ticket.bookedDate.substr(3);
             if (month == currentMonth) {
                 const int seatCount = std::max(1, countSeats(ticket.booked));
-                const long long comboRevenue = computeComboRevenue(ticket.comboName);
-                const long long ticketRevenue = computeTicketRevenue(ticket, seatCount, comboRevenue);
-                revenue += (ticketRevenue + comboRevenue);
+                const long long comboPart = computeComboRevenue(ticket.comboName);
+                const long long moviePart = computeTicketRevenue(ticket, seatCount, comboPart);
+
+                totalRevenue += static_cast<long long>(ticket.price);
+                movieRevenue += moviePart;
+                comboRevenue += comboPart;
                 ticketsCount += seatCount;
             }
         }
@@ -256,7 +267,7 @@ void OverviewPanel::calculateMonthlyStats() {
         }
     }
 
-    totalRevenueThisMonth = revenue;
+    totalRevenueThisMonth = totalRevenue;
     totalTicketsThisMonth = ticketsCount;
     newCustomersThisMonth = newCustomers;
 
@@ -276,6 +287,16 @@ void OverviewPanel::calculateMonthlyStats() {
     totalRevenueCard.setOutlineThickness(3.f);
     totalRevenueCard.setOutlineColor(cardOutlineRed);
     totalRevenueCard.setValue(toCurrency(totalRevenueThisMonth));
+
+    movieRevenueCard.setTitleWithDate("Doanh thu theo phim", monthDisplay);
+    movieRevenueCard.setOutlineThickness(3.f);
+    movieRevenueCard.setOutlineColor(cardOutlineCyan);
+    movieRevenueCard.setValue(toCurrency(movieRevenue));
+
+    comboRevenueCard.setTitleWithDate("Doanh thu combo", monthDisplay);
+    comboRevenueCard.setOutlineThickness(3.f);
+    comboRevenueCard.setOutlineColor(cardOutlineYellow);
+    comboRevenueCard.setValue(toCurrency(comboRevenue));
 }
 
 void OverviewPanel::calculateTopMovies() {
@@ -288,10 +309,8 @@ void OverviewPanel::calculateTopMovies() {
     while (node) {
         const Ticket& ticket = node->data;
         const int seats = std::max(1, countSeats(ticket.booked));
-        const long long comboRevenue = computeComboRevenue(ticket.comboName);
-        const long long ticketRevenue = computeTicketRevenue(ticket, seats, comboRevenue);
         ticketCounts[ticket.title] += seats;
-        revenueCounts[ticket.title] += (ticketRevenue + comboRevenue);
+        revenueCounts[ticket.title] += static_cast<long long>(ticket.price);
         node = node->next;
     }
 
@@ -318,10 +337,7 @@ void OverviewPanel::calculateMonthlyTrend() {
                 int month = std::stoi(ticket.bookedDate.substr(3, 2));
                 int year = std::stoi(ticket.bookedDate.substr(6, 4));
 
-                const int seats = std::max(1, countSeats(ticket.booked));
-                const long long comboRevenue = computeComboRevenue(ticket.comboName);
-                const long long ticketRevenue = computeTicketRevenue(ticket, seats, comboRevenue);
-                revenueByMonth[{year, month}] += (ticketRevenue + comboRevenue);
+                revenueByMonth[{year, month}] += static_cast<long long>(ticket.price);
             } catch (...) {}
         }
         node = node->next;
@@ -998,6 +1014,8 @@ void OverviewPanel::render(RenderTarget& target) const {
     newCustomersCard.render(target);
     ticketsCard.render(target);
     totalRevenueCard.render(target);
+    movieRevenueCard.render(target);
+    comboRevenueCard.render(target);
 
     drawTicketChart(target);
     drawMovieTable(target);

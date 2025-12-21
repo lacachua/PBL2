@@ -24,7 +24,7 @@ private:
     // Main card background
     RectangleShape mainCardBg;
     
-    // ✅ Component views (modular architecture)
+    // Component views (modular architecture)
     unique_ptr<PersonalInfoView> personalInfoView;
     unique_ptr<PurchaseHistoryView> purchaseHistoryView;
     unique_ptr<VoucherListView> voucherListView;

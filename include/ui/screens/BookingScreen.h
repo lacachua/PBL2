@@ -193,12 +193,12 @@ private:
 
     BookingState currentState;
     
-    // ✅ Booking data - lưu trữ toàn bộ thông tin booking qua các state
+    // Booking data - lưu trữ toàn bộ thông tin booking qua các state
     BookingData bookingData;
     
     ShowtimeSection showtimeSection;
 
-    // 🔥 chuyển sang smart pointer
+    // TODO: chuyển sang smart pointer
     unique_ptr<SeatSelection> seatSelection;
 
     unique_ptr<ComboSelection> comboSelection;
@@ -208,17 +208,17 @@ private:
 
     ShowtimeSeatRepository seatRepo;
     
-    // ✅ Business logic service (SOLID: Dependency Inversion)
+    // Business logic service (SOLID: Dependency Inversion)
     std::unique_ptr<BookingService> bookingService;
     
-    // ✅ Popup yêu cầu đăng nhập (unique_ptr để quản lý lifecycle)
+    // Popup yêu cầu đăng nhập (unique_ptr để quản lý lifecycle)
     unique_ptr<LoginRequiredPopup> loginPopup;
     unique_ptr<LoginRequiredPopup> voucherLoginPopup;
     
-    // ✅ Confirmation view cho state xacnhan
+    // Confirmation view cho state xacnhan
     unique_ptr<ConfirmationView> confirmationView;
     
-    // ✅ Repository để tạo và lưu vé
+    // Repository để tạo và lưu vé
     TicketRepository ticketRepo;
 
     // Voucher UI state

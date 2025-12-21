@@ -59,6 +59,8 @@ private:
     StatCard newCustomersCard;
     StatCard ticketsCard;
     StatCard totalRevenueCard;
+    StatCard movieRevenueCard;
+    StatCard comboRevenueCard;
 
     sf::RectangleShape ticketChartCard;
     sf::RectangleShape revenueChartCard;

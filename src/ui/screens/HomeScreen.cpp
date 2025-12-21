@@ -12,7 +12,7 @@ HomeScreen::HomeScreen(Font& font, RenderWindow& window)
         win.setFramerateLimit(60);
     });
     
-    // ✅ Initialize global search bar with movie data
+    // Initialize global search bar with movie data
     initializeGlobalSearch(repo->getAllMovies());
 }
 

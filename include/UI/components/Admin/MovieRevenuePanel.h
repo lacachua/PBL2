@@ -12,6 +12,7 @@
 #include "repositories/admin/AdminTicketRepository.h"
 #include "UI/components/Admin/DropdownBox.h"
 #include "UI/components/Admin/RoundRectButton.h"
+#include "UI/components/Admin/StatCard.h"
 #include "repositories/booking/ShowtimeRepository.h"
 
 struct MovieRevenueEntry {
@@ -27,7 +28,9 @@ struct MovieRevenueEntry {
 
 enum class ChartMode {
     Tickets,
-    Revenue
+    Revenue,
+    MovieRevenue,
+    ComboRevenue
 };
 
 struct ModeToggle {
@@ -57,7 +60,22 @@ private:
 
     DLL<Ticket> filteredTickets;
     std::vector<MovieRevenueEntry> movieStats;
+    struct ComboRevenueEntry {
+        std::string label;
+        int quantity = 0;
+        long long revenue = 0;
+    };
+    std::vector<ComboRevenueEntry> comboStats;
     std::vector<long long> availableDateKeys;
+
+    long long selectedStartKey = 0;
+    long long selectedEndKey = 0;
+
+    long long totalRevenueValue = 0;
+    long long movieRevenueValue = 0;
+    long long comboRevenueValue = 0;
+
+    bool suppressClicksUntilMouseRelease = false;
 
     // Paths
     std::string ticketsFilePath;
@@ -71,6 +89,10 @@ private:
     sf::Text fromLabel;
     sf::Text toLabel;
 
+    StatCard totalRevenueCard;
+    StatCard movieRevenueCard;
+    StatCard comboRevenueCard;
+
     std::unique_ptr<DropdownBox> fromYearDropdown;
     std::unique_ptr<DropdownBox> fromMonthDropdown;
     std::unique_ptr<DropdownBox> fromDayDropdown;
@@ -83,6 +105,8 @@ private:
 
     ModeToggle ticketsToggle;
     ModeToggle revenueToggle;
+    ModeToggle movieOnlyToggle;
+    ModeToggle comboToggle;
     ChartMode currentChartMode = ChartMode::Tickets;
 
     sf::RectangleShape chartCard;
@@ -112,6 +136,10 @@ private:
 
     void applySelection();
     void updateMovieStats();
+    void updateComboStats();
+    void updateSummaryCards();
+    std::string currentRangeLabel() const;
+    bool isAnyDropdownOpen() const;
 
     int countSeats(const std::string& seatList) const;
     std::string trim(const std::string& text) const;
@@ -121,6 +149,7 @@ private:
 
     void setChartMode(ChartMode mode);
     void sortStatsForCurrentMode();
+    void sortComboStats();
     void drawChart(sf::RenderTarget& target) const;
 
 public:

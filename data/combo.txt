@@ -9,6 +9,3 @@ CB07|2 CocaCola + 1 Bắp Phô Mai|125000
 CB08|2 CocaCola + 2 Bắp Caramel|185000
 CB09|2 CocaCola + 2 Bắp Phô Mai|190000
 CB10|4 CocaCola + 2 Bắp Phô Mai|240000
-
-
-

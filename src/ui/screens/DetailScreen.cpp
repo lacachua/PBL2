@@ -86,7 +86,7 @@ DetailScreen::DetailScreen(Font& headerFont, Font& btnFont, Font& titleFnt, Font
         icon5("../assets/elements/ageRating.png"),
         ageRatingIcon(icon5)
 {
-    // ✅ Initialize global search bar with movie data
+    // Initialize global search bar with movie data
     MovieRepository repo("../data/movies.txt");
     initializeGlobalSearch(repo.getAllMovies());
     poster.setScale({0.32f, 0.32f});
@@ -164,7 +164,7 @@ DetailScreen::DetailScreen(Font& headerFont, Font& btnFont, Font& titleFnt, Font
     synopsis_text.setString(wrapText(String(movie.synopsis), detail_font, 20, 620.f));
     synopsis_text.setPosition({iconX, synopsis_header.getGlobalBounds().position.y + synopsis_header.getGlobalBounds().size.y + 16.f});
 
-    // ✅ Các nút
+    // Các nút
     backBtn.setPosition({150.f, 130.f});
     bookBtn.setPosition({iconX, 758.f});
     bookBtn.setFillColor(Color(255, 255, 255, 235));

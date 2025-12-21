@@ -45,7 +45,7 @@ UIInputBox::UIInputBox(sf::Font& font, const Config& config)
     cursor_.setFillColor(config_.textColor);
     
     // Search icon
-    searchIcon_->setString(L"🔍");
+    searchIcon_->setString(L"");
     searchIcon_->setCharacterSize(config_.fontSize);
     searchIcon_->setFillColor(config_.placeholderColor);
     

@@ -475,7 +475,7 @@ void MoviePanel::handleAdd() {
     repository->loadFromFile();
     
     closePopup();
-    showNotification("✅ Đã thêm phim mới thành công!");
+    showNotification("Đã thêm phim mới thành công!");
 }
 
 void MoviePanel::handleEdit() {
@@ -534,7 +534,7 @@ void MoviePanel::handleDelete() {
     repository->loadFromFile();
     
     closePopup();
-    showNotification("🗑️ Đã xóa thành công");
+    showNotification("Đã xóa thành công");
     selectedRow = -1;
 }
 

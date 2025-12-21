@@ -34,13 +34,13 @@ BookingScreen::BookingScreen(Font& f, const String& movieId)
     seatSelection = make_unique<SeatSelection>(font);
     // loginPopup sẽ được tạo khi cần (nullptr ban đầu)
     
-    // ✅ Initialize global search bar with movie data
+    // Initialize global search bar with movie data
     MovieRepository repo("../data/movies.txt");
     initializeGlobalSearch(repo.getAllMovies());
 }
 
 void BookingScreen::getUserInfo(const string& email, string& fullName, string& phone) {
-    // ✅ SOLID: Delegate to BookingService instead of reading file directly
+    // SOLID: Delegate to BookingService instead of reading file directly
     if (bookingService) {
         bookingService->getUserInfo(email, fullName, phone);
     } else {
@@ -83,7 +83,7 @@ void BookingScreen::update(Vector2f mousePos, bool mousePressed, AppState& state
         bool canProceed = seatSelection->hasSelectedSeats();
         header.handleNavigation(mousePos, mousePressed, currentState, canProceed);
 
-        // ❌ KHÔNG LƯU GHẾ Ở ĐÂY NỮA - Chỉ lưu khi xác nhận thành công
+        // KHÔNG LƯU GHẾ Ở ĐÂY NỮA - Chỉ lưu khi xác nhận thành công
         
         // Nếu quay lại suất chiếu => hủy seatSelection để đảm bảo reload khi vào lại
         if (currentState == BookingState::suatchieu) {
@@ -100,7 +100,7 @@ void BookingScreen::update(Vector2f mousePos, bool mousePressed, AppState& state
         header.handleNavigation(mousePos, mousePressed, currentState, canProceed);
     }
     else if (currentState == BookingState::thanhtoan) {
-        // ✅ Xử lý popup nếu đang hiển thị
+        // Xử lý popup nếu đang hiển thị
         if (loginPopup) {
             loginPopup->update(mousePos, mousePressed);
             int action = loginPopup->handleClick(mousePos, mousePressed);
@@ -171,7 +171,7 @@ void BookingScreen::update(Vector2f mousePos, bool mousePressed, AppState& state
 
         handleVoucherInteractions(mousePos, mousePressed, currentSubtotal);
 
-        // ✅ KIỂM TRA: Nếu chưa đăng nhập và nhấn "Tiếp tục"
+        // KIỂM TRA: Nếu chưa đăng nhập và nhấn "Tiếp tục"
         bool canProceed = true;
         
         // Lưu state trước khi navigate
@@ -180,7 +180,7 @@ void BookingScreen::update(Vector2f mousePos, bool mousePressed, AppState& state
         // Xử lý click điều hướng
         header.handleNavigation(mousePos, mousePressed, currentState, canProceed);
         
-        // ✅ Nếu user vừa nhấn "Tiếp tục" (state thay đổi) và chưa đăng nhập
+        // Nếu user vừa nhấn "Tiếp tục" (state thay đổi) và chưa đăng nhập
         if (currentState != beforeNav && currentState == BookingState::xacnhan) {
             if (!BaseScreen::isUserLoggedIn()) {
                 // Tạo popup mới
@@ -189,7 +189,7 @@ void BookingScreen::update(Vector2f mousePos, bool mousePressed, AppState& state
                 return;
             }
             
-            // ✅ ĐÃ ĐĂNG NHẬP - Thu thập và lưu dữ liệu vào bookingData
+            // ĐÃ ĐĂNG NHẬP - Thu thập và lưu dữ liệu vào bookingData
             
             // Kiểm tra dữ liệu cần thiết
             if (!seatSelection || !orderSummary) {
@@ -321,7 +321,7 @@ void BookingScreen::update(Vector2f mousePos, bool mousePressed, AppState& state
         if (confirmationView->handleHomeButtonClick(mousePos, mousePressed, state)) {
             // Reset toàn bộ booking state khi quay về home
             currentState = BookingState::suatchieu;
-            bookingData.clear();  // ✅ Clear booking data
+            bookingData.clear();  // Clear booking data
             seatSelection.reset();
             comboSelection.reset();
             orderSummary.reset();
@@ -402,11 +402,11 @@ void BookingScreen::draw(RenderWindow& window) {
         );
     }
     else if (currentState == BookingState::xacnhan && confirmationView) {
-        // ✅ Vẽ ConfirmationView - chiếm toàn bộ không gian (không vẽ header/summary)
+        // Vẽ ConfirmationView - chiếm toàn bộ không gian (không vẽ header/summary)
         confirmationView->draw(window);
     }
     
-    // ✅ Vẽ popup sau cùng (trên tất cả) - chỉ khi tồn tại
+    // Vẽ popup sau cùng (trên tất cả) - chỉ khi tồn tại
     if (loginPopup) {
         loginPopup->draw(window);
     }

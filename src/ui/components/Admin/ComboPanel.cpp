@@ -413,7 +413,7 @@ void ComboPanel::handleAdd() {
     repository->loadFromFile();
 
     closePopup();
-    showNotification("✅ Đã thêm combo mới");
+    showNotification("Đã thêm combo mới");
 }
 
 void ComboPanel::handleEdit() {
@@ -447,7 +447,7 @@ void ComboPanel::handleDelete() {
     repository->loadFromFile();
     selectedRow = -1;
     closePopup();
-    showNotification("🗑️ Đã xóa combo");
+    showNotification("Đã xóa combo");
 }
 
 void ComboPanel::handleReload() {

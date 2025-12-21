@@ -34,7 +34,7 @@ BaseScreen::BaseScreen(Font& f)
 	accountButton.setOutlineThickness(0.f);
 	logoutButton.setOutlineThickness(0.f);
 
-	// ✅ Initialize global search bar
+	// Initialize global search bar
 	FloatRect searchBarBounds = searchBar_sprite.getGlobalBounds();
 	float searchBoxX = searchBarBounds.position.x + 40.f;
 	float searchBoxY = searchBarBounds.position.y + 8.f;
@@ -44,7 +44,7 @@ BaseScreen::BaseScreen(Font& f)
 }
 
 void BaseScreen::update(Vector2f mousePos, bool mousePressed, AppState& state) {
-	// ✅ Handle global search bar updates
+	// Handle global search bar updates
 	if (globalSearchBar) {
 		globalSearchBar->update(mousePos, mousePressed);
 
@@ -62,7 +62,7 @@ void BaseScreen::update(Vector2f mousePos, bool mousePressed, AppState& state) {
 		return;
 	}
 
-	// ✅ Tự động cập nhật text nút đăng nhập dựa vào trạng thái
+	// Tự động cập nhật text nút đăng nhập dựa vào trạng thái
 	if (isUserLoggedIn()) {
 		// Extract first name (last word in Vietnamese full name)
 		string firstName = getFirstName(loggedInUsername);
@@ -71,7 +71,7 @@ void BaseScreen::update(Vector2f mousePos, bool mousePressed, AppState& state) {
 	else
 		buttons[2].setString(L"Đăng nhập | Đăng ký");
 
-	// ✅ Xử lý dropdown menu nếu user đã đăng nhập
+	// Xử lý dropdown menu nếu user đã đăng nhập
 	if (isUserLoggedIn() && showDropdown) {
 		updateDropdownPosition();
 		accountButton.update(mousePos);

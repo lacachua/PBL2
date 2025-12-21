@@ -189,7 +189,7 @@ void GlobalSearchBar::draw(RenderWindow& window) {
             String originalText = String::fromUtf8(suggestions[i].title.begin(), suggestions[i].title.end());
             suggestionText.setString(originalText);
             
-            // ✅ Kiểm tra độ dài text và cắt nếu quá dài
+            // Kiểm tra độ dài text và cắt nếu quá dài
             FloatRect textBounds = suggestionText.getLocalBounds();
             if (textBounds.size.x > maxTextWidth) {
                 // Cắt text và thêm "..."
@@ -204,7 +204,7 @@ void GlobalSearchBar::draw(RenderWindow& window) {
             Vector2f pos = suggestionBox.getPosition();
             suggestionText.setPosition(Vector2f(pos.x + 15.f, pos.y + 10.f + i * 40.f));
             
-            // ✅ Highlight hovered or selected suggestion with different colors
+            // Highlight hovered or selected suggestion with different colors
             if ((int)i == hoveredSuggestion || (int)i == selectedSuggestion) {
                 RectangleShape highlight(Vector2f(suggestionBox.getSize().x, 40.f));
                 highlight.setPosition(Vector2f(pos.x, pos.y + i * 40.f));

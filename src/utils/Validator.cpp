@@ -75,7 +75,7 @@ bool Validator::isValidDate(const string& date) {
 
         if (day > daysInMonth[month - 1]) return false;
 
-        // ✅ Kiểm tra ngày sinh phải là quá khứ (không được là tương lai)
+        // Kiểm tra ngày sinh phải là quá khứ (không được là tương lai)
         time_t now = time(nullptr);
         tm* localTime = localtime(&now);
         int currentYear = localTime->tm_year + 1900;

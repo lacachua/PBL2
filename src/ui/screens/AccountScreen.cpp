@@ -15,7 +15,7 @@ AccountScreen::AccountScreen(Font& f, AuthService& auth)
     purchaseHistoryView = make_unique<PurchaseHistoryView>(f);
     voucherListView = make_unique<VoucherListView>(f);
     
-    // ✅ Initialize global search bar with movie data
+    // Initialize global search bar with movie data
     MovieRepository repo("../data/movies.txt");
     initializeGlobalSearch(repo.getAllMovies());
     

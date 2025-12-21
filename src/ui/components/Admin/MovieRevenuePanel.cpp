@@ -72,9 +72,14 @@ MovieRevenuePanel::MovieRevenuePanel(sf::Font& fontRef, float w, float h)
             titleText(fontRef, sf::String(), 20),
             fromLabel(fontRef, sf::String(), 14),
             toLabel(fontRef, sf::String(), 14),
+            totalRevenueCard(fontRef, {250.f, 70.f}, Color(239, 68, 68)),
+            movieRevenueCard(fontRef, {250.f, 70.f}, Color(13, 148, 136)),
+            comboRevenueCard(fontRef, {250.f, 70.f}, Color(221, 180, 67)),
             loadButton(fontRef, "Tải dữ liệu", sf::Vector2f(140.f, 38.f), 8.f),
             ticketsToggle(fontRef),
-            revenueToggle(fontRef) {
+            revenueToggle(fontRef),
+            movieOnlyToggle(fontRef),
+            comboToggle(fontRef) {
         initializeUI();
         layoutComponents();
         loadData();
@@ -103,6 +108,10 @@ void MovieRevenuePanel::initializeUI() {
     titleText.setFillColor(Color(27, 38, 59));
     titleText.setStyle(sf::Text::Bold);
 
+    totalRevenueCard.setOutlineThickness(3.f);
+    movieRevenueCard.setOutlineThickness(3.f);
+    comboRevenueCard.setOutlineThickness(3.f);
+
     fromLabel.setString(toSfString("Từ"));
     fromLabel.setFillColor(Color(71, 85, 105));
 
@@ -123,10 +132,10 @@ void MovieRevenuePanel::initializeUI() {
         if (dropdown) dropdown->setMaxVisibleOptions(12);
     }
 
-    if (fromMonthDropdown) fromMonthDropdown->setEnabled(false);
-    if (fromDayDropdown) fromDayDropdown->setEnabled(false);
-    if (toMonthDropdown) toMonthDropdown->setEnabled(false);
-    if (toDayDropdown) toDayDropdown->setEnabled(false);
+    if (fromMonthDropdown) fromMonthDropdown->setEnabled(true);
+    if (fromDayDropdown) fromDayDropdown->setEnabled(true);
+    if (toMonthDropdown) toMonthDropdown->setEnabled(true);
+    if (toDayDropdown) toDayDropdown->setEnabled(true);
 
     loadButton.setSize(sf::Vector2f(140.f, dropdownHeight));
     loadButton.setRadius(8.f);
@@ -135,7 +144,7 @@ void MovieRevenuePanel::initializeUI() {
     loadButton.setTextColor(Color::White);
 
     auto configureToggle = [&](ModeToggle& toggle, const std::string& label) {
-        toggle.shape.setSize(sf::Vector2f(210.f, dropdownHeight));
+        toggle.shape.setSize(sf::Vector2f(200.f, dropdownHeight));
         toggle.shape.setFillColor(Color(229, 231, 235));
         toggle.shape.setOutlineThickness(1.f);
         toggle.shape.setOutlineColor(Color(209, 213, 219));
@@ -147,7 +156,9 @@ void MovieRevenuePanel::initializeUI() {
     };
 
     configureToggle(ticketsToggle, "Số vé bán ra theo phim");
-    configureToggle(revenueToggle, "Doanh thu theo phim");
+    configureToggle(revenueToggle, "Tổng doanh thu");
+    configureToggle(movieOnlyToggle, "Doanh thu theo phim");
+    configureToggle(comboToggle, "Doanh thu theo combo");
 
     chartCard.setFillColor(Color::White);
     chartCard.setOutlineThickness(1.f);
@@ -163,7 +174,20 @@ void MovieRevenuePanel::layoutComponents() {
     titleText.setPosition({position.x + 40.f, position.y + 20.f});
 
     const float margin = 24.f;
-    const float controlY = position.y + 74.f;
+    const float statHeight = 70.f;
+    const float statGap = 12.f;
+    const float statsY = position.y + 60.f;
+
+    const float statWidth = (width - margin * 2.f - statGap * 2.f) / 3.f;
+    totalRevenueCard.setSize({statWidth, statHeight});
+    movieRevenueCard.setSize({statWidth, statHeight});
+    comboRevenueCard.setSize({statWidth, statHeight});
+
+    totalRevenueCard.setPosition({position.x + margin, statsY});
+    movieRevenueCard.setPosition({totalRevenueCard.getPosition().x + statWidth + statGap, statsY});
+    comboRevenueCard.setPosition({movieRevenueCard.getPosition().x + statWidth + statGap, statsY});
+
+    const float controlY = statsY + statHeight + 18.f;
     const float dropdownHeight = 38.f;
     const float yearWidth = 100.f;
     const float monthWidth = 85.f;
@@ -189,23 +213,46 @@ void MovieRevenuePanel::layoutComponents() {
     if (toMonthDropdown) toMonthDropdown->setPosition(sf::Vector2f(toFieldsX + yearWidth + fieldGap, controlY));
     if (toDayDropdown) toDayDropdown->setPosition(sf::Vector2f(toFieldsX + yearWidth + monthWidth + fieldGap * 2.f, controlY));
 
-    const float row2Y = controlY + dropdownHeight + 12.f;
+    const float rowY = controlY + dropdownHeight + 12.f;
     const float toggleStartX = position.x + margin;
     const float toggleGap = 10.f;
-    ticketsToggle.shape.setPosition(sf::Vector2f(toggleStartX, row2Y));
-    revenueToggle.shape.setPosition(sf::Vector2f(toggleStartX + ticketsToggle.shape.getSize().x + toggleGap, row2Y));
+    const float loadGap = 18.f;
 
+    // Load button sits outside the 4 toggles, aligned to the right
     const FloatRect buttonBounds = loadButton.getGlobalBounds();
-    const float idealButtonX = revenueToggle.shape.getPosition().x + revenueToggle.shape.getSize().x + toggleGap * 2.f;
-    const float buttonX = std::min(position.x + width - margin - buttonBounds.size.x, idealButtonX);
-    loadButton.setPosition(sf::Vector2f(buttonX, row2Y));
+    const float buttonX = position.x + width - margin - buttonBounds.size.x;
+    loadButton.setPosition(sf::Vector2f(buttonX, rowY));
 
-    const float chartTop = row2Y + dropdownHeight + 16.f;
+    // 4 toggles share one row with equal width; expand to fill remaining space
+    const float toggleRowRight = buttonX - loadGap;
+    const float toggleRowWidth = std::max(0.f, toggleRowRight - toggleStartX);
+    const float toggleWidth = std::max(150.f, (toggleRowWidth - toggleGap * 3.f) / 4.f);
+
+    for (auto* toggle : {&ticketsToggle, &revenueToggle, &movieOnlyToggle, &comboToggle}) {
+        toggle->shape.setSize(sf::Vector2f(toggleWidth, dropdownHeight));
+    }
+
+    ticketsToggle.shape.setPosition(sf::Vector2f(toggleStartX, rowY));
+    revenueToggle.shape.setPosition(sf::Vector2f(toggleStartX + toggleWidth + toggleGap, rowY));
+    movieOnlyToggle.shape.setPosition(sf::Vector2f(toggleStartX + (toggleWidth + toggleGap) * 2.f, rowY));
+    comboToggle.shape.setPosition(sf::Vector2f(toggleStartX + (toggleWidth + toggleGap) * 3.f, rowY));
+
+    const float chartTop = rowY + dropdownHeight + 16.f;
     chartCard.setSize(sf::Vector2f(width - margin * 2.f, std::max(260.f, height - (chartTop + 14.f))));
     chartCard.setPosition(sf::Vector2f(position.x + margin, chartTop));
 
     // Re-center toggle labels after moving
     setChartMode(currentChartMode);
+}
+
+bool MovieRevenuePanel::isAnyDropdownOpen() const {
+    for (const auto* dropdown : {fromYearDropdown.get(), fromMonthDropdown.get(), fromDayDropdown.get(),
+                                 toYearDropdown.get(), toMonthDropdown.get(), toDayDropdown.get()}) {
+        if (dropdown && dropdown->isDropdownOpen()) {
+            return true;
+        }
+    }
+    return false;
 }
 
 void MovieRevenuePanel::loadData() {
@@ -215,6 +262,13 @@ void MovieRevenuePanel::loadData() {
     loadTickets();
     populateDropdowns();
     applySelection();
+}
+
+std::string MovieRevenuePanel::currentRangeLabel() const {
+    if (selectedStartKey <= 0 || selectedEndKey <= 0) {
+        return "";
+    }
+    return keyToDisplay(selectedStartKey) + " - " + keyToDisplay(selectedEndKey);
 }
 
 void MovieRevenuePanel::loadMovies() {
@@ -347,70 +401,62 @@ void MovieRevenuePanel::populateDropdowns() {
 }
 
 void MovieRevenuePanel::populateMonths(DropdownBox& dropdown, const DropdownBox& yearDropdown) const {
-    const std::string selectedYear = yearDropdown.getSelectedValue();
-    std::vector<std::string> options = {"Tháng"};
-
-    if (selectedYear != "Năm" && !selectedYear.empty()) {
-        for (int month = 1; month <= 12; ++month) {
-            char buffer[4];
-            std::snprintf(buffer, sizeof(buffer), "%02d", month);
-            options.emplace_back(buffer);
-        }
+    (void)yearDropdown;
+    std::vector<std::string> options;
+    options.reserve(12);
+    for (int month = 1; month <= 12; ++month) {
+        char buffer[4];
+        std::snprintf(buffer, sizeof(buffer), "%02d", month);
+        options.emplace_back(buffer);
     }
-
     dropdown.setOptions(options);
-    dropdown.setSelectedIndex(0);
+    if (!options.empty()) {
+        dropdown.setSelectedIndex(0);
+    }
 }
 
 void MovieRevenuePanel::populateDays(DropdownBox& dropdown, const DropdownBox& yearDropdown, const DropdownBox& monthDropdown) const {
     const std::string selectedYear = yearDropdown.getSelectedValue();
     const std::string selectedMonth = monthDropdown.getSelectedValue();
-    std::vector<std::string> options = {"Ngày"};
+    std::vector<std::string> options;
 
-    if (selectedYear != "Năm" && !selectedYear.empty() &&
-        selectedMonth != "Tháng" && !selectedMonth.empty()) {
-        const int year = std::stoi(selectedYear);
-        const int month = std::stoi(selectedMonth);
-        const int totalDays = daysInMonth(month, year);
-        for (int day = 1; day <= totalDays; ++day) {
-            char buffer[4];
-            std::snprintf(buffer, sizeof(buffer), "%02d", day);
-            options.emplace_back(buffer);
-        }
+    int year = 0;
+    int month = 0;
+    try {
+        year = std::stoi(selectedYear);
+        month = std::stoi(selectedMonth);
+    } catch (...) {
+        year = 0;
+        month = 0;
+    }
+
+    const int totalDays = (year > 0 && month > 0) ? daysInMonth(month, year) : 31;
+    options.reserve(static_cast<std::size_t>(std::max(28, totalDays)));
+    for (int day = 1; day <= totalDays; ++day) {
+        char buffer[4];
+        std::snprintf(buffer, sizeof(buffer), "%02d", day);
+        options.emplace_back(buffer);
     }
 
     dropdown.setOptions(options);
-    dropdown.setSelectedIndex(0);
+    if (!options.empty()) {
+        dropdown.setSelectedIndex(0);
+    }
 }
 
 void MovieRevenuePanel::updateDropdownEnabling() {
-    auto updateGroup = [](DropdownBox& yearDropdown, DropdownBox& monthDropdown, DropdownBox& dayDropdown) {
-        const bool yearSelected = yearDropdown.getSelectedIndex() > 0;
-        monthDropdown.setEnabled(yearSelected);
-        if (!yearSelected) {
-            monthDropdown.setSelectedIndex(0);
-            dayDropdown.setSelectedIndex(0);
-            dayDropdown.setEnabled(false);
-            return;
-        }
-
-        const bool monthSelected = monthDropdown.getSelectedIndex() > 0;
-        dayDropdown.setEnabled(monthSelected);
-        if (!monthSelected) {
-            dayDropdown.setSelectedIndex(0);
-        }
-    };
-
-    if (fromYearDropdown && fromMonthDropdown && fromDayDropdown) {
-        updateGroup(*fromYearDropdown, *fromMonthDropdown, *fromDayDropdown);
-    }
-    if (toYearDropdown && toMonthDropdown && toDayDropdown) {
-        updateGroup(*toYearDropdown, *toMonthDropdown, *toDayDropdown);
-    }
+    // Placeholders removed: dropdowns always contain numeric options.
+    // Keep them enabled to allow direct selection.
+    if (fromYearDropdown) fromYearDropdown->setEnabled(true);
+    if (fromMonthDropdown) fromMonthDropdown->setEnabled(true);
+    if (fromDayDropdown) fromDayDropdown->setEnabled(true);
+    if (toYearDropdown) toYearDropdown->setEnabled(true);
+    if (toMonthDropdown) toMonthDropdown->setEnabled(true);
+    if (toDayDropdown) toDayDropdown->setEnabled(true);
 }
 
 void MovieRevenuePanel::populateYears(DropdownBox& dropdown) const {
-    std::vector<std::string> options = {"Năm"};
+    std::vector<std::string> options;
     std::unordered_set<int> uniqueYears;
     for (long long key : availableDateKeys) {
         uniqueYears.insert(static_cast<int>(key / 10000LL));
@@ -422,7 +468,7 @@ void MovieRevenuePanel::populateYears(DropdownBox& dropdown) const {
         options.push_back(std::to_string(year));
     }
 
-    if (options.size() == 1) {
+    if (options.empty()) {
         std::time_t now = std::time(nullptr);
         if (const std::tm* local = std::localtime(&now)) {
             options.push_back(std::to_string(local->tm_year + 1900));
@@ -430,7 +476,9 @@ void MovieRevenuePanel::populateYears(DropdownBox& dropdown) const {
     }
 
     dropdown.setOptions(options);
-    dropdown.setSelectedIndex(0);
+    if (!options.empty()) {
+        dropdown.setSelectedIndex(0);
+    }
 }
 
 bool MovieRevenuePanel::isLeapYear(int year) const {
@@ -477,9 +525,6 @@ void MovieRevenuePanel::applySelection() {
     }
 
     auto selectedInt = [](const DropdownBox& dropdown) -> int {
-        if (dropdown.getSelectedIndex() <= 0) {
-            return 0;
-        }
         try {
             return std::stoi(dropdown.getSelectedValue());
         } catch (...) {
@@ -508,9 +553,132 @@ void MovieRevenuePanel::applySelection() {
     }
     if (startKey > endKey) std::swap(startKey, endKey);
 
+    selectedStartKey = startKey;
+    selectedEndKey = endKey;
+
     filteredTickets = ticketTree.rangeQuery(startKey, endKey);
     updateMovieStats();
-    sortStatsForCurrentMode();
+    updateComboStats();
+    updateSummaryCards();
+
+    // Keep sorting deterministic; combo stats always sorted by revenue desc.
+    sortComboStats();
+    if (currentChartMode == ChartMode::ComboRevenue) {
+        // already sorted
+    } else {
+        sortStatsForCurrentMode();
+    }
+}
+
+void MovieRevenuePanel::updateSummaryCards() {
+    totalRevenueValue = 0;
+    movieRevenueValue = 0;
+    comboRevenueValue = 0;
+
+    Node<Ticket>* node = filteredTickets.getHead();
+    while (node) {
+        const Ticket& ticket = node->data;
+        const int seats = countSeats(ticket.booked);
+        const long long comboRev = computeComboRevenue(ticket.comboName);
+        const long long movieRev = computeTicketRevenue(ticket, seats, comboRev);
+        totalRevenueValue += static_cast<long long>(ticket.price);
+        movieRevenueValue += movieRev;
+        comboRevenueValue += comboRev;
+        node = node->next;
+    }
+
+    const std::string range = currentRangeLabel();
+    const std::string dateLabel = range.empty() ? "" : range;
+
+    totalRevenueCard.setTitleWithDate("Tổng doanh thu", dateLabel);
+    totalRevenueCard.setValue(formatCurrency(totalRevenueValue));
+
+    movieRevenueCard.setTitleWithDate("Doanh thu phim", dateLabel);
+    movieRevenueCard.setValue(formatCurrency(movieRevenueValue));
+
+    comboRevenueCard.setTitleWithDate("Doanh thu combo", dateLabel);
+    comboRevenueCard.setValue(formatCurrency(comboRevenueValue));
+}
+
+void MovieRevenuePanel::updateComboStats() {
+    comboStats.clear();
+
+    std::unordered_map<std::string, std::size_t> index;
+
+    auto addCombo = [&](const std::string& label, int quantity) {
+        if (label.empty() || quantity <= 0) return;
+        auto priceIt = comboPrices.find(label);
+        if (priceIt == comboPrices.end()) return;
+        const long long revenue = static_cast<long long>(priceIt->second) * static_cast<long long>(quantity);
+
+        auto it = index.find(label);
+        if (it == index.end()) {
+            ComboRevenueEntry entry;
+            entry.label = label;
+            entry.quantity = quantity;
+            entry.revenue = revenue;
+            comboStats.push_back(entry);
+            index[label] = comboStats.size() - 1;
+        } else {
+            ComboRevenueEntry& entry = comboStats[it->second];
+            entry.quantity += quantity;
+            entry.revenue += revenue;
+        }
+    };
+
+    Node<Ticket>* node = filteredTickets.getHead();
+    while (node) {
+        std::string comboList = trim(node->data.comboName);
+        if (comboList.empty() || comboList == "Không có") {
+            node = node->next;
+            continue;
+        }
+
+        std::size_t start = 0;
+        while (start < comboList.size()) {
+            std::size_t end = comboList.find(',', start);
+            std::string item = (end == std::string::npos)
+                ? comboList.substr(start)
+                : comboList.substr(start, end - start);
+            item = trim(item);
+
+            if (!item.empty()) {
+                int quantity = 1;
+
+                // Direction B: "CBxx:xN"
+                std::size_t dirPos = item.find(":x");
+                if (dirPos != std::string::npos) {
+                    try {
+                        quantity = std::max(1, std::stoi(trim(item.substr(dirPos + 2))));
+                    } catch (...) {
+                        quantity = 1;
+                    }
+                    item = trim(item.substr(0, dirPos));
+                } else {
+                    // Legacy: "Name xN"
+                    std::size_t xPos = item.rfind('x');
+                    if (xPos != std::string::npos) {
+                        try {
+                            quantity = std::max(1, std::stoi(trim(item.substr(xPos + 1))));
+                        } catch (...) {
+                            quantity = 1;
+                        }
+                        item = trim(item.substr(0, xPos));
+                    }
+                }
+
+                addCombo(item, quantity);
+            }
+
+            if (end == std::string::npos) break;
+            start = end + 1;
+        }
+
+        node = node->next;
+    }
+
+    // Deterministic ordering across reloads
+    sortComboStats();
 }
 
 void MovieRevenuePanel::updateMovieStats() {
@@ -658,6 +826,8 @@ void MovieRevenuePanel::setChartMode(ChartMode mode) {
 
     activate(ticketsToggle, mode == ChartMode::Tickets);
     activate(revenueToggle, mode == ChartMode::Revenue);
+    activate(movieOnlyToggle, mode == ChartMode::MovieRevenue);
+    activate(comboToggle, mode == ChartMode::ComboRevenue);
 
     auto centerLabel = [](ModeToggle& toggle) {
         FloatRect bounds = toggle.label.getLocalBounds();
@@ -669,12 +839,44 @@ void MovieRevenuePanel::setChartMode(ChartMode mode) {
 
     centerLabel(ticketsToggle);
     centerLabel(revenueToggle);
+    centerLabel(movieOnlyToggle);
+    centerLabel(comboToggle);
 
-    sortStatsForCurrentMode();
+    if (currentChartMode == ChartMode::ComboRevenue) {
+        sortComboStats();
+    } else {
+        sortStatsForCurrentMode();
+    }
+}
+
+void MovieRevenuePanel::sortComboStats() {
+    if (comboStats.empty()) return;
+    std::stable_sort(comboStats.begin(), comboStats.end(), [](const ComboRevenueEntry& a, const ComboRevenueEntry& b) {
+        if (a.revenue == b.revenue) {
+            if (a.quantity == b.quantity) {
+                return a.label < b.label;
+            }
+            return a.quantity > b.quantity;
+        }
+        return a.revenue > b.revenue;
+    });
 }
 
 void MovieRevenuePanel::sortStatsForCurrentMode() {
     if (movieStats.empty()) {
+        return;
+    }
+
+    if (currentChartMode == ChartMode::MovieRevenue) {
+        std::stable_sort(movieStats.begin(), movieStats.end(), [](const MovieRevenueEntry& a, const MovieRevenueEntry& b) {
+            if (a.ticketRevenue == b.ticketRevenue) {
+                if (a.ticketCount == b.ticketCount) {
+                    return a.title < b.title;
+                }
+                return a.ticketCount > b.ticketCount;
+            }
+            return a.ticketRevenue > b.ticketRevenue;
+        });
         return;
     }
 
@@ -708,16 +910,21 @@ void MovieRevenuePanel::sortStatsForCurrentMode() {
 void MovieRevenuePanel::drawChart(RenderTarget& target) const {
     target.draw(chartCard);
 
-    const std::string headingText = (currentChartMode == ChartMode::Revenue)
-        ? "Doanh thu theo phim"
-        : "Số vé bán ra theo phim";
+    const std::string headingText = (currentChartMode == ChartMode::ComboRevenue)
+        ? "Doanh thu combo"
+        : (currentChartMode == ChartMode::MovieRevenue)
+            ? "Doanh thu phim"
+            : (currentChartMode == ChartMode::Revenue)
+                ? "Tổng doanh thu theo phim"
+                : "Số vé bán ra theo phim";
     sf::Text heading(font, toSfString(headingText), 18);
     heading.setFillColor(Color(27, 38, 59));
     heading.setStyle(sf::Text::Bold);
     heading.setPosition(sf::Vector2f(chartCard.getPosition().x + 24.f, chartCard.getPosition().y + 14.f));
     target.draw(heading);
 
-    if (movieStats.empty()) {
+    if ((currentChartMode == ChartMode::ComboRevenue && comboStats.empty()) ||
+        (currentChartMode != ChartMode::ComboRevenue && movieStats.empty())) {
         sf::Text empty(font, toSfString("Không có dữ liệu"), 14);
         empty.setFillColor(Color(120, 130, 140));
         empty.setPosition(sf::Vector2f(chartCard.getPosition().x + 24.f, chartCard.getPosition().y + 70.f));
@@ -725,14 +932,23 @@ void MovieRevenuePanel::drawChart(RenderTarget& target) const {
         return;
     }
 
-    const std::size_t barCount = std::min<std::size_t>(movieStats.size(), 12);
+    const std::size_t barCount = (currentChartMode == ChartMode::ComboRevenue)
+        ? std::min<std::size_t>(comboStats.size(), 12)
+        : std::min<std::size_t>(movieStats.size(), 12);
     
     // Tính maxValue động từ dữ liệu thực
     double actualMaxValue = 0.0;
     for (std::size_t i = 0; i < barCount; ++i) {
-        double value = (currentChartMode == ChartMode::Revenue)
-            ? static_cast<double>(movieStats[i].totalRevenue())
-            : static_cast<double>(movieStats[i].ticketCount);
+        double value = 0.0;
+        if (currentChartMode == ChartMode::ComboRevenue) {
+            value = static_cast<double>(comboStats[i].revenue);
+        } else if (currentChartMode == ChartMode::Revenue) {
+            value = static_cast<double>(movieStats[i].totalRevenue());
+        } else if (currentChartMode == ChartMode::MovieRevenue) {
+            value = static_cast<double>(movieStats[i].ticketRevenue);
+        } else {
+            value = static_cast<double>(movieStats[i].ticketCount);
+        }
         if (value > actualMaxValue) {
             actualMaxValue = value;
         }
@@ -741,10 +957,12 @@ void MovieRevenuePanel::drawChart(RenderTarget& target) const {
     // Làm tròn maxValue thành số đẹp
     double maxValue = static_cast<double>(roundUpNice(static_cast<long long>(actualMaxValue)));
     if (maxValue <= 0.0) {
-        maxValue = (currentChartMode == ChartMode::Revenue) ? 1000000.0 : 100.0;
+        const bool isRevenue = (currentChartMode == ChartMode::Revenue || currentChartMode == ChartMode::MovieRevenue || currentChartMode == ChartMode::ComboRevenue);
+        maxValue = isRevenue ? 1000000.0 : 100.0;
     }
 
-    const float paddingLeft = (currentChartMode == ChartMode::Revenue) ? 100.f : 60.f;
+    const bool isRevenueMode = (currentChartMode == ChartMode::Revenue || currentChartMode == ChartMode::MovieRevenue || currentChartMode == ChartMode::ComboRevenue);
+    const float paddingLeft = isRevenueMode ? 100.f : 60.f;
     const float paddingRight = 30.f;
     const float paddingTop = 50.f;
     const float paddingBottom = 80.f;
@@ -765,7 +983,7 @@ void MovieRevenuePanel::drawChart(RenderTarget& target) const {
 
         const double rawValue = maxValue * ratio;
         std::string labelStr;
-        if (currentChartMode == ChartMode::Revenue) {
+        if (isRevenueMode) {
             long long value = static_cast<long long>(std::round(rawValue));
             labelStr = formatCurrency(value);
         } else {
@@ -802,22 +1020,37 @@ void MovieRevenuePanel::drawChart(RenderTarget& target) const {
 
     for (std::size_t i = 0; i < barCount; ++i) {
         const float x = startX + static_cast<float>(i) * (barWidth + gap);
-        const double rawValue = (currentChartMode == ChartMode::Revenue)
-            ? static_cast<double>(movieStats[i].totalRevenue())
-            : static_cast<double>(movieStats[i].ticketCount);
+        double rawValue = 0.0;
+        if (currentChartMode == ChartMode::ComboRevenue) {
+            rawValue = static_cast<double>(comboStats[i].revenue);
+        } else if (currentChartMode == ChartMode::Revenue) {
+            rawValue = static_cast<double>(movieStats[i].totalRevenue());
+        } else if (currentChartMode == ChartMode::MovieRevenue) {
+            rawValue = static_cast<double>(movieStats[i].ticketRevenue);
+        } else {
+            rawValue = static_cast<double>(movieStats[i].ticketCount);
+        }
         float barHeight = static_cast<float>((rawValue / maxValue) * chartHeight);
         if (barHeight < 4.f) {
             barHeight = 4.f;
         }
 
         sf::RectangleShape bar({barWidth, barHeight});
-        bar.setFillColor(currentChartMode == ChartMode::Revenue ? Color(236, 72, 153) : Color(59, 130, 246));
+        if (currentChartMode == ChartMode::ComboRevenue) {
+            bar.setFillColor(Color(221, 180, 67));
+        } else if (currentChartMode == ChartMode::MovieRevenue) {
+            bar.setFillColor(Color(13, 148, 136));
+        } else if (currentChartMode == ChartMode::Revenue) {
+            bar.setFillColor(Color(236, 72, 153));
+        } else {
+            bar.setFillColor(Color(59, 130, 246));
+        }
         bar.setPosition(sf::Vector2f(x, originY - barHeight));
         target.draw(bar);
 
         // Giá trị nằm bên trên cột (dễ đọc hơn)
         std::string valueStr;
-        if (currentChartMode == ChartMode::Revenue) {
+        if (isRevenueMode) {
             long long val = static_cast<long long>(std::round(rawValue));
             valueStr = formatCurrency(val);
         } else {
@@ -845,7 +1078,9 @@ void MovieRevenuePanel::drawChart(RenderTarget& target) const {
 
         // Nhãn phim (giống Tổng quan: ngang, tên dài -> "...")
         const int maxChars = std::max(6, static_cast<int>(std::floor(barWidth / 7.f)));
-        const std::string labelText = ellipsize(movieStats[i].title, static_cast<std::size_t>(maxChars));
+        const std::string labelText = (currentChartMode == ChartMode::ComboRevenue)
+            ? ellipsize(comboStats[i].label, static_cast<std::size_t>(maxChars))
+            : ellipsize(movieStats[i].title, static_cast<std::size_t>(maxChars));
         sf::Text label(font, toSfString(labelText), 12);
         label.setFillColor(Color(94, 106, 123));
         FloatRect labelBounds = label.getLocalBounds();
@@ -865,6 +1100,8 @@ void MovieRevenuePanel::setPosition(const sf::Vector2f& pos) {
 
 void MovieRevenuePanel::handleEvent(const Event& event, const RenderWindow& window) {
     const sf::Vector2f mousePos = window.mapPixelToCoords(sf::Mouse::getPosition(window));
+
+    const bool wasDropdownOpen = isAnyDropdownOpen();
 
     auto handleDateGroup = [&](std::unique_ptr<DropdownBox>& year,
                                std::unique_ptr<DropdownBox>& month,
@@ -893,23 +1130,44 @@ void MovieRevenuePanel::handleEvent(const Event& event, const RenderWindow& wind
     handleDateGroup(toYearDropdown, toMonthDropdown, toDayDropdown);
     updateDropdownEnabling();
 
+    // If a dropdown was open at the start of this event, prevent click-through to other controls.
+    if (wasDropdownOpen) {
+        if (const auto* mousePressed = event.getIf<Event::MouseButtonPressed>()) {
+            if (mousePressed->button == sf::Mouse::Button::Left) {
+                suppressClicksUntilMouseRelease = true;
+            }
+        }
+        return;
+    }
+
     if (const auto* mousePressed = event.getIf<Event::MouseButtonPressed>()) {
         if (mousePressed->button == sf::Mouse::Button::Left) {
             if (ticketsToggle.shape.getGlobalBounds().contains(mousePos)) {
                 setChartMode(ChartMode::Tickets);
             } else if (revenueToggle.shape.getGlobalBounds().contains(mousePos)) {
                 setChartMode(ChartMode::Revenue);
+            } else if (movieOnlyToggle.shape.getGlobalBounds().contains(mousePos)) {
+                setChartMode(ChartMode::MovieRevenue);
+            } else if (comboToggle.shape.getGlobalBounds().contains(mousePos)) {
+                setChartMode(ChartMode::ComboRevenue);
             }
         }
     }
 }
 
 void MovieRevenuePanel::update(const sf::Vector2f& mousePos, bool mouseDown) {
+    if (!mouseDown) {
+        suppressClicksUntilMouseRelease = false;
+    }
+
+    const bool blockClicks = suppressClicksUntilMouseRelease || isAnyDropdownOpen();
+
     const sf::Color primary = Color(59, 130, 246);
     const sf::Color hover = Color(37, 99, 235);
     const sf::Color active = Color(29, 78, 216);
+
     loadButton.update(mousePos, mouseDown, hover, active);
-    if (loadButton.isClicked(mousePos, mouseDown)) {
+    if (!blockClicks && loadButton.isClicked(mousePos, mouseDown)) {
         // Reload from source-of-truth then apply selected date range
         loadMovies();
         loadShowtimePrices();
@@ -931,6 +1189,8 @@ void MovieRevenuePanel::update(const sf::Vector2f& mousePos, bool mouseDown) {
 
     updateToggle(ticketsToggle, currentChartMode == ChartMode::Tickets);
     updateToggle(revenueToggle, currentChartMode == ChartMode::Revenue);
+    updateToggle(movieOnlyToggle, currentChartMode == ChartMode::MovieRevenue);
+    updateToggle(comboToggle, currentChartMode == ChartMode::ComboRevenue);
 
     if (fromYearDropdown) fromYearDropdown->update();
     if (fromMonthDropdown) fromMonthDropdown->update();
@@ -943,6 +1203,11 @@ void MovieRevenuePanel::update(const sf::Vector2f& mousePos, bool mouseDown) {
 void MovieRevenuePanel::render(RenderTarget& target) const {
     target.draw(background);
     target.draw(titleText);
+
+    totalRevenueCard.render(target);
+    movieRevenueCard.render(target);
+    comboRevenueCard.render(target);
+
     target.draw(fromLabel);
     target.draw(toLabel);
 
@@ -950,6 +1215,10 @@ void MovieRevenuePanel::render(RenderTarget& target) const {
     target.draw(ticketsToggle.label);
     target.draw(revenueToggle.shape);
     target.draw(revenueToggle.label);
+    target.draw(movieOnlyToggle.shape);
+    target.draw(movieOnlyToggle.label);
+    target.draw(comboToggle.shape);
+    target.draw(comboToggle.label);
 
     loadButton.draw(target);
     drawChart(target);

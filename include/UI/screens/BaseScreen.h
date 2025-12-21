@@ -18,17 +18,17 @@ class BaseScreen {
         Sprite searchBar_sprite;
         DLL<TextButton> buttons;
         
-        // ✅ Global search bar for all screens
+        // Global search bar for all screens
         unique_ptr<GlobalSearchBar> globalSearchBar;
         unique_ptr<MovieSearchManager> globalSearchManager;
         
-        // ✅ Track selected movie from search
+        // Track selected movie from search
         int selectedMovieIndexFromSearch = -1;
         
-        // ✅ Static variables để lưu trạng thái đăng nhập chung cho tất cả screen
+        // Static variables để lưu trạng thái đăng nhập chung cho tất cả screen
         static string loggedInUsername;
         static string loggedInUserEmail;
-        static bool logoutRequested;  // ✅ Flag để báo cho App biết cần reset
+        static bool logoutRequested;  // Flag để báo cho App biết cần reset
         
         // Dropdown menu components
         bool showDropdown = false;
@@ -42,47 +42,47 @@ class BaseScreen {
 
         virtual void update(Vector2f mousePos, bool mousePressed, AppState& state);
         
-        // ✅ Method to handle events (for search bar keyboard input)
+        // Method to handle events (for search bar keyboard input)
         virtual void handleEvent(const Event& event);
 
         virtual void draw(RenderWindow& window);
         
-        // ✅ Draw UI overlay elements that should be on top of everything
+        // Draw UI overlay elements that should be on top of everything
         virtual void drawOverlay(RenderWindow& window);
 
         void setAccountButtonText(const String& text);
         
-        // ✅ Initialize search functionality (to be called by derived classes with movie data)
+        // Initialize search functionality (to be called by derived classes with movie data)
         void initializeGlobalSearch(const DLL<MovieDetail>& movies);
         
-        // ✅ Get selected movie index from global search
+        // Get selected movie index from global search
         int getSelectedMovieIndexFromSearch() const;
         
-        // ✅ Clear selected movie index after use
+        // Clear selected movie index after use
         void clearSelectedMovieIndexFromSearch();
         
-        // ✅ Static methods để set/get username và email cho tất cả screens
+        // Static methods để set/get username và email cho tất cả screens
         static void setLoggedInUser(const string& username, const string& email);
         static string getLoggedInUser();
         static string getLoggedInUserEmail();
         static bool isUserLoggedIn();
         
-        // ✅ Method để logout user
+        // Method để logout user
         static void handleLogout();
         
-        // ✅ Close dropdown menu (should be called before state changes)
+        // Close dropdown menu (should be called before state changes)
         void closeDropdown();
         
-        // ✅ Check if logout was requested
+        // Check if logout was requested
         static bool isLogoutRequested();
         
-        // ✅ Clear logout flag after handling
+        // Clear logout flag after handling
         static void clearLogoutFlag();
         
     protected:
-        // ✅ Helper to extract first name (last word) from full name
+        // Helper to extract first name (last word) from full name
         static string getFirstName(const string& fullName);
         
-        // ✅ Update vị trí dropdown ngay bên dưới nút "Xin chào"
+        // Update vị trí dropdown ngay bên dưới nút "Xin chào"
         void updateDropdownPosition();
 };

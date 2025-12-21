@@ -61,18 +61,19 @@ void VoucherPanel::setupUI() {
     userTableHeader.setSize(Vector2f(RIGHT_PANEL_WIDTH - 40, HEADER_HEIGHT));
     userTableHeader.setFillColor(headerColor);
     
-    // Setup buttons - Left panel
-    setupButton(btnAddVoucher, "Thêm mới", Color(40, 167, 69), Color(60, 187, 89), {120.f, BUTTON_HEIGHT});
-    setupButton(btnEditVoucher, "Chỉnh sửa", Color(20, 118, 172), Color(40, 138, 192), {120.f, BUTTON_HEIGHT});
-    setupButton(btnDeleteVoucher, "Xóa", Color(220, 53, 69), Color(240, 73, 89), {80.f, BUTTON_HEIGHT});
-    setupButton(btnDistribute, "Phát đồng loạt", Color(255, 152, 0), Color(255, 172, 40), {150.f, BUTTON_HEIGHT});
-    setupButton(btnViewUsers, "Xem người nhận", Color(108, 117, 125), Color(128, 137, 145), {150.f, BUTTON_HEIGHT});
-    setupButton(btnRefresh, "", Color(20, 118, 172), Color(30, 138, 192), {48.f, 48.f});
+    // Setup buttons - Left panel (match MoviePanel sizing)
+    const float btnW = 150.f;
+    setupButton(btnAddVoucher, "Thêm mới", Color(40, 167, 69), Color(60, 187, 89), {btnW, BUTTON_HEIGHT});
+    setupButton(btnEditVoucher, "Chỉnh sửa", Color(20, 118, 172), Color(40, 138, 192), {btnW, BUTTON_HEIGHT});
+    setupButton(btnDeleteVoucher, "Xóa", Color(220, 53, 69), Color(240, 73, 89), {btnW, BUTTON_HEIGHT});
+    setupButton(btnDistribute, "Phát đồng loạt", Color(255, 152, 0), Color(255, 172, 40), {btnW, BUTTON_HEIGHT});
+    setupButton(btnViewUsers, "Xem người nhận", Color(108, 117, 125), Color(128, 137, 145), {btnW, BUTTON_HEIGHT});
+    setupButton(btnRefresh, "", Color(20, 118, 172), Color(30, 138, 192), {BUTTON_HEIGHT, BUTTON_HEIGHT});
     
-    // Setup buttons - Right panel
-    setupButton(btnAddToUser, "Thêm người nhận", Color(40, 167, 69), Color(60, 187, 89), {160.f, BUTTON_HEIGHT});
-    setupButton(btnRemoveFromUser, "Thu hồi voucher", Color(220, 53, 69), Color(240, 73, 89), {160.f, BUTTON_HEIGHT});
-    setupButton(btnBackToList, "← Quay lại", Color(108, 117, 125), Color(128, 137, 145), {120.f, BUTTON_HEIGHT});
+    // Setup buttons - Right panel (match MoviePanel sizing)
+    setupButton(btnBackToList, "← Quay lại", Color(108, 117, 125), Color(128, 137, 145), {btnW, BUTTON_HEIGHT});
+    setupButton(btnAddToUser, "Thêm người nhận", Color(40, 167, 69), Color(60, 187, 89), {btnW, BUTTON_HEIGHT});
+    setupButton(btnRemoveFromUser, "Thu hồi voucher", Color(220, 53, 69), Color(240, 73, 89), {btnW, BUTTON_HEIGHT});
     
     // Reload icon
     if (!reloadTexture.loadFromFile("../assets/elements/reload.png")) {
@@ -109,7 +110,7 @@ void VoucherPanel::setupButton(ActionButton& button, const string& labelUtf8,
     button.hoverColor = hover;
     
     if (!labelUtf8.empty()) {
-        button.label = make_unique<Text>(font, toUtf8(labelUtf8), 15);
+        button.label = make_unique<Text>(font, toUtf8(labelUtf8), 16);
         button.label->setFillColor(Color::White);
     }
 }
@@ -122,10 +123,27 @@ void VoucherPanel::layoutElements() {
         titleText->setPosition(Vector2f(position.x + 40.f, position.y + 20.f));
     }
     
-    // Panels
+    // Panels (dynamic sizing to match MoviePanel scale and avoid button overlap)
     float panelY = position.y + 70.f;
+    const float availableWidth = std::max(0.f, width - PANEL_MARGIN * 3.f);
+    const float minRightWidth = 560.f;
+    const float minLeftWidth = 640.f;
+
+    float leftWidth = std::max(minLeftWidth, availableWidth * 0.56f);
+    if (availableWidth - leftWidth < minRightWidth) {
+        leftWidth = std::max(0.f, availableWidth - minRightWidth);
+    }
+    float rightWidth = std::max(0.f, availableWidth - leftWidth);
+    if (rightWidth < minRightWidth && availableWidth >= minRightWidth) {
+        rightWidth = minRightWidth;
+        leftWidth = std::max(0.f, availableWidth - rightWidth);
+    }
+
+    leftPanelBg.setSize(Vector2f(leftWidth, height - 100.f));
+    rightPanelBg.setSize(Vector2f(rightWidth, height - 100.f));
+
     leftPanelBg.setPosition(Vector2f(position.x + PANEL_MARGIN, panelY));
-    rightPanelBg.setPosition(Vector2f(position.x + PANEL_MARGIN + LEFT_PANEL_WIDTH + PANEL_MARGIN, panelY));
+    rightPanelBg.setPosition(Vector2f(leftPanelBg.getPosition().x + leftWidth + PANEL_MARGIN, panelY));
     
     // Panel titles
     if (leftPanelTitle) {
@@ -136,41 +154,62 @@ void VoucherPanel::layoutElements() {
     }
     
     // Table headers
+    defTableHeader.setSize(Vector2f(std::max(0.f, leftWidth - 40.f), HEADER_HEIGHT));
+    userTableHeader.setSize(Vector2f(std::max(0.f, rightWidth - 40.f), HEADER_HEIGHT));
     defTableHeader.setPosition(Vector2f(leftPanelBg.getPosition().x + 20.f, panelY + 100.f));
     userTableHeader.setPosition(Vector2f(rightPanelBg.getPosition().x + 20.f, panelY + 100.f));
     
-    // Left panel buttons
-    float leftBtnY = panelY + 50.f;
-    float leftBtnX = leftPanelBg.getPosition().x + 20.f;
+    // Left panel buttons (single row like MoviePanel; ensure no overlap with refresh)
+    const float spacing = 18.f;
+    const float leftBtnY = panelY + 50.f;
+    const float leftBtnX0 = leftPanelBg.getPosition().x + 20.f;
+
+    const float refreshX = leftPanelBg.getPosition().x + leftWidth - 20.f - btnRefresh.box.getSize().x;
+    const float maxRight = std::max(leftBtnX0, refreshX - spacing);
+    const float availableForButtons = std::max(0.f, maxRight - leftBtnX0);
+    const int buttonCount = 4;
+    const float desiredW = btnAddVoucher.box.getSize().x;
+    float btnW = desiredW;
+    if (buttonCount > 0) {
+        const float needed = buttonCount * desiredW + (buttonCount - 1) * spacing;
+        if (needed > availableForButtons) {
+            btnW = std::max(110.f, (availableForButtons - (buttonCount - 1) * spacing) / static_cast<float>(buttonCount));
+        }
+    }
+
+    btnAddVoucher.box.setSize({btnW, BUTTON_HEIGHT});
+    btnEditVoucher.box.setSize({btnW, BUTTON_HEIGHT});
+    btnDeleteVoucher.box.setSize({btnW, BUTTON_HEIGHT});
+    btnDistribute.box.setSize({btnW, BUTTON_HEIGHT});
+
+    btnAddVoucher.box.setPosition(Vector2f(leftBtnX0, leftBtnY));
+    btnEditVoucher.box.setPosition(Vector2f(leftBtnX0 + (btnW + spacing) * 1.f, leftBtnY));
+    btnDeleteVoucher.box.setPosition(Vector2f(leftBtnX0 + (btnW + spacing) * 2.f, leftBtnY));
+    btnDistribute.box.setPosition(Vector2f(leftBtnX0 + (btnW + spacing) * 3.f, leftBtnY));
+
+    btnRefresh.box.setPosition(Vector2f(refreshX, leftBtnY));
     
-    btnAddVoucher.box.setPosition(Vector2f(leftBtnX, leftBtnY));
-    leftBtnX += btnAddVoucher.box.getSize().x + 10.f;
-    
-    btnEditVoucher.box.setPosition(Vector2f(leftBtnX, leftBtnY));
-    leftBtnX += btnEditVoucher.box.getSize().x + 10.f;
-    
-    btnDeleteVoucher.box.setPosition(Vector2f(leftBtnX, leftBtnY));
-    leftBtnX += btnDeleteVoucher.box.getSize().x + 10.f;
-    
-    btnDistribute.box.setPosition(Vector2f(leftBtnX, leftBtnY));
-    leftBtnX += btnDistribute.box.getSize().x + 10.f;
-    
-    btnRefresh.box.setPosition(Vector2f(
-        leftPanelBg.getPosition().x + LEFT_PANEL_WIDTH - 68.f, 
-        leftBtnY - 2.f
-    ));
-    
-    // Right panel buttons
-    float rightBtnY = panelY + 50.f;
-    float rightBtnX = rightPanelBg.getPosition().x + 20.f;
-    
-    btnBackToList.box.setPosition(Vector2f(rightBtnX, rightBtnY));
-    rightBtnX += btnBackToList.box.getSize().x + 10.f;
-    
-    btnAddToUser.box.setPosition(Vector2f(rightBtnX, rightBtnY));
-    rightBtnX += btnAddToUser.box.getSize().x + 10.f;
-    
-    btnRemoveFromUser.box.setPosition(Vector2f(rightBtnX, rightBtnY));
+    // Right panel buttons (single row like MoviePanel)
+    const float rightBtnY = panelY + 50.f;
+    const float rightBtnX0 = rightPanelBg.getPosition().x + 20.f;
+    const float rightAvail = std::max(0.f, rightWidth - 40.f);
+    const int rightCount = 3;
+    float rightBtnW = btnBackToList.box.getSize().x;
+    {
+        const float desired = rightBtnW;
+        const float needed = rightCount * desired + (rightCount - 1) * spacing;
+        if (needed > rightAvail) {
+            rightBtnW = std::max(120.f, (rightAvail - (rightCount - 1) * spacing) / static_cast<float>(rightCount));
+        }
+    }
+
+    btnBackToList.box.setSize({rightBtnW, BUTTON_HEIGHT});
+    btnAddToUser.box.setSize({rightBtnW, BUTTON_HEIGHT});
+    btnRemoveFromUser.box.setSize({rightBtnW, BUTTON_HEIGHT});
+
+    btnBackToList.box.setPosition(Vector2f(rightBtnX0, rightBtnY));
+    btnAddToUser.box.setPosition(Vector2f(rightBtnX0 + (rightBtnW + spacing) * 1.f, rightBtnY));
+    btnRemoveFromUser.box.setPosition(Vector2f(rightBtnX0 + (rightBtnW + spacing) * 2.f, rightBtnY));
     
     // Center button labels
     auto centerLabel = [](ActionButton& btn) {

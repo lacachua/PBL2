@@ -177,7 +177,7 @@ void MovieSearchManager::loadMovies(const DLL<MovieDetail>& movieList) {
     
     // Build the Trie and index map
     for (int i = 0; i < movies.getSize(); i++) {
-        // ✅ Convert sf::String to std::string UTF-8
+        // Convert sf::String to std::string UTF-8
         sf::String sfTitle = movies[i].title;
         auto utf8 = sfTitle.toUtf8();
         string title(reinterpret_cast<const char*>(utf8.data()), utf8.size());
@@ -213,7 +213,7 @@ vector<SearchResult> MovieSearchManager::searchMovies(const string& query, int l
                 if (results.size() >= (size_t)limit) break;
                 SearchResult result;
                 
-                // ✅ Convert sf::String to std::string UTF-8
+                // Convert sf::String to std::string UTF-8
                 sf::String sfTitle = movies[idx].title;
                 auto utf8 = sfTitle.toUtf8();
                 result.title = string(reinterpret_cast<const char*>(utf8.data()), utf8.size());
