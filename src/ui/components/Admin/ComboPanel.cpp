@@ -495,6 +495,38 @@ void ComboPanel::renderNotification(RenderWindow& window) {
 
 void ComboPanel::handleEvent(const Event& event, const RenderWindow& window) {
     if (currentPopup != NONE) {
+        // Tab navigation between input fields
+        if (const auto* keyEvent = event.getIf<Event::KeyPressed>()) {
+            if (keyEvent->code == Keyboard::Key::Tab && !inputBoxes.empty()) {
+                int direction = keyEvent->shift ? -1 : 1;
+                int focusedIndex = -1;
+                for (int i = 0; i < static_cast<int>(inputBoxes.size()); ++i) {
+                    if (inputBoxes[static_cast<size_t>(i)] && inputBoxes[static_cast<size_t>(i)]->getFocus()) {
+                        focusedIndex = i;
+                        break;
+                    }
+                }
+
+                auto focusOnly = [&](int idx) {
+                    for (int i = 0; i < static_cast<int>(inputBoxes.size()); ++i) {
+                        if (inputBoxes[static_cast<size_t>(i)]) {
+                            inputBoxes[static_cast<size_t>(i)]->setFocus(i == idx);
+                        }
+                    }
+                };
+
+                if (focusedIndex < 0) {
+                    // Focus first box
+                    focusOnly(0);
+                } else {
+                    int total = static_cast<int>(inputBoxes.size());
+                    int nextIndex = (focusedIndex + direction + total) % total;
+                    focusOnly(nextIndex);
+                }
+                return;
+            }
+        }
+
         for (auto& box : inputBoxes) {
             box->handleEvent(event);
         }

@@ -102,11 +102,11 @@ private:
     sf::RectangleShape listBackground_;
     
     // Layout constants
-    static constexpr float POPUP_WIDTH = 520.f;
-    static constexpr float POPUP_HEIGHT = 520.f;
+    static constexpr float POPUP_WIDTH = 600.f;
+    static constexpr float POPUP_HEIGHT = 580.f;
     static constexpr float PADDING = 24.f;
     static constexpr float ITEM_HEIGHT = 38.f;
-    static constexpr float LIST_HEIGHT = 230.f;
+    static constexpr float LIST_HEIGHT = 280.f;
     static constexpr int MAX_VISIBLE_ITEMS = 6;
     
     // Colors

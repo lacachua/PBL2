@@ -371,13 +371,19 @@ void UserSelectPopup::render(sf::RenderWindow& window) {
     // Render user list
     renderUserList(window);
     
-    // Selected count and Select All button
+    // Selected count and Select All button (below/outside the list frame)
+    const float listBottomY = listBackground_.getPosition().y + listBackground_.getSize().y;
+    const float actionsTopY = listBottomY + 10.f;
+
+    // Left: selected count
     std::string countStr = "Đã chọn: " + std::to_string(selectedIndices_.size()) + " người";
     selectedCountText_->setString(toUtf8(countStr));
-    selectedCountText_->setPosition({popupPos.x + PADDING, contentY + 360.f});
+    selectedCountText_->setPosition({popupPos.x + PADDING, actionsTopY + 6.f});
     window.draw(*selectedCountText_);
-    
-    btnSelectAll_->setPosition({popupPos.x + 200.f, contentY + 355.f});
+
+    // Center: select all / deselect button
+    const float btnW = btnSelectAll_->getGlobalBounds().size.x;
+    btnSelectAll_->setPosition({popupPos.x + (POPUP_WIDTH - btnW) / 2.f, actionsTopY});
     btnSelectAll_->draw(window);
     
     // Scroll indicator
@@ -452,22 +458,20 @@ void UserSelectPopup::renderUserList(sf::RenderWindow& window) {
         }
         window.draw(itemBg);
         
-        // Checkbox
-        sf::RectangleShape checkbox({18.f, 18.f});
-        checkbox.setPosition({listArea.position.x + 10.f, itemY + 9.f});
-        checkbox.setFillColor(isSelected ? accentColor_ : sf::Color::White);
-        checkbox.setOutlineColor(isSelected ? accentColor_ : borderColor_);
-        checkbox.setOutlineThickness(1.5f);
-        window.draw(checkbox);
-        
-        // Checkmark
-        if (isSelected) {
-            sf::Text checkmark(font_, toUtf8("✓"), 14);
-            checkmark.setFillColor(sf::Color::White);
-            checkmark.setStyle(sf::Text::Bold);
-            checkmark.setPosition({checkbox.getPosition().x + 2.f, checkbox.getPosition().y - 1.f});
-            window.draw(checkmark);
-        }
+        // Selection indicator (circle)
+        // Avoid glyph-based checkmarks to prevent font/encoding issues.
+        const float indicatorBoxSize = 18.f;
+        const float indicatorRadius = 7.f;
+        const sf::Vector2f indicatorBoxPos(listArea.position.x + 10.f, itemY + 9.f);
+        sf::CircleShape indicator(indicatorRadius);
+        indicator.setPosition({
+            indicatorBoxPos.x + (indicatorBoxSize - 2.f * indicatorRadius) / 2.f,
+            indicatorBoxPos.y + (indicatorBoxSize - 2.f * indicatorRadius) / 2.f
+        });
+        indicator.setFillColor(isSelected ? successColor_ : sf::Color::White);
+        indicator.setOutlineColor(isSelected ? successColor_ : borderColor_);
+        indicator.setOutlineThickness(1.5f);
+        window.draw(indicator);
         
         // Email
         std::string email = user.email;

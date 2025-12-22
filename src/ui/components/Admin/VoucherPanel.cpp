@@ -322,6 +322,49 @@ void VoucherPanel::handleEvent(const Event& event, const RenderWindow& window) {
     
     // Handle popup events
     if (currentPopup != PopupType::NONE) {
+        // Tab navigation between input boxes (Add/Edit/Distribute/etc)
+        if (const auto* keyEvent = event.getIf<Event::KeyPressed>()) {
+            if (keyEvent->code == Keyboard::Key::Tab && !inputBoxes.empty()) {
+                int direction = keyEvent->shift ? -1 : 1;
+                int focusedIndex = -1;
+                for (int i = 0; i < static_cast<int>(inputBoxes.size()); ++i) {
+                    if (inputBoxes[static_cast<size_t>(i)] && inputBoxes[static_cast<size_t>(i)]->getFocus()) {
+                        focusedIndex = i;
+                        break;
+                    }
+                }
+
+                auto focusOnly = [&](int idx) {
+                    for (int i = 0; i < static_cast<int>(inputBoxes.size()); ++i) {
+                        if (inputBoxes[static_cast<size_t>(i)]) {
+                            inputBoxes[static_cast<size_t>(i)]->setFocus(i == idx);
+                        }
+                    }
+                };
+
+                if (focusedIndex < 0) {
+                    // Focus first editable box
+                    for (int i = 0; i < static_cast<int>(inputBoxes.size()); ++i) {
+                        if (inputBoxes[static_cast<size_t>(i)] && inputBoxes[static_cast<size_t>(i)]->isEditable()) {
+                            focusOnly(i);
+                            break;
+                        }
+                    }
+                } else {
+                    int nextIndex = focusedIndex;
+                    int total = static_cast<int>(inputBoxes.size());
+                    for (int attempt = 0; attempt < total; ++attempt) {
+                        nextIndex = (nextIndex + direction + total) % total;
+                        if (inputBoxes[static_cast<size_t>(nextIndex)] && inputBoxes[static_cast<size_t>(nextIndex)]->isEditable()) {
+                            break;
+                        }
+                    }
+                    focusOnly(nextIndex);
+                }
+                return;
+            }
+        }
+
         // Handle mouse click for input focus
         if (const auto* click = event.getIf<Event::MouseButtonPressed>()) {
             if (click->button == Mouse::Button::Left) {
@@ -718,8 +761,18 @@ void VoucherPanel::renderVoucherDefinitions(RenderWindow& window) {
     }
 
     const float headerY = defTableHeader.getPosition().y;
+    // White separators between header columns
+    {
+        RectangleShape headerSep(Vector2f(1.f, HEADER_HEIGHT));
+        headerSep.setFillColor(Color::White);
+        for (size_t i = 0; i + 1 < headers.size(); ++i) {
+            headerSep.setPosition(Vector2f(colLefts[i] + colWidths[i], headerY));
+            window.draw(headerSep);
+        }
+    }
+
     for (size_t i = 0; i < headers.size(); i++) {
-        Text headerText(font, toUtf8(headers[i]), 16);
+        Text headerText(font, toUtf8(headers[i]), 18);
         headerText.setFillColor(Color::White);
         headerText.setStyle(Text::Bold);
 
@@ -755,46 +808,35 @@ void VoucherPanel::renderVoucherDefinitions(RenderWindow& window) {
             rowBg.setFillColor(i % 2 == 0 ? rowColor : rowAltColor);
         }
         window.draw(rowBg);
-        
-        // Row data
-        float colX = defTableHeader.getPosition().x + 10.f;
-        
+
+        // Row data (center-aligned per column)
+        auto drawCenteredCell = [&](size_t colIndex, const std::string& value, unsigned int fontSize, const Color& color, bool bold = false) {
+            Text text(font, toUtf8(value), fontSize);
+            text.setFillColor(color);
+            text.setStyle(bold ? Text::Bold : Text::Regular);
+            const FloatRect b = text.getLocalBounds();
+            const float x = colLefts[colIndex] + (colWidths[colIndex] - b.size.x) / 2.f - b.position.x;
+            const float y = currentRowY + (ROW_HEIGHT - b.size.y) / 2.f - b.position.y;
+            text.setPosition(Vector2f(x, y));
+            window.draw(text);
+        };
+
         // Code
-        Text codeText(font, toUtf8(def.code), 14);
-        codeText.setFillColor(accentColor);
-        codeText.setStyle(Text::Bold);
-        codeText.setPosition(Vector2f(colX, currentRowY + (ROW_HEIGHT - 16) / 2.f));
-        window.draw(codeText);
-        colX += colWidths[0];
-        
-        // Type
-        Text typeText(font, toUtf8(getTypeString(def.type)), 14);
-        typeText.setFillColor(textColor);
-        typeText.setPosition(Vector2f(colX, currentRowY + (ROW_HEIGHT - 16) / 2.f));
-        window.draw(typeText);
-        colX += colWidths[1];
-        
+        drawCenteredCell(0, def.code, 16, accentColor, true);
+
+        // Type (display numeric 1/2 like voucher_defs.txt)
+        drawCenteredCell(1, to_string(def.type), 16, textColor);
+
         // Value
         string valueStr = def.type == 1 ? formatCurrency(def.value) : to_string(static_cast<int>(def.value)) + "%";
-        Text valueText(font, toUtf8(valueStr), 14);
-        valueText.setFillColor(successColor);
-        valueText.setPosition(Vector2f(colX, currentRowY + (ROW_HEIGHT - 16) / 2.f));
-        window.draw(valueText);
-        colX += colWidths[2];
-        
+        drawCenteredCell(2, valueStr, 16, successColor);
+
         // Min bill
-        Text minText(font, toUtf8(formatCurrency(def.minBill)), 14);
-        minText.setFillColor(textColor);
-        minText.setPosition(Vector2f(colX, currentRowY + (ROW_HEIGHT - 16) / 2.f));
-        window.draw(minText);
-        colX += colWidths[3];
-        
+        drawCenteredCell(3, formatCurrency(def.minBill), 16, textColor);
+
         // User count
         int userCount = repository->countUsersWithVoucher(def.code);
-        Text countText(font, toUtf8(to_string(userCount)), 14);
-        countText.setFillColor(userCount > 0 ? accentColor : textColor);
-        countText.setPosition(Vector2f(colX, currentRowY + (ROW_HEIGHT - 16) / 2.f));
-        window.draw(countText);
+        drawCenteredCell(4, to_string(userCount), 16, userCount > 0 ? accentColor : textColor);
     }
     
     // Empty state
@@ -815,14 +857,13 @@ void VoucherPanel::renderUserVouchers(RenderWindow& window) {
     window.draw(userTableHeader);
     
     // Header columns
-    vector<string> headers = {"Email", "Tên", "SL", "HSD"};
+    vector<string> headers = {"Email", "Tên", "SL"};
     const float totalW = userTableHeader.getSize().x;
     vector<float> colWidths;
     colWidths.reserve(headers.size());
-    colWidths.push_back(totalW * 0.44f); // Email
-    colWidths.push_back(totalW * 0.32f); // Tên
-    colWidths.push_back(totalW * 0.08f); // SL
-    colWidths.push_back(std::max(0.f, totalW - (colWidths[0] + colWidths[1] + colWidths[2]))); // HSD
+    colWidths.push_back(totalW * 0.46f); // Email
+    colWidths.push_back(totalW * 0.42f); // Tên (wider)
+    colWidths.push_back(std::max(0.f, totalW - (colWidths[0] + colWidths[1]))); // SL
 
     vector<float> colLefts(headers.size(), userTableHeader.getPosition().x);
     for (size_t i = 1; i < colLefts.size(); ++i) {
@@ -830,8 +871,17 @@ void VoucherPanel::renderUserVouchers(RenderWindow& window) {
     }
 
     const float headerY = userTableHeader.getPosition().y;
+    // White separators between header columns
+    {
+        RectangleShape headerSep(Vector2f(1.f, HEADER_HEIGHT));
+        headerSep.setFillColor(Color::White);
+        for (size_t i = 0; i + 1 < headers.size(); ++i) {
+            headerSep.setPosition(Vector2f(colLefts[i] + colWidths[i], headerY));
+            window.draw(headerSep);
+        }
+    }
     for (size_t i = 0; i < headers.size(); i++) {
-        Text headerText(font, toUtf8(headers[i]), 16);
+        Text headerText(font, toUtf8(headers[i]), 18);
         headerText.setFillColor(Color::White);
         headerText.setStyle(Text::Bold);
         const FloatRect bounds = headerText.getLocalBounds();
@@ -865,44 +915,61 @@ void VoucherPanel::renderUserVouchers(RenderWindow& window) {
             rowBg.setFillColor(i % 2 == 0 ? rowColor : rowAltColor);
         }
         window.draw(rowBg);
+
+        const float cellPaddingX = 10.f;
+        auto fitToWidth = [&](const std::string& raw, float maxWidth, unsigned int fontSize) -> sf::String {
+            sf::String s = toUtf8(raw);
+            sf::Text t(font, s, fontSize);
+            if (t.getLocalBounds().size.x <= maxWidth) return s;
+
+            const sf::String ellipsis = toUtf8("...");
+            // If even ellipsis doesn't fit, return empty.
+            t.setString(ellipsis);
+            if (t.getLocalBounds().size.x > maxWidth) return sf::String();
+
+            while (s.getSize() > 0) {
+                s = s.substring(0, s.getSize() - 1);
+                t.setString(s + ellipsis);
+                if (t.getLocalBounds().size.x <= maxWidth) {
+                    return s + ellipsis;
+                }
+            }
+            return ellipsis;
+        };
+
+        auto drawLeftCellFit = [&](size_t colIndex, const std::string& value, unsigned int fontSize, const Color& color, bool bold = false) {
+            float x = colLefts[colIndex] + cellPaddingX;
+            float maxWidth = std::max(0.f, colWidths[colIndex] - 2.f * cellPaddingX);
+            sf::String fitted = fitToWidth(value, maxWidth, fontSize);
+
+            Text text(font, fitted, fontSize);
+            text.setFillColor(color);
+            text.setStyle(bold ? Text::Bold : Text::Regular);
+            const FloatRect b = text.getLocalBounds();
+            text.setPosition(Vector2f(x, currentRowY + (ROW_HEIGHT - b.size.y) / 2.f - b.position.y));
+            window.draw(text);
+        };
+
+        auto drawCenteredCell = [&](size_t colIndex, const std::string& value, unsigned int fontSize, const Color& color, bool bold = false) {
+            sf::String s = toUtf8(value);
+            Text text(font, s, fontSize);
+            text.setFillColor(color);
+            text.setStyle(bold ? Text::Bold : Text::Regular);
+            const FloatRect b = text.getLocalBounds();
+            float x = colLefts[colIndex] + (colWidths[colIndex] - b.size.x) / 2.f - b.position.x;
+            float y = currentRowY + (ROW_HEIGHT - b.size.y) / 2.f - b.position.y;
+            text.setPosition(Vector2f(x, y));
+            window.draw(text);
+        };
         
-        // Row data
-        float colX = userTableHeader.getPosition().x + 10.f;
-        
-        // Email
-        string displayEmail = user.email;
-        if (displayEmail.length() > 22) {
-            displayEmail = displayEmail.substr(0, 19) + "...";
-        }
-        Text emailText(font, toUtf8(displayEmail), 13);
-        emailText.setFillColor(textColor);
-        emailText.setPosition(Vector2f(colX, currentRowY + (ROW_HEIGHT - 14) / 2.f));
-        window.draw(emailText);
-        colX += colWidths[0];
-        
-        // Name
-        string displayName = user.fullName;
-        if (displayName.length() > 18) {
-            displayName = displayName.substr(0, 15) + "...";
-        }
-        Text nameText(font, toUtf8(displayName), 13);
-        nameText.setFillColor(textColor);
-        nameText.setPosition(Vector2f(colX, currentRowY + (ROW_HEIGHT - 14) / 2.f));
-        window.draw(nameText);
-        colX += colWidths[1];
-        
-        // Quantity
-        Text qtyText(font, toUtf8(to_string(user.quantity)), 13);
-        qtyText.setFillColor(successColor);
-        qtyText.setPosition(Vector2f(colX, currentRowY + (ROW_HEIGHT - 14) / 2.f));
-        window.draw(qtyText);
-        colX += colWidths[2];
-        
-        // Expiry
-        Text expText(font, toUtf8(formatDate(user.expiryDate)), 13);
-        expText.setFillColor(Color(100, 100, 100));
-        expText.setPosition(Vector2f(colX, currentRowY + (ROW_HEIGHT - 14) / 2.f));
-        window.draw(expText);
+        // Email (left, fitted)
+        drawLeftCellFit(0, user.email, 16, textColor);
+
+        // Name (left, fitted; wider column)
+        drawLeftCellFit(1, user.fullName, 16, textColor);
+
+        // Quantity (centered)
+        drawCenteredCell(2, to_string(user.quantity), 16, successColor);
     }
     
     // Empty state
@@ -929,6 +996,10 @@ void VoucherPanel::renderPopup(RenderWindow& window) {
     
     // Popup size based on type
     Vector2f popupSize(450.f, 400.f);
+    if (currentPopup == PopupType::ADD_VOUCHER || currentPopup == PopupType::EDIT_VOUCHER) {
+        // More room to avoid text overlap/truncation
+        popupSize = Vector2f(560.f, 460.f);
+    }
     if (currentPopup == PopupType::ADD_TO_USER) {
         popupSize = Vector2f(520.f, 520.f);
     } else if (currentPopup == PopupType::DELETE_VOUCHER) {
@@ -1199,7 +1270,7 @@ void VoucherPanel::openAddVoucherPopup() {
     float startY = 70.f;
     float labelX = 24.f;
     float inputX = 130.f;
-    float inputWidth = 280.f;
+    float inputWidth = 360.f;
     float rowHeight = 55.f;
     
     vector<string> labels = {"Mã voucher:", "Loại (1/2):", "Giá trị:", "HĐ tối thiểu:", "Mô tả:"};
@@ -1210,6 +1281,12 @@ void VoucherPanel::openAddVoucherPopup() {
         inputLabels.push_back(move(label));
         
         auto textBox = make_unique<TextBox>(font, inputWidth, 36.f);
+        // Sample text / placeholder
+        if (i == 0) textBox->setPlaceholder("Ví dụ: SALE10");
+        if (i == 1) textBox->setPlaceholder("Nhập 1 hoặc 2");
+        if (i == 2) textBox->setPlaceholder("Ví dụ: 50000 (type 1) hoặc 10 (type 2)");
+        if (i == 3) textBox->setPlaceholder("Ví dụ: 200000");
+        if (i == 4) textBox->setPlaceholder("Ví dụ: Giảm 10% cho đơn từ 200k");
         inputBoxes.push_back(move(textBox));
     }
     
@@ -1244,7 +1321,7 @@ void VoucherPanel::openEditVoucherPopup() {
         def.description
     };
     
-    float inputWidth = 280.f;
+    float inputWidth = 360.f;
     
     for (size_t i = 0; i < labels.size(); i++) {
         auto label = make_unique<Text>(font, toUtf8(labels[i]), 14);

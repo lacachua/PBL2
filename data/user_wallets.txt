@@ -27,7 +27,6 @@ vuvannguyen1@gmail.net|METIZ|1|20260111|1
 vanvu1@gmail.com|METIZ|1|20260111|1
 staff01@cinexine.vn|METIZ|1|20260111|1
 vanvu41ht3@gmail.com|NGUYENVU|1|20260117|2
-vanvu41ht4@gmail.com|NGUYENVU|1|20260117|2
 vanvu41ht5@gmail.com|NGUYENVU|1|20260117|2
 vuvannguyen@gmail.com|NGUYENVU|1|20260117|2
 vanvu41ht6@gmail.com|NGUYENVU|1|20260117|2
