@@ -381,13 +381,10 @@ void TicketPanel::refreshTickets() {
 }
 
 void TicketPanel::updateButtonStates() {
-    if (selectedRow >= 0) {
-        btnView->setColors(Color(20, 118, 172), Color(17, 98, 144));
-        btnDelete->setColors(Color(211, 47, 47), Color(171, 36, 36));
-    } else {
-        btnView->setColors(Color(142, 169, 204), Color(142, 169, 204));
-        btnDelete->setColors(Color(189, 99, 99), Color(189, 99, 99));
-    }
+    // Keep buttons visually active at all times; actions still validate selection
+    // and show notifications when required.
+    btnView->setColors(Color(20, 118, 172), Color(17, 98, 144));
+    btnDelete->setColors(Color(211, 47, 47), Color(171, 36, 36));
 }
 
 void TicketPanel::handleReload() {

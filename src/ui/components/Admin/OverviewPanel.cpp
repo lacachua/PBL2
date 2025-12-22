@@ -83,8 +83,12 @@ void OverviewPanel::initializeUI() {
     comboRevenueCard.setPosition({movieRevenueCard.getPosition().x + statWidth + cardGap, row2Y});
 
     // Layout: Tiêu đề ngoài khung, biểu đồ + bảng
-    float chartTop = position.y + margin + (statHeight * 2.f + cardGap) + 36.f;  // Thêm space cho tiêu đề
-    float chartGap = 36.f;  // Gap giữa 2 hàng (có tiêu đề)
+    // Reduce unused spacing so the 4 cards can show more rows.
+    const float titleSpace = 28.f;
+    const float chartGap = 20.f;
+    const float rowInsetTop = 16.f;
+
+    float chartTop = position.y + margin + (statHeight * 2.f + cardGap) + titleSpace;  // Space for headings
     float totalChartHeight = height - chartTop - margin;
     float singleRowHeight = (totalChartHeight - chartGap) / 2.f;
     
@@ -92,30 +96,30 @@ void OverviewPanel::initializeUI() {
     float tableWidth = (width - margin * 2.f) * 0.5f - 12.f;  // 35% cho bảng
 
     // Biểu đồ cột (trên) - không có tiêu đề bên trong
-    ticketChartCard.setSize({chartWidth, singleRowHeight - 20.f});
-    ticketChartCard.setPosition({position.x + margin, chartTop + 20.f});
+    ticketChartCard.setSize({chartWidth, std::max(180.f, singleRowHeight - rowInsetTop)});
+    ticketChartCard.setPosition({position.x + margin, chartTop + rowInsetTop});
     ticketChartCard.setFillColor(Color::White);
     ticketChartCard.setOutlineThickness(1.f);
     ticketChartCard.setOutlineColor(Color(226, 232, 240));
 
     // Bảng phim (bên phải biểu đồ cột)
-    movieTableCard.setSize({tableWidth, singleRowHeight - 20.f});
-    movieTableCard.setPosition({ticketChartCard.getPosition().x + chartWidth + 12.f, chartTop + 20.f});
+    movieTableCard.setSize({tableWidth, std::max(180.f, singleRowHeight - rowInsetTop)});
+    movieTableCard.setPosition({ticketChartCard.getPosition().x + chartWidth + 12.f, chartTop + rowInsetTop});
     movieTableCard.setFillColor(Color::White);
     movieTableCard.setOutlineThickness(1.f);
     movieTableCard.setOutlineColor(Color(226, 232, 240));
 
     // Biểu đồ đường (dưới)
     float row2Top = chartTop + singleRowHeight + chartGap;
-    revenueChartCard.setSize({chartWidth, singleRowHeight - 20.f});
-    revenueChartCard.setPosition({position.x + margin, row2Top + 20.f});
+    revenueChartCard.setSize({chartWidth, std::max(180.f, singleRowHeight - rowInsetTop)});
+    revenueChartCard.setPosition({position.x + margin, row2Top + rowInsetTop});
     revenueChartCard.setFillColor(Color::White);
     revenueChartCard.setOutlineThickness(1.f);
     revenueChartCard.setOutlineColor(Color(226, 232, 240));
 
     // Bảng doanh thu (bên phải biểu đồ đường)
-    revenueTableCard.setSize({tableWidth, singleRowHeight - 20.f});
-    revenueTableCard.setPosition({revenueChartCard.getPosition().x + chartWidth + 12.f, row2Top + 20.f});
+    revenueTableCard.setSize({tableWidth, std::max(180.f, singleRowHeight - rowInsetTop)});
+    revenueTableCard.setPosition({revenueChartCard.getPosition().x + chartWidth + 12.f, row2Top + rowInsetTop});
     revenueTableCard.setFillColor(Color::White);
     revenueTableCard.setOutlineThickness(1.f);
     revenueTableCard.setOutlineColor(Color(226, 232, 240));
@@ -248,10 +252,12 @@ void OverviewPanel::calculateMonthlyStats() {
             std::string month = ticket.bookedDate.substr(3);
             if (month == currentMonth) {
                 const int seatCount = std::max(1, countSeats(ticket.booked));
-                const long long comboPart = computeComboRevenue(ticket.comboName);
+                const long long ticketTotal = static_cast<long long>(ticket.price);
+                const long long rawComboPart = computeComboRevenue(ticket.comboName);
+                const long long comboPart = std::max(0LL, std::min(rawComboPart, ticketTotal));
                 const long long moviePart = computeTicketRevenue(ticket, seatCount, comboPart);
 
-                totalRevenue += static_cast<long long>(ticket.price);
+                totalRevenue += ticketTotal;
                 movieRevenue += moviePart;
                 comboRevenue += comboPart;
                 ticketsCount += seatCount;
@@ -439,17 +445,14 @@ long long OverviewPanel::computeComboRevenue(const std::string& comboList) const
 }
 
 long long OverviewPanel::computeTicketRevenue(const Ticket& ticket, int seatCount, long long comboRevenue) const {
+    // Split must be consistent with total revenue source-of-truth: Ticket.price.
+    // Movie revenue is always (ticketTotal - comboPart) so that movie + combo == total.
     if (seatCount <= 0) return 0;
-    auto it = showtimeSeatPrices.find(ticket.showtimeId);
-    if (it != showtimeSeatPrices.end() && it->second > 0) {
-        return static_cast<long long>(it->second) * seatCount;
-    }
 
-    const long long base = static_cast<long long>(ticket.price) - comboRevenue;
-    if (base <= 0) {
-        return static_cast<long long>(ticket.price);
-    }
-    return base;
+    const long long ticketTotal = static_cast<long long>(ticket.price);
+    const long long safeCombo = std::max(0LL, std::min(comboRevenue, ticketTotal));
+    const long long moviePart = ticketTotal - safeCombo;
+    return std::max(0LL, moviePart);
 }
 
 std::string OverviewPanel::toCurrency(long long amount) const {

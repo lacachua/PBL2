@@ -60,14 +60,38 @@ private:
     int selectedRow = -1;
     int hoveredRow = -1;
     int scrollOffset = 0;
+
+    // Popups
+    enum class PopupType { None, ViewInfo, LockConfirm, DeleteConfirm };
+    PopupType activePopup = PopupType::None;
+    int popupUserIndex = -1;
+
+    RectangleShape popupOverlay;
+    RectangleShape popupPanel;
+    std::unique_ptr<Text> popupTitle;
+
+    struct DetailEntry {
+        Text label;
+        Text value;
+
+        explicit DetailEntry(Font& font) : label(font), value(font) {}
+        DetailEntry(const DetailEntry&) = default;
+        DetailEntry(DetailEntry&&) noexcept = default;
+        DetailEntry& operator=(const DetailEntry&) = default;
+        DetailEntry& operator=(DetailEntry&&) noexcept = default;
+    };
+    std::vector<DetailEntry> detailEntries;
+
+    ActionButton popupBtnPrimary;
+    ActionButton popupBtnSecondary;
     
     // Constants for layout
-    static constexpr float TABLE_X = 32.f;
-    static constexpr float TABLE_Y = 140.f;
-    static constexpr float TABLE_WIDTH = 1152.f;
-    static constexpr float TABLE_HEIGHT = 560.f;
-    static constexpr float HEADER_HEIGHT = 48.f;
-    static constexpr float ROW_HEIGHT = 44.f;
+    static constexpr float TABLE_X = 40.f;
+    static constexpr float TABLE_Y = 120.f;
+    static constexpr float TABLE_WIDTH = 1100.f;
+    static constexpr float TABLE_HEIGHT = 720.f;
+    static constexpr float HEADER_HEIGHT = 46.f;
+    static constexpr float ROW_HEIGHT = 40.f;
 
     // Colors aligned with Admin theme
     Color bgColor = Color(244, 246, 250);
@@ -87,9 +111,17 @@ private:
     void renderTable(RenderWindow& window);
     void renderButtons(RenderWindow& window);
     void renderNotification(RenderWindow& window);
+    void renderPopup(RenderWindow& window);
     void showNotification(const string& message, const Color& color = Color(20, 118, 172));
     string formatDate(time_t timestamp) const;
     void layoutElements();
+
+    void closePopup();
+    void openViewPopup();
+    void openLockPopup();
+    void openDeletePopup();
+    void rebuildDetailTexts(const User& user);
+    const User* getPopupUser() const;
     
 public:
     UserPanel(Font& font, float width, float height);

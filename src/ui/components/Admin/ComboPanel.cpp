@@ -70,7 +70,7 @@ void ComboPanel::setupUI() {
     const float btnH = 44.f;
 
     btnAddBg.setSize(Vector2f(btnW, btnH));
-    btnAddBg.setFillColor(Color(20, 118, 172));
+    btnAddBg.setFillColor(Color(40, 167, 69));
     btnEditBg.setSize(Vector2f(btnW, btnH));
     btnEditBg.setFillColor(Color(233, 164, 0));
     btnDeleteBg.setSize(Vector2f(btnW, btnH));
@@ -548,7 +548,7 @@ void ComboPanel::update(Vector2f mousePos, bool mousePressed) {
             return Color(r, g, b);
         };
 
-        Color addBase(20, 118, 172);
+        Color addBase(40, 167, 69);
         Color editBase(233, 164, 0);
         Color delBase(211, 47, 47);
         Color reloadBase(20, 118, 172);

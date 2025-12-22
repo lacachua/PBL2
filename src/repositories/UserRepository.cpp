@@ -67,6 +67,8 @@ string UserRepository::serializeLine(const User& user) const {
 }
 
 void UserRepository::loadFromFile() {
+    users.clear();
+
     ifstream file(filePath);
     if (!file.is_open()) return;
     

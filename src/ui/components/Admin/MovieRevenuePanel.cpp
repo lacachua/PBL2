@@ -173,7 +173,8 @@ void MovieRevenuePanel::layoutComponents() {
     // Keep title aligned with other admin management panels
     titleText.setPosition({position.x + 40.f, position.y + 20.f});
 
-    const float margin = 24.f;
+    // Align content with other Admin states (e.g., MoviePanel/VoucherPanel title/table margin)
+    const float margin = 40.f;
     const float statHeight = 70.f;
     const float statGap = 12.f;
     const float statsY = position.y + 60.f;
@@ -579,9 +580,12 @@ void MovieRevenuePanel::updateSummaryCards() {
     while (node) {
         const Ticket& ticket = node->data;
         const int seats = countSeats(ticket.booked);
-        const long long comboRev = computeComboRevenue(ticket.comboName);
+        const long long ticketTotal = static_cast<long long>(ticket.price);
+        const long long rawComboRev = computeComboRevenue(ticket.comboName);
+        const long long comboRev = std::max(0LL, std::min(rawComboRev, ticketTotal));
         const long long movieRev = computeTicketRevenue(ticket, seats, comboRev);
-        totalRevenueValue += static_cast<long long>(ticket.price);
+
+        totalRevenueValue += ticketTotal;
         movieRevenueValue += movieRev;
         comboRevenueValue += comboRev;
         node = node->next;
@@ -694,8 +698,10 @@ void MovieRevenuePanel::updateMovieStats() {
             continue;
         }
         int seats = countSeats(ticket.booked);
-        long long comboRevenue = computeComboRevenue(ticket.comboName);
-        long long ticketRevenue = computeTicketRevenue(ticket, seats, comboRevenue);
+        const long long ticketTotal = static_cast<long long>(ticket.price);
+        const long long rawComboRevenue = computeComboRevenue(ticket.comboName);
+        const long long comboRevenue = std::max(0LL, std::min(rawComboRevenue, ticketTotal));
+        const long long ticketRevenue = computeTicketRevenue(ticket, seats, comboRevenue);
 
         auto it = indexByTitle.find(normalizedTitle);
         if (it == indexByTitle.end()) {
@@ -797,17 +803,14 @@ long long MovieRevenuePanel::computeComboRevenue(const std::string& comboList) c
 }
 
 long long MovieRevenuePanel::computeTicketRevenue(const Ticket& ticket, int seatCount, long long comboRevenue) const {
+    // Split must be consistent with total revenue source-of-truth: Ticket.price.
+    // Movie revenue is always (ticketTotal - comboPart) so that movie + combo == total.
     if (seatCount <= 0) return 0;
-    auto it = showtimeSeatPrices.find(ticket.showtimeId);
-    if (it != showtimeSeatPrices.end() && it->second > 0) {
-        return static_cast<long long>(it->second) * seatCount;
-    }
 
-    long long base = static_cast<long long>(ticket.price) - comboRevenue;
-    if (base <= 0) {
-        return static_cast<long long>(ticket.price);
-    }
-    return base;
+    const long long ticketTotal = static_cast<long long>(ticket.price);
+    const long long safeCombo = std::max(0LL, std::min(comboRevenue, ticketTotal));
+    const long long moviePart = ticketTotal - safeCombo;
+    return std::max(0LL, moviePart);
 }
 
 void MovieRevenuePanel::setChartMode(ChartMode mode) {

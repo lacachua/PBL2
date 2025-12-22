@@ -76,6 +76,19 @@ public:
         }
         delete[] buckets;
     }
+
+    void clear() {
+        for (int i = 0; i < capacity; i++) {
+            Node* current = buckets[i];
+            while (current) {
+                Node* temp = current;
+                current = current->next;
+                delete temp;
+            }
+            buckets[i] = nullptr;
+        }
+        size = 0;
+    }
     
     void insert(const K& key, const V& value) {
         int index = hashFunction(key);

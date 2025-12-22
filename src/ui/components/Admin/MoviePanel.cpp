@@ -107,7 +107,7 @@ void MoviePanel::setupUI() {
 
     // Add button
     btnAddBg.setSize(Vector2f(btnW, btnH));
-    btnAddBg.setFillColor(Color(20,118,172)); // #1476AC
+    btnAddBg.setFillColor(Color(40, 167, 69));
     btnAddBg.setOutlineThickness(0.f);
 
     string btnAddStr = "Thêm phim";
@@ -746,7 +746,7 @@ void MoviePanel::update(Vector2f mousePos, bool mousePressed) {
         };
 
         // Base colors
-        Color addBase(20, 118, 172);
+        Color addBase(40, 167, 69);
         Color editBase(233, 164, 0);
         Color delBase(211, 47, 47);
         Color reloadBase(20, 118, 172);

@@ -61,19 +61,20 @@ void VoucherPanel::setupUI() {
     userTableHeader.setSize(Vector2f(RIGHT_PANEL_WIDTH - 40, HEADER_HEIGHT));
     userTableHeader.setFillColor(headerColor);
     
-    // Setup buttons - Left panel (match MoviePanel sizing)
+    // Setup buttons - Left panel (requested order/colors)
+    // Thêm mới (Xanh lá) - Chỉnh sửa (Vàng) - Xóa (Đỏ) - Phát đồng loạt (Xanh dương) - Reload (giữ nguyên)
     const float btnW = 150.f;
     setupButton(btnAddVoucher, "Thêm mới", Color(40, 167, 69), Color(60, 187, 89), {btnW, BUTTON_HEIGHT});
-    setupButton(btnEditVoucher, "Chỉnh sửa", Color(20, 118, 172), Color(40, 138, 192), {btnW, BUTTON_HEIGHT});
-    setupButton(btnDeleteVoucher, "Xóa", Color(220, 53, 69), Color(240, 73, 89), {btnW, BUTTON_HEIGHT});
-    setupButton(btnDistribute, "Phát đồng loạt", Color(255, 152, 0), Color(255, 172, 40), {btnW, BUTTON_HEIGHT});
+    setupButton(btnEditVoucher, "Chỉnh sửa", Color(233, 164, 0), Color(247, 186, 40), {btnW, BUTTON_HEIGHT});
+    setupButton(btnDeleteVoucher, "Xóa", Color(211, 47, 47), Color(226, 83, 83), {btnW, BUTTON_HEIGHT});
+    setupButton(btnDistribute, "Phát đồng loạt", Color(20, 118, 172), Color(34, 156, 218), {btnW, BUTTON_HEIGHT});
     setupButton(btnViewUsers, "Xem người nhận", Color(108, 117, 125), Color(128, 137, 145), {btnW, BUTTON_HEIGHT});
     setupButton(btnRefresh, "", Color(20, 118, 172), Color(30, 138, 192), {BUTTON_HEIGHT, BUTTON_HEIGHT});
     
-    // Setup buttons - Right panel (match MoviePanel sizing)
-    setupButton(btnBackToList, "← Quay lại", Color(108, 117, 125), Color(128, 137, 145), {btnW, BUTTON_HEIGHT});
-    setupButton(btnAddToUser, "Thêm người nhận", Color(40, 167, 69), Color(60, 187, 89), {btnW, BUTTON_HEIGHT});
-    setupButton(btnRemoveFromUser, "Thu hồi voucher", Color(220, 53, 69), Color(240, 73, 89), {btnW, BUTTON_HEIGHT});
+    // Setup buttons - Right panel (widen Add/Remove to avoid text overflow)
+    setupButton(btnBackToList, "← Quay lại", Color(108, 117, 125), Color(128, 137, 145), {150.f, BUTTON_HEIGHT});
+    setupButton(btnAddToUser, "Thêm người nhận", Color(40, 167, 69), Color(60, 187, 89), {190.f, BUTTON_HEIGHT});
+    setupButton(btnRemoveFromUser, "Thu hồi voucher", Color(211, 47, 47), Color(226, 83, 83), {190.f, BUTTON_HEIGHT});
     
     // Reload icon
     if (!reloadTexture.loadFromFile("../assets/elements/reload.png")) {
@@ -189,27 +190,27 @@ void VoucherPanel::layoutElements() {
 
     btnRefresh.box.setPosition(Vector2f(refreshX, leftBtnY));
     
-    // Right panel buttons (single row like MoviePanel)
+    // Right panel buttons (keep Back size, widen Add/Remove to avoid text overflow)
     const float rightBtnY = panelY + 50.f;
     const float rightBtnX0 = rightPanelBg.getPosition().x + 20.f;
     const float rightAvail = std::max(0.f, rightWidth - 40.f);
-    const int rightCount = 3;
-    float rightBtnW = btnBackToList.box.getSize().x;
+    const float backW = 150.f;
+
+    float actionW = 190.f;
     {
-        const float desired = rightBtnW;
-        const float needed = rightCount * desired + (rightCount - 1) * spacing;
-        if (needed > rightAvail) {
-            rightBtnW = std::max(120.f, (rightAvail - (rightCount - 1) * spacing) / static_cast<float>(rightCount));
+        const float remaining = std::max(0.f, rightAvail - backW - spacing * 2.f);
+        if (remaining > 0.f) {
+            actionW = std::max(160.f, remaining / 2.f);
         }
     }
 
-    btnBackToList.box.setSize({rightBtnW, BUTTON_HEIGHT});
-    btnAddToUser.box.setSize({rightBtnW, BUTTON_HEIGHT});
-    btnRemoveFromUser.box.setSize({rightBtnW, BUTTON_HEIGHT});
+    btnBackToList.box.setSize({backW, BUTTON_HEIGHT});
+    btnAddToUser.box.setSize({actionW, BUTTON_HEIGHT});
+    btnRemoveFromUser.box.setSize({actionW, BUTTON_HEIGHT});
 
     btnBackToList.box.setPosition(Vector2f(rightBtnX0, rightBtnY));
-    btnAddToUser.box.setPosition(Vector2f(rightBtnX0 + (rightBtnW + spacing) * 1.f, rightBtnY));
-    btnRemoveFromUser.box.setPosition(Vector2f(rightBtnX0 + (rightBtnW + spacing) * 2.f, rightBtnY));
+    btnAddToUser.box.setPosition(Vector2f(rightBtnX0 + backW + spacing, rightBtnY));
+    btnRemoveFromUser.box.setPosition(Vector2f(btnAddToUser.box.getPosition().x + actionW + spacing, rightBtnY));
     
     // Center button labels
     auto centerLabel = [](ActionButton& btn) {
@@ -291,7 +292,11 @@ void VoucherPanel::handleEvent(const Event& event, const RenderWindow& window) {
         // Scroll in voucher definitions
         if (leftPanelBg.getGlobalBounds().contains(mousePos)) {
             auto defs = repository->getAllDefinitions();
-            int maxScroll = max(0, static_cast<int>(defs.size()) - 8);
+            const float tableBottom = leftPanelBg.getPosition().y + leftPanelBg.getSize().y - 20.f;
+            const float rowY = defTableHeader.getPosition().y + HEADER_HEIGHT;
+            const float bodyHeight = max(0.f, tableBottom - rowY);
+            const int visibleRows = max(1, static_cast<int>(bodyHeight / ROW_HEIGHT));
+            int maxScroll = max(0, static_cast<int>(defs.size()) - visibleRows);
             if (scroll->delta > 0) {
                 defScrollOffset = max(0, defScrollOffset - 1);
             } else {
@@ -301,7 +306,11 @@ void VoucherPanel::handleEvent(const Event& event, const RenderWindow& window) {
         
         // Scroll in user vouchers
         if (rightPanelBg.getGlobalBounds().contains(mousePos)) {
-            int maxScroll = max(0, static_cast<int>(currentVoucherUsers.size()) - 8);
+            const float tableBottom = rightPanelBg.getPosition().y + rightPanelBg.getSize().y - 20.f;
+            const float rowY = userTableHeader.getPosition().y + HEADER_HEIGHT;
+            const float bodyHeight = max(0.f, tableBottom - rowY);
+            const int visibleRows = max(1, static_cast<int>(bodyHeight / ROW_HEIGHT));
+            int maxScroll = max(0, static_cast<int>(currentVoucherUsers.size()) - visibleRows);
             if (scroll->delta > 0) {
                 userScrollOffset = max(0, userScrollOffset - 1);
             } else {
@@ -499,9 +508,11 @@ void VoucherPanel::handleEvent(const Event& event, const RenderWindow& window) {
             }
             
             // Click on voucher definition table
+            const float defsBottom = leftPanelBg.getPosition().y + leftPanelBg.getSize().y - 20.f;
+            const float defsTop = defTableHeader.getPosition().y + HEADER_HEIGHT;
             FloatRect defTableBounds(
-                Vector2f(defTableHeader.getPosition().x, defTableHeader.getPosition().y + HEADER_HEIGHT),
-                Vector2f(defTableHeader.getSize().x, height - 250.f)
+                Vector2f(defTableHeader.getPosition().x, defsTop),
+                Vector2f(defTableHeader.getSize().x, std::max(0.f, defsBottom - defsTop))
             );
             
             if (defTableBounds.contains(mousePos)) {
@@ -516,9 +527,11 @@ void VoucherPanel::handleEvent(const Event& event, const RenderWindow& window) {
             }
             
             // Click on user voucher table
+            const float usersBottom = rightPanelBg.getPosition().y + rightPanelBg.getSize().y - 20.f;
+            const float usersTop = userTableHeader.getPosition().y + HEADER_HEIGHT;
             FloatRect userTableBounds(
-                Vector2f(userTableHeader.getPosition().x, userTableHeader.getPosition().y + HEADER_HEIGHT),
-                Vector2f(userTableHeader.getSize().x, height - 250.f)
+                Vector2f(userTableHeader.getPosition().x, usersTop),
+                Vector2f(userTableHeader.getSize().x, std::max(0.f, usersBottom - usersTop))
             );
             
             if (userTableBounds.contains(mousePos)) {
@@ -558,9 +571,11 @@ void VoucherPanel::update(Vector2f mousePos, bool mousePressed) {
     hoveredUserIndex = -1;
     
     // Voucher definition hover
+    const float defsBottom = leftPanelBg.getPosition().y + leftPanelBg.getSize().y - 20.f;
+    const float defsTop = defTableHeader.getPosition().y + HEADER_HEIGHT;
     FloatRect defTableBounds(
-        Vector2f(defTableHeader.getPosition().x, defTableHeader.getPosition().y + HEADER_HEIGHT),
-        Vector2f(defTableHeader.getSize().x, height - 250.f)
+        Vector2f(defTableHeader.getPosition().x, defsTop),
+        Vector2f(defTableHeader.getSize().x, std::max(0.f, defsBottom - defsTop))
     );
     
     if (defTableBounds.contains(mousePos)) {
@@ -573,9 +588,11 @@ void VoucherPanel::update(Vector2f mousePos, bool mousePressed) {
     }
     
     // User voucher hover
+    const float usersBottom = rightPanelBg.getPosition().y + rightPanelBg.getSize().y - 20.f;
+    const float usersTop = userTableHeader.getPosition().y + HEADER_HEIGHT;
     FloatRect userTableBounds(
-        Vector2f(userTableHeader.getPosition().x, userTableHeader.getPosition().y + HEADER_HEIGHT),
-        Vector2f(userTableHeader.getSize().x, height - 250.f)
+        Vector2f(userTableHeader.getPosition().x, usersTop),
+        Vector2f(userTableHeader.getSize().x, std::max(0.f, usersBottom - usersTop))
     );
     
     if (userTableBounds.contains(mousePos)) {
@@ -686,24 +703,40 @@ void VoucherPanel::renderVoucherDefinitions(RenderWindow& window) {
     
     // Header columns
     vector<string> headers = {"Mã", "Loại", "Giá trị", "Tối thiểu", "Người nhận"};
-    vector<float> colWidths = {100.f, 80.f, 120.f, 120.f, 100.f};
-    
-    float headerX = defTableHeader.getPosition().x + 10.f;
-    float headerY = defTableHeader.getPosition().y;
-    
+    const float totalW = defTableHeader.getSize().x;
+    vector<float> colWidths;
+    colWidths.reserve(headers.size());
+    colWidths.push_back(totalW * 0.20f); // Mã
+    colWidths.push_back(totalW * 0.14f); // Loại
+    colWidths.push_back(totalW * 0.22f); // Giá trị
+    colWidths.push_back(totalW * 0.22f); // Tối thiểu
+    colWidths.push_back(std::max(0.f, totalW - (colWidths[0] + colWidths[1] + colWidths[2] + colWidths[3]))); // Người nhận
+
+    vector<float> colLefts(headers.size(), defTableHeader.getPosition().x);
+    for (size_t i = 1; i < colLefts.size(); ++i) {
+        colLefts[i] = colLefts[i - 1] + colWidths[i - 1];
+    }
+
+    const float headerY = defTableHeader.getPosition().y;
     for (size_t i = 0; i < headers.size(); i++) {
-        Text headerText(font, toUtf8(headers[i]), 14);
+        Text headerText(font, toUtf8(headers[i]), 16);
         headerText.setFillColor(Color::White);
         headerText.setStyle(Text::Bold);
-        headerText.setPosition(Vector2f(headerX, headerY + (HEADER_HEIGHT - 14) / 2.f));
+
+        const FloatRect bounds = headerText.getLocalBounds();
+        headerText.setPosition(Vector2f(
+            colLefts[i] + (colWidths[i] - bounds.size.x) / 2.f - bounds.position.x,
+            headerY + (HEADER_HEIGHT - bounds.size.y) / 2.f - bounds.position.y
+        ));
         window.draw(headerText);
-        headerX += colWidths[i];
     }
     
     // Table rows
     auto defs = repository->getAllDefinitions();
     float rowY = defTableHeader.getPosition().y + HEADER_HEIGHT;
-    int maxRows = static_cast<int>((height - 250.f) / ROW_HEIGHT);
+    const float tableBottom = leftPanelBg.getPosition().y + leftPanelBg.getSize().y - 20.f;
+    const float bodyHeight = std::max(0.f, tableBottom - rowY);
+    int maxRows = std::max(1, static_cast<int>(bodyHeight / ROW_HEIGHT));
     int endIdx = min(static_cast<int>(defs.size()), defScrollOffset + maxRows);
     
     for (int i = defScrollOffset; i < endIdx; i++) {
@@ -727,7 +760,7 @@ void VoucherPanel::renderVoucherDefinitions(RenderWindow& window) {
         float colX = defTableHeader.getPosition().x + 10.f;
         
         // Code
-        Text codeText(font, toUtf8(def.code), 13);
+        Text codeText(font, toUtf8(def.code), 14);
         codeText.setFillColor(accentColor);
         codeText.setStyle(Text::Bold);
         codeText.setPosition(Vector2f(colX, currentRowY + (ROW_HEIGHT - 16) / 2.f));
@@ -735,7 +768,7 @@ void VoucherPanel::renderVoucherDefinitions(RenderWindow& window) {
         colX += colWidths[0];
         
         // Type
-        Text typeText(font, toUtf8(getTypeString(def.type)), 13);
+        Text typeText(font, toUtf8(getTypeString(def.type)), 14);
         typeText.setFillColor(textColor);
         typeText.setPosition(Vector2f(colX, currentRowY + (ROW_HEIGHT - 16) / 2.f));
         window.draw(typeText);
@@ -743,14 +776,14 @@ void VoucherPanel::renderVoucherDefinitions(RenderWindow& window) {
         
         // Value
         string valueStr = def.type == 1 ? formatCurrency(def.value) : to_string(static_cast<int>(def.value)) + "%";
-        Text valueText(font, toUtf8(valueStr), 13);
+        Text valueText(font, toUtf8(valueStr), 14);
         valueText.setFillColor(successColor);
         valueText.setPosition(Vector2f(colX, currentRowY + (ROW_HEIGHT - 16) / 2.f));
         window.draw(valueText);
         colX += colWidths[2];
         
         // Min bill
-        Text minText(font, toUtf8(formatCurrency(def.minBill)), 13);
+        Text minText(font, toUtf8(formatCurrency(def.minBill)), 14);
         minText.setFillColor(textColor);
         minText.setPosition(Vector2f(colX, currentRowY + (ROW_HEIGHT - 16) / 2.f));
         window.draw(minText);
@@ -758,7 +791,7 @@ void VoucherPanel::renderVoucherDefinitions(RenderWindow& window) {
         
         // User count
         int userCount = repository->countUsersWithVoucher(def.code);
-        Text countText(font, toUtf8(to_string(userCount)), 13);
+        Text countText(font, toUtf8(to_string(userCount)), 14);
         countText.setFillColor(userCount > 0 ? accentColor : textColor);
         countText.setPosition(Vector2f(colX, currentRowY + (ROW_HEIGHT - 16) / 2.f));
         window.draw(countText);
@@ -783,23 +816,37 @@ void VoucherPanel::renderUserVouchers(RenderWindow& window) {
     
     // Header columns
     vector<string> headers = {"Email", "Tên", "SL", "HSD"};
-    vector<float> colWidths = {180.f, 150.f, 50.f, 100.f};
-    
-    float headerX = userTableHeader.getPosition().x + 10.f;
-    float headerY = userTableHeader.getPosition().y;
-    
+    const float totalW = userTableHeader.getSize().x;
+    vector<float> colWidths;
+    colWidths.reserve(headers.size());
+    colWidths.push_back(totalW * 0.44f); // Email
+    colWidths.push_back(totalW * 0.32f); // Tên
+    colWidths.push_back(totalW * 0.08f); // SL
+    colWidths.push_back(std::max(0.f, totalW - (colWidths[0] + colWidths[1] + colWidths[2]))); // HSD
+
+    vector<float> colLefts(headers.size(), userTableHeader.getPosition().x);
+    for (size_t i = 1; i < colLefts.size(); ++i) {
+        colLefts[i] = colLefts[i - 1] + colWidths[i - 1];
+    }
+
+    const float headerY = userTableHeader.getPosition().y;
     for (size_t i = 0; i < headers.size(); i++) {
-        Text headerText(font, toUtf8(headers[i]), 14);
+        Text headerText(font, toUtf8(headers[i]), 16);
         headerText.setFillColor(Color::White);
         headerText.setStyle(Text::Bold);
-        headerText.setPosition(Vector2f(headerX, headerY + (HEADER_HEIGHT - 14) / 2.f));
+        const FloatRect bounds = headerText.getLocalBounds();
+        headerText.setPosition(Vector2f(
+            colLefts[i] + (colWidths[i] - bounds.size.x) / 2.f - bounds.position.x,
+            headerY + (HEADER_HEIGHT - bounds.size.y) / 2.f - bounds.position.y
+        ));
         window.draw(headerText);
-        headerX += colWidths[i];
     }
     
     // Table rows
     float rowY = userTableHeader.getPosition().y + HEADER_HEIGHT;
-    int maxRows = static_cast<int>((height - 250.f) / ROW_HEIGHT);
+    const float tableBottom = rightPanelBg.getPosition().y + rightPanelBg.getSize().y - 20.f;
+    const float bodyHeight = std::max(0.f, tableBottom - rowY);
+    int maxRows = std::max(1, static_cast<int>(bodyHeight / ROW_HEIGHT));
     int endIdx = min(static_cast<int>(currentVoucherUsers.size()), userScrollOffset + maxRows);
     
     for (int i = userScrollOffset; i < endIdx; i++) {
@@ -827,7 +874,7 @@ void VoucherPanel::renderUserVouchers(RenderWindow& window) {
         if (displayEmail.length() > 22) {
             displayEmail = displayEmail.substr(0, 19) + "...";
         }
-        Text emailText(font, toUtf8(displayEmail), 12);
+        Text emailText(font, toUtf8(displayEmail), 13);
         emailText.setFillColor(textColor);
         emailText.setPosition(Vector2f(colX, currentRowY + (ROW_HEIGHT - 14) / 2.f));
         window.draw(emailText);
@@ -838,21 +885,21 @@ void VoucherPanel::renderUserVouchers(RenderWindow& window) {
         if (displayName.length() > 18) {
             displayName = displayName.substr(0, 15) + "...";
         }
-        Text nameText(font, toUtf8(displayName), 12);
+        Text nameText(font, toUtf8(displayName), 13);
         nameText.setFillColor(textColor);
         nameText.setPosition(Vector2f(colX, currentRowY + (ROW_HEIGHT - 14) / 2.f));
         window.draw(nameText);
         colX += colWidths[1];
         
         // Quantity
-        Text qtyText(font, toUtf8(to_string(user.quantity)), 12);
+        Text qtyText(font, toUtf8(to_string(user.quantity)), 13);
         qtyText.setFillColor(successColor);
         qtyText.setPosition(Vector2f(colX, currentRowY + (ROW_HEIGHT - 14) / 2.f));
         window.draw(qtyText);
         colX += colWidths[2];
         
         // Expiry
-        Text expText(font, toUtf8(formatDate(user.expiryDate)), 12);
+        Text expText(font, toUtf8(formatDate(user.expiryDate)), 13);
         expText.setFillColor(Color(100, 100, 100));
         expText.setPosition(Vector2f(colX, currentRowY + (ROW_HEIGHT - 14) / 2.f));
         window.draw(expText);
@@ -1125,8 +1172,9 @@ void VoucherPanel::renderNotification(RenderWindow& window) {
     Vector2f notifPos(position.x + width - notificationBg.getSize().x - 30.f, position.y + 20.f);
     notificationBg.setPosition(notifPos);
     notificationBg.setFillColor(notificationColor);
-    
-    RoundedRectRenderer::draw(window, notifPos, notificationBg.getSize(), 8.f, notificationColor);
+
+    // Keep notification style consistent with other admin states (no rounded frame).
+    window.draw(notificationBg);
     
     if (notificationText) {
         FloatRect bounds = notificationText->getLocalBounds();
