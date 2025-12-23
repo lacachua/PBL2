@@ -1,5 +1,6 @@
 #include "UI/components/Admin/RoomPanel.h"
 #include "UI/components/Admin/RoundedRectRenderer.h"
+#include "utils/FileUtils.h"
 #include <fstream>
 #include <sstream>
 #include <algorithm>
@@ -10,11 +11,6 @@
 using namespace std::chrono;
 
 namespace {
-const char* ROOMS_FILE = "../data/rooms.txt";
-const char* MOVIES_FILE = "../data/movies.txt";
-const char* SHOWTIMES_FILE = "../data/showtimes.txt";
-const char* SHOWTIMES_HISTORY_FILE = "../data/showtimes_history.txt";
-
 sf::String utf8(const string& text) {
     return sf::String::fromUtf8(text.begin(), text.end());
 }
@@ -99,17 +95,22 @@ void RoomPanel::setPosition(Vector2f pos) {
 }
 
 void RoomPanel::loadData() {
-    rooms = loadRooms(ROOMS_FILE);
-    auto movies = loadMovies(MOVIES_FILE);
+    const string roomsPath = FileUtils::resolveDataPath("data/rooms.txt");
+    const string moviesPath = FileUtils::resolveDataPath("data/movies.txt");
+    const string showtimesPath = FileUtils::resolveDataPath("data/showtimes.txt");
+    const string showtimesHistoryPath = FileUtils::resolveDataPath("data/showtimes_history.txt");
+
+    rooms = loadRooms(roomsPath);
+    auto movies = loadMovies(moviesPath);
     liveSchedules.clear();
     cachedSchedules.clear();
     roomSchedules.clear();
     cacheDirty = false;
 
-    loadShowtimes(SHOWTIMES_FILE, movies);
+    loadShowtimes(showtimesPath, movies);
     // Include history so rooms can still show the currently-playing movie even if the
     // active showtimes file only contains upcoming entries.
-    loadShowtimes(SHOWTIMES_HISTORY_FILE, movies);
+    loadShowtimes(showtimesHistoryPath, movies);
     roomSchedules = liveSchedules;
     loadCache();
     cacheDirty = removeExpiredCachedShows();

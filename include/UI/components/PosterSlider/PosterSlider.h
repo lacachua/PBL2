@@ -26,7 +26,7 @@ private:
 
     bool dotNavActive = false;
     int dotNavFinalTarget = 0;
-    int dotNavDirection = 0; // +1 or -1
+    int dotNavDirection = 0; // +1 hoac -1
 
     PosterAnimator animator;
     PosterLoader loader;

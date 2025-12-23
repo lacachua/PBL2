@@ -19,7 +19,7 @@ public:
     };
     
 private:
-    Font& font;  // Reference to avoid loading multiple times
+    Font& font;  // Dung tham chieu de tranh load nhieu lan
     vector<string> headers;
     vector<int> columnWidths;
     vector<vector<Cell>> rows;
@@ -38,16 +38,16 @@ private:
     Clock cursorBlinkClock;
     int hoveredRow = -1;
     
-    // CineXine Theme Colors
-    Color bgColor = Color(17, 28, 42);           // #111C2A - darker than sidebar
-    Color headerColor = Color(20, 118, 172);     // #1476AC - CineXine blue
-    Color rowColor = Color(24, 44, 64);          // #182C40 - row background
-    Color borderColor = Color(34, 59, 84);       // #223B54 - subtle border
-    Color hoverColor = Color(30, 58, 92);        // #1E3A5C - hover state
-    Color selectedColor = Color(40, 80, 120);    // Lighter blue for selection
-    Color editingColor = Color(50, 90, 130);     // Even lighter for editing
-    Color textColor = Color(240, 240, 240);      // #F0F0F0 - light text
-    Color headerTextColor = Color(255, 255, 255); // White for header
+    // Bang mau chu de CineXine
+    Color bgColor = Color(17, 28, 42);           // #111C2A - dam hon sidebar
+    Color headerColor = Color(20, 118, 172);     // #1476AC - xanh CineXine
+    Color rowColor = Color(24, 44, 64);          // #182C40 - nen dong
+    Color borderColor = Color(34, 59, 84);       // #223B54 - vien nhe
+    Color hoverColor = Color(30, 58, 92);        // #1E3A5C - mau hover
+    Color selectedColor = Color(40, 80, 120);    // Xanh nhat hon khi chon
+    Color editingColor = Color(50, 90, 130);     // Sang hon khi edit
+    Color textColor = Color(240, 240, 240);      // #F0F0F0 - chu sang
+    Color headerTextColor = Color(255, 255, 255); // Trang cho header
     
     RectangleShape background;
     RectangleShape scrollBar;
@@ -55,7 +55,7 @@ private:
     bool isDraggingScrollBar = false;
     float scrollBarWidth = 10.f;
     
-    // Callbacks
+    // Ham goi lai
     function<bool(int row, int col, const string& newValue)> onCellChange;
     function<void(int row)> onRowSelect;
     
@@ -76,7 +76,7 @@ public:
     void update(Vector2f mousePos, bool mousePressed);
     void render(RenderWindow& window);
     
-    // Callbacks
+    // Ham goi lai
     void setOnCellChange(function<bool(int, int, const string&)> callback);
     void setOnRowSelect(function<void(int)> callback);
     
@@ -84,7 +84,7 @@ public:
     vector<string> getRowData(int row) const;
     int getRowCount() const;
     
-    // Update/delete operations
+    // Cap nhat hoac xoa dong
     void updateRow(int row, const vector<string>& newData);
     void deleteRow(int row);
 };

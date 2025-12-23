@@ -1,4 +1,5 @@
 #include "UI/screens/DetailScreen.h"
+#include "utils/FileUtils.h"
 #include "repositories/MovieRepository.h"
 #include <sstream>
 
@@ -87,7 +88,7 @@ DetailScreen::DetailScreen(Font& headerFont, Font& btnFont, Font& titleFnt, Font
         ageRatingIcon(icon5)
 {
     // Initialize global search bar with movie data
-    MovieRepository repo("../data/movies.txt");
+    MovieRepository repo(FileUtils::resolveDataPath("data/movies.txt"));
     initializeGlobalSearch(repo.getAllMovies());
     poster.setScale({0.32f, 0.32f});
     poster.setScale({0.32f, 0.32f});

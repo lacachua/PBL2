@@ -52,7 +52,7 @@ private:
     float height;
     Vector2f position;
 
-    // Data
+    // Du lieu thong ke
     BTree<long long, Ticket> ticketTree;
     unordered_map<string, int> showtimeSeatPrices;
     unordered_map<string, int> comboPrices;
@@ -77,13 +77,13 @@ private:
 
     bool suppressClicksUntilMouseRelease = false;
 
-    // Paths
+    // Duong dan file
     string ticketsFilePath;
     string moviesFilePath;
     string showtimesFilePath;
     string combosFilePath;
 
-    // UI Elements
+    // Thanh phan giao dien
     RectangleShape background;
     Text titleText;
     Text fromLabel;
@@ -111,7 +111,7 @@ private:
 
     RectangleShape chartCard;
 
-    // Helpers
+    // Ham ho tro xu ly
     string resolveDataPath(const string& relative) const;
     void initializeUI();
     void layoutComponents();
@@ -131,7 +131,7 @@ private:
     bool isLeapYear(int year) const;
     int daysInMonth(int month, int year) const;
 
-    long long dateToKey(const string& displayDate) const; // expects dd/mm/yyyy
+    long long dateToKey(const string& displayDate) const; // dinh dang dd/mm/yyyy
     string keyToDisplay(long long key) const;
 
     void applySelection();

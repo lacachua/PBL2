@@ -15,7 +15,7 @@ private:
     unique_ptr<BookingService> bookingService;
     unique_ptr<LoginRequiredPopup> loginRequiredPopup;
     
-    // Input state
+    // Trạng thái input
     string inputText;
     string appliedVoucherCode;
     string statusMessage;
@@ -25,14 +25,14 @@ private:
     int discountValue;
     int subtotalSnapshot;
     
-    // UI animation
+    // Hiệu ứng UI
     Clock caretClock;
     bool caretVisible;
     
-    // Layout constants
+    // Hằng số bố cục
     static constexpr size_t kMaxVoucherLength = 16;
     
-    // Helper methods
+    // Các hàm hỗ trợ
     void normalizeVoucherCode(string& code);
     void clearVoucherPreview();
     FloatRect getInputBounds() const;

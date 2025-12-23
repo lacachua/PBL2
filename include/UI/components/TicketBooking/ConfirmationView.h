@@ -1,7 +1,7 @@
 #pragma once
 #include <SFML/Graphics.hpp>
 #include "repositories/booking/TicketRepository.h"
-#include "BookingState.h"  // For BookingData struct
+#include "BookingState.h"  // Su dung BookingData
 #include "../Button.h"
 #include "core/AppState.h"
 using namespace sf;
@@ -11,10 +11,10 @@ private:
     Font& font;
     Button homeButton;
     
-    // Display texts - Title
+    // Tieu de hien thi
     Text titleText;
     
-    // Labels (Cột Mô tả)
+    // Nhan ben trai (Mo ta)
     Text labelTicketId;
     Text labelCustomer;
     Text labelEmail;
@@ -25,7 +25,7 @@ private:
     Text labelCombo;
     Text labelTotal;
     
-    // Values (Cột Thông tin)
+    // Gia tri ben phai (Thong tin)
     Text valueTicketId;
     Text valueCustomer;
     Text valueEmail;

@@ -17,11 +17,11 @@ private:
     float width, height;
     Vector2f position;
     
-    // Repository
+    // Tang du lieu
     unique_ptr<UserRepository> repository;
-    vector<User> userList; // Cache for display
+    vector<User> userList; // Bo nho dem phuc vu hien thi
     
-    // UI Components
+    // Thanh phan giao dien
     unique_ptr<Text> titleText;
     RectangleShape background;
     RectangleShape tableHeaderBg;
@@ -41,7 +41,7 @@ private:
     Texture reloadTexture;
     std::optional<Sprite> reloadSprite;
 
-    // Notification
+    // Thong bao trang thai
     RectangleShape notificationBg;
     unique_ptr<Text> notificationText;
     string notificationMessage;
@@ -49,12 +49,12 @@ private:
     bool notificationVisible = false;
     Color notificationColor = Color(20, 118, 172);
 
-    // Table state
+    // Trang thai cua bang
     int selectedRow = -1;
     int hoveredRow = -1;
     int scrollOffset = 0;
 
-    // Popups
+    // Hop thoai
     enum class PopupType { None, ViewInfo, DeleteConfirm };
     PopupType activePopup = PopupType::None;
     int popupUserIndex = -1;
@@ -78,7 +78,7 @@ private:
     ActionButton popupBtnPrimary;
     ActionButton popupBtnSecondary;
     
-    // Constants for layout
+    // Hang so bo cuc
     static constexpr float TABLE_X = 40.f;
     static constexpr float TABLE_Y = 120.f;
     static constexpr float TABLE_WIDTH = 1100.f;
@@ -86,7 +86,7 @@ private:
     static constexpr float HEADER_HEIGHT = 46.f;
     static constexpr float ROW_HEIGHT = 40.f;
 
-    // Colors aligned with Admin theme
+    // Bang mau dong nhat voi giao dien Admin
     Color bgColor = Color(244, 246, 250);
     Color headerColor = Color(20, 118, 172);
     Color tableHeaderColor = Color(27, 38, 59);

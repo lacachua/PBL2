@@ -40,7 +40,7 @@ private:
     int hoveredRow = -1;
     int scrollOffset = 0;
 
-    // Detail popup
+    // Popup hien chi tiet
     bool detailVisible = false;
     RectangleShape overlay;
     RectangleShape detailPanel;
@@ -59,7 +59,7 @@ private:
     RectangleShape detailCloseBg;
     std::unique_ptr<Text> detailCloseText;
 
-    // Notification toast
+    // Thong bao nho tren man hinh
     bool notificationVisible = false;
     Clock notificationClock;
     RectangleShape notificationBg;

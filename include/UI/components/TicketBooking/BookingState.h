@@ -10,9 +10,9 @@ enum class BookingState {
     xacnhan
 };
 
-// Struct to store all booking information across states
+// Cau truc giu thong tin dat ve xuyen suot cac buoc
 struct BookingData {
-    // Showtime data
+    // Thong tin suat chieu
     std::string showtimeId;
     std::string movieId;
     std::string movieName;
@@ -22,12 +22,12 @@ struct BookingData {
     std::string time;
     int ticketPrice = 0;
     
-    // Seat data
-    std::vector<std::string> selectedSeats;  // e.g., ["A1", "A2"]
+    // Thong tin ghe
+    std::vector<std::string> selectedSeats;  // vi du ["A1", "A2"]
     std::string seatsDisplay;  // "A1, A2, A3"
     int totalSeats = 0;
     
-    // Combo data
+    // Thong tin combo
     struct ComboItem {
         std::string comboId;
         std::string comboName;
@@ -38,16 +38,16 @@ struct BookingData {
     std::string combosDisplay;  // "Combo A (x2), Combo B (x1)"
     int comboTotalPrice = 0;
 
-    // Voucher data
+    // Thong tin voucher
     std::string voucherCode;
     int voucherDiscount = 0;
     
-    // User data
+    // Thong tin khach hang
     std::string customerName;
     std::string customerEmail;
     std::string customerPhone;
     
-    // Final data
+    // Tong ket
     std::string ticketId;
     int totalPrice = 0;
     

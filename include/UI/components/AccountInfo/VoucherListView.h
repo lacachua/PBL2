@@ -22,11 +22,11 @@ private:
     std::string currentUser;
     std::vector<VoucherDisplay> vouchers;
 
-    // UI Components
+    // Thanh phan giao dien
     sf::Text titleText;
     sf::RectangleShape scrollableArea;
     
-    // Pagination
+    // Phan trang
     int currentPage = 0;
     int itemsPerPage = 5;
     sf::RectangleShape prevButton, nextButton;

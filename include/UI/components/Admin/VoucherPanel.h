@@ -28,26 +28,26 @@ private:
     float width, height;
     Vector2f position;
     
-    // Repository
+    // Tang du lieu
     unique_ptr<AdminVoucherRepository> repository;
     
-    // Current state
+    // Trang thai hien tai
     enum class ViewMode { DEFINITIONS, USER_VOUCHERS };
     ViewMode currentMode = ViewMode::DEFINITIONS;
     int selectedVoucherIndex = -1;
     int hoveredVoucherIndex = -1;
     string selectedVoucherCode = "";
     
-    // User voucher view state
+    // Thong tin trang thai man hinh user voucher
     int selectedUserIndex = -1;
     int hoveredUserIndex = -1;
     vector<VoucherUserInfo> currentVoucherUsers;
     
-    // Scroll states
+    // Trang thai cuon
     int defScrollOffset = 0;
     int userScrollOffset = 0;
     
-    // UI Components
+    // Thanh phan giao dien
     RectangleShape background;
     RectangleShape leftPanelBg;
     RectangleShape rightPanelBg;
@@ -55,11 +55,11 @@ private:
     unique_ptr<Text> leftPanelTitle;
     unique_ptr<Text> rightPanelTitle;
     
-    // Table headers
+    // Header bang
     RectangleShape defTableHeader;
     RectangleShape userTableHeader;
     
-    // Action buttons - Voucher Definition
+    // Nut thao tac o che do document voucher
     struct ActionButton {
         RectangleShape box;
         unique_ptr<Text> label;
@@ -75,7 +75,7 @@ private:
     ActionButton btnViewUsers;   // Xem users có voucher
     ActionButton btnRefresh;
     
-    // Action buttons - User Voucher
+    // Nut thao tac o che do user voucher
     ActionButton btnAddToUser;
     ActionButton btnRemoveFromUser;
     ActionButton btnBackToList;
@@ -83,7 +83,7 @@ private:
     Texture reloadTexture;
     optional<Sprite> reloadSprite;
     
-    // Popup
+    // Thiet lap popup
     enum class PopupType { NONE, ADD_VOUCHER, EDIT_VOUCHER, DELETE_VOUCHER, 
                           DISTRIBUTE_VOUCHER, ADD_TO_USER };
     PopupType currentPopup = PopupType::NONE;
@@ -96,25 +96,25 @@ private:
     unique_ptr<Button> btnPopupSave;
     unique_ptr<Button> btnPopupCancel;
     
-    // User selection popup
+    // Popup chon nguoi dung
     unique_ptr<UserSelectPopup> userSelectPopup_;
     
-    // Legacy user selection (to be removed after migration)
-    vector<pair<string, string>> availableUsers;  // All available users (email, name)
-    vector<int> filteredAvailableUsers;           // Indices into availableUsers (after search filter)
-    set<int> selectedUserSet;                     // Set of selected user indices for multi-select
+    // Cach xu ly chon nguoi dung cu (se bo sau khi di chuyen sang popup moi)
+    vector<pair<string, string>> availableUsers;  // Danh sach email + ten
+    vector<int> filteredAvailableUsers;           // Chi so tuong ung sau khi loc
+    set<int> selectedUserSet;                     // Cac chi so dang duoc chon
     int selectedAvailableUserIndex = -1;
     int hoveredAvailableUserIndex = -1;
     int availableUserScrollOffset = 0;
-    string userSearchFilter;                      // Search filter for users
+    string userSearchFilter;                      // Tu khoa tim kiem nguoi dung
     RectangleShape userListBg;
-    unique_ptr<Button> btnSelectAll;              // Select all / Deselect all button
-    unique_ptr<TextBox> searchBox;                // Search box for filtering users
+    unique_ptr<Button> btnSelectAll;              // Chon tat ca / huy chon
+    unique_ptr<TextBox> searchBox;                // Hop tim kiem nguoi dung
     
-    // Helper method to filter users by search query
+    // Ham loc nguoi dung theo tu khoa
     void filterUsers(const string& query);
     
-    // Notification
+    // Thong bao
     string notificationMessage;
     Clock notificationClock;
     bool notificationVisible = false;
@@ -122,7 +122,7 @@ private:
     RectangleShape notificationBg;
     unique_ptr<Text> notificationText;
     
-    // Layout constants
+    // Hang so bo cuc
     static constexpr float LEFT_PANEL_WIDTH = 580.f;
     static constexpr float RIGHT_PANEL_WIDTH = 540.f;
     static constexpr float PANEL_MARGIN = 20.f;
@@ -131,7 +131,7 @@ private:
     static constexpr float BUTTON_HEIGHT = 44.f;
     static constexpr float BUTTON_RADIUS = 8.f;
     
-    // Colors
+    // Bang mau
     Color bgColor = Color(244, 246, 250);
     Color panelBgColor = Color::White;
     Color headerColor = Color(20, 118, 172);
@@ -147,13 +147,13 @@ private:
     Color warningColor = Color(255, 193, 7);
     Color dangerColor = Color(220, 53, 69);
     
-    // Setup methods
+    // Ham khoi tao UI
     void setupUI();
     void setupButton(ActionButton& button, const string& labelUtf8, 
                      const Color& base, const Color& hover, Vector2f size);
     void layoutElements();
     
-    // Render methods
+    // Ham ve cac phan
     void renderLeftPanel(RenderWindow& window);
     void renderRightPanel(RenderWindow& window);
     void renderVoucherDefinitions(RenderWindow& window);
@@ -162,12 +162,12 @@ private:
     void renderPopup(RenderWindow& window);
     void renderNotification(RenderWindow& window);
     
-    // Update methods
+    // Ham cap nhat trang thai
     void updateButton(ActionButton& button, Vector2f mousePos);
     void refreshData();
     void loadUsersForVoucher(const string& code);
     
-    // Popup methods
+    // Ham xu ly popup
     void openAddVoucherPopup();
     void openEditVoucherPopup();
     void openDeleteVoucherPopup();
@@ -175,7 +175,7 @@ private:
     void openAddToUserPopup();
     void closePopup();
     
-    // Action methods
+    // Ham thuc hien hanh dong
     void handleAddVoucher();
     void handleEditVoucher();
     void handleDeleteVoucher();
@@ -183,7 +183,7 @@ private:
     void handleAddToUser();
     void handleRemoveFromUser();
     
-    // Helper methods
+    // Ham ho tro chung
     void showNotification(const string& message, const Color& color = Color(20, 118, 172));
     string formatCurrency(double amount) const;
     string formatDate(const string& raw) const;

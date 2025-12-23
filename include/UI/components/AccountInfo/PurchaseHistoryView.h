@@ -13,11 +13,11 @@ private:
     string currentUserEmail;
     vector<Ticket> userTickets;
     
-    // UI Components
+    // Thanh phan giao dien
     Text titleText;
     RectangleShape scrollableArea;
     
-    // Pagination
+    // Phan trang
     int currentPage = 0;
     int itemsPerPage = 5;
     RectangleShape prevButton, nextButton;

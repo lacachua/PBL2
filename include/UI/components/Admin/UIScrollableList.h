@@ -40,7 +40,7 @@ public:
 
     UIScrollableList(sf::FloatRect bounds, const Config& config = Config{});
     
-    // Data management
+    // Quan ly danh sach du lieu
     void setItems(const std::vector<T>& items);
     void setItems(std::vector<T>&& items);
     void clearItems();
@@ -48,13 +48,13 @@ public:
     std::vector<T>& getItems() { return items_; }
     size_t getItemCount() const { return items_.size(); }
     
-    // Layout
+    // Bo cuc
     void setBounds(sf::FloatRect bounds);
     sf::FloatRect getBounds() const { return bounds_; }
     void setItemHeight(float height);
     float getItemHeight() const { return config_.itemHeight; }
     
-    // Scroll control
+    // Dieu khien cuon
     void setScrollOffset(float offset);
     float getScrollOffset() const { return scrollOffset_; }
     void scrollTo(size_t index);
@@ -63,30 +63,30 @@ public:
     float getMaxScrollOffset() const;
     bool isScrollable() const { return getMaxScrollOffset() > 0.f; }
     
-    // Event handling
+    // Xu ly su kien
     void handleMouseWheel(float delta);
     bool handleMouseClick(sf::Vector2f mousePos);
     void updateHover(sf::Vector2f mousePos);
     
-    // Mouse position translation (screen -> list coordinate)
+    // Chuyen toa do chuot tu man hinh sang trong danh sach
     sf::Vector2f translateMousePos(sf::Vector2f screenPos) const;
     
-    // Get item at mouse position
+    // Lay phan tu o vi tri chuot
     T* getItemAtPosition(sf::Vector2f mousePos);
     int getItemIndexAtPosition(sf::Vector2f mousePos) const;
     
-    // Callbacks
+    // Ham goi lai
     void setRenderItem(RenderItemCallback callback) { renderItem_ = std::move(callback); }
     void setOnItemClick(ItemClickCallback callback) { onItemClick_ = std::move(callback); }
     void setOnItemHover(ItemHoverCallback callback) { onItemHover_ = std::move(callback); }
     
-    // Rendering
+    // Ve len render target
     void render(sf::RenderTarget& target);
     
-    // Get visible range for external use
+    // Lay khoang muc dang hien de bo cuc ngoai su dung
     std::pair<size_t, size_t> getVisibleRange() const;
     
-    // Get hovered index
+    // Lay chi so dang duoc hover
     int getHoveredIndex() const { return hoveredIndex_; }
 
 private:
@@ -103,7 +103,7 @@ private:
     ItemClickCallback onItemClick_;
     ItemHoverCallback onItemHover_;
     
-    // Cached renderables
+    // Thanh phan ve duoc cache
     sf::RectangleShape background_;
     sf::RectangleShape border_;
     sf::RectangleShape scrollbarTrack_;
@@ -114,19 +114,19 @@ private:
     sf::FloatRect getScrollbarThumbBounds() const;
 };
 
-// Implementation in header due to template
+// Cai dat ngay trong header do la template
 
 template<typename T>
 UIScrollableList<T>::UIScrollableList(sf::FloatRect bounds, const Config& config)
     : bounds_(bounds)
     , config_(config)
 {
-    // Background
+    // Nen danh sach
     background_.setSize(bounds_.size);
     background_.setPosition(bounds_.position);
     background_.setFillColor(config_.backgroundColor);
     
-    // Border
+    // Vien bao
     if (config_.showBorder) {
         border_.setSize(bounds_.size);
         border_.setPosition(bounds_.position);
@@ -135,10 +135,10 @@ UIScrollableList<T>::UIScrollableList(sf::FloatRect bounds, const Config& config
         border_.setOutlineColor(config_.borderColor);
     }
     
-    // Scrollbar track
+    // Ranh truot cua thanh cuon
     scrollbarTrack_.setFillColor(config_.scrollbarTrackColor);
     
-    // Scrollbar thumb
+    // Tay nam cua thanh cuon
     scrollbarThumb_.setFillColor(config_.scrollbarThumbColor);
     
     updateScrollbar();
@@ -284,7 +284,7 @@ template<typename T>
 int UIScrollableList<T>::getItemIndexAtPosition(sf::Vector2f mousePos) const {
     if (!bounds_.contains(mousePos)) return -1;
     
-    // Translate to list coordinate
+    // Chuyen sang toa do noi bo
     float relativeY = mousePos.y - bounds_.position.y + scrollOffset_;
     int index = static_cast<int>(relativeY / config_.itemHeight);
     
@@ -320,10 +320,10 @@ void UIScrollableList<T>::render(sf::RenderTarget& target) {
         return;
     }
     
-    // Save current view
+    // Luu view hien tai
     sf::View defaultView = target.getView();
     
-    // Create clipped view
+    // Tao view duoc cat theo khung
     sf::View clippedView;
     clippedView.setCenter({
         bounds_.position.x + bounds_.size.x / 2.f,
@@ -331,7 +331,7 @@ void UIScrollableList<T>::render(sf::RenderTarget& target) {
     });
     clippedView.setSize(bounds_.size);
     
-    // Calculate viewport (normalized 0-1)
+    // Tinh viewport (chuan hoa 0-1)
     sf::Vector2u windowSize = target.getSize();
     sf::FloatRect viewport(
         sf::Vector2f(bounds_.position.x / static_cast<float>(windowSize.x),
@@ -343,7 +343,7 @@ void UIScrollableList<T>::render(sf::RenderTarget& target) {
     
     target.setView(clippedView);
     
-    // View culling: only render visible items
+    // Chi ve cac muc dang nam trong khu vuc nhin thay
     auto [firstVisible, lastVisible] = getVisibleRange();
     
     for (size_t i = firstVisible; i < lastVisible; ++i) {
@@ -356,15 +356,15 @@ void UIScrollableList<T>::render(sf::RenderTarget& target) {
         renderItem_(items_[i], i, itemPos, isHovered, target);
     }
     
-    // Restore view
+    // Khoi phuc view goc
     target.setView(defaultView);
     
-    // Draw border over content
+    // Ve vien de phu len noi dung
     if (config_.showBorder) {
         target.draw(border_);
     }
     
-    // Draw scrollbar (outside clipped view)
+    // Ve thanh cuon (nam ngoai view da cat)
     if (isScrollable()) {
         target.draw(scrollbarTrack_);
         target.draw(scrollbarThumb_);
@@ -384,12 +384,12 @@ void UIScrollableList<T>::updateScrollbar() {
     float viewHeight = bounds_.size.y;
     float maxScroll = getMaxScrollOffset();
     
-    // Scrollbar track (right side of list)
+    // Ranh truot ben phai danh sach
     float trackX = bounds_.position.x + bounds_.size.x - config_.scrollbarWidth - 2.f;
     scrollbarTrack_.setSize({config_.scrollbarWidth, viewHeight - 4.f});
     scrollbarTrack_.setPosition({trackX, bounds_.position.y + 2.f});
     
-    // Scrollbar thumb
+    // Tay nam thanh cuon
     float thumbHeight = std::max(30.f, (viewHeight / contentHeight) * viewHeight);
     float thumbY = bounds_.position.y + 2.f + (scrollOffset_ / maxScroll) * (viewHeight - thumbHeight - 4.f);
     

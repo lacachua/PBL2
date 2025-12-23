@@ -14,11 +14,11 @@ private:
 public:
     SummaryPanel(Font&);
     
-    // Draw cho state suatchieu
+    // Vẽ cho state suất chiếu
     void draw(RenderWindow&, const String& movieName, const String& room, 
               const String& date, const String& time, int ticketPrice, bool hasSelectedShowtime);
     
-    // Draw cho state ghengoi (thêm thông tin ghế)
+    // Vẽ cho state ghế ngồi (thêm thông tin ghế)
     void drawWithSeats(RenderWindow&, const String& movieName, const String& room,
                        const String& date, const String& time, 
                        const String& selectedSeats, int totalPrice);

@@ -30,17 +30,17 @@ private:
     float height;
     sf::Vector2f position;
 
-    // Data paths
+    // Duong dan du lieu
     std::string ticketsFilePath;
     std::string usersFilePath;
     std::string showtimesFilePath;
     std::string combosFilePath;
 
-    // Revenue helpers
+    // Hang muc ho tro tinh doanh thu
     std::unordered_map<std::string, int> showtimeSeatPrices;
     std::unordered_map<std::string, int> comboPrices;
 
-    // Data caches
+    // Bo dem du lieu
     std::unordered_map<std::string, long long> registrationTimes;
     DLL<Ticket> ticketsCache;
     bool dataLoaded = false;  // Đánh dấu đã load dữ liệu chưa
@@ -53,7 +53,7 @@ private:
     DLL<MovieTicketCount> topMovies;
     DLL<MonthlyRevenuePoint> monthlyTrend;
 
-    // UI elements
+    // Thanh phan giao dien
     sf::RectangleShape background;
     StatCard revenueTodayCard;
     StatCard newCustomersCard;
@@ -72,7 +72,7 @@ private:
     sf::Color cardOutlineYellow = sf::Color(221, 180, 67);
     sf::Color cardOutlineRed = sf::Color(239, 68, 68);
 
-    // Helpers
+    // Cac ham xu ly bo tro
     std::string resolveDataPath(const std::string& relative) const;
     void initializeUI();
     void loadData();

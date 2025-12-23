@@ -1,4 +1,5 @@
 #include "utils/ShowtimeGenerator.h"
+#include "utils/FileUtils.h"
 #include <fstream>
 #include <sstream>
 #include <iomanip>
@@ -144,7 +145,7 @@ int ShowtimeGenerator::getPriceByTime(int hour) {
 
 void ShowtimeGenerator::generateShowtimesFile(const string& outputPath, int numDays) {
     // Load data
-    vector<MovieInfo> movies = loadMovies("../data/movies.txt");
+    vector<MovieInfo> movies = loadMovies(FileUtils::resolveDataPath("data/movies.txt"));
     vector<string> rooms = loadRooms("../data/rooms.txt");
     
     if (movies.empty()) {

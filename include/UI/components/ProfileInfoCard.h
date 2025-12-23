@@ -8,7 +8,7 @@
 
 class ProfileInfoCard {
 public:
-    // Configuration struct for flexible customization
+    // Cau truc cau hinh de tuy bien linh hoat
     struct Config {
         float width;
         float cardPadding;
@@ -21,7 +21,7 @@ public:
         bool showPasswordSection;
         bool darkMode;
         
-        // Colors
+        // Cau hinh mau sac
         sf::Color backgroundColor;
         sf::Color labelColor;
         sf::Color titleColor;
@@ -34,7 +34,7 @@ public:
         sf::Color successColor;
         sf::Color errorColor;
         
-        // Default constructor with default values
+        // Khoi tao gia tri mac dinh
         Config() :
             width(656.f),
             cardPadding(26.f),
@@ -62,16 +62,16 @@ public:
 
     ProfileInfoCard(const sf::Font& font, AuthService& auth, const Config& config = Config());
     
-    // Setup
+    // Cai dat ban dau
     void setUser(const std::string& email);
     void setPosition(sf::Vector2f pos);
     
-    // Core loop
+    // Vong doi tuong tac chinh
     void handleEvent(const sf::Event& event, sf::Vector2f mousePos, bool mousePressed);
     void update(sf::Vector2f mousePos, bool mousePressed);
     void draw(sf::RenderWindow& window);
     
-    // Getters
+    // Ham truy xuat thong tin
     sf::Vector2f getSize() const;
     float getTotalHeight() const;
 
@@ -93,7 +93,7 @@ private:
     Config config_;
     sf::Vector2f position_;
 
-    // Section 1: Personal Info
+    // Phan 1: Thong tin ca nhan
     sf::Text personalInfoTitle_;
     sf::Text fullNameLabel_, birthDateLabel_, phoneLabel_, emailLabel_;
     sf::RectangleShape fullNameBox_, birthDateBox_, phoneBox_, emailBox_;
@@ -104,7 +104,7 @@ private:
     sf::Clock infoMsgClock_;
     bool showInfoMsg_ = false;
 
-    // Section 2: Password Change
+    // Phan 2: Thay doi mat khau
     sf::Text passwordTitle_;
     sf::Text oldPwdLabel_, newPwdLabel_, confirmPwdLabel_;
     PasswordField oldPwdField_, newPwdField_, confirmPwdField_;
@@ -113,8 +113,8 @@ private:
     sf::Clock pwdMsgClock_;
     bool showPwdMsg_ = false;
 
-    // State
-    int activeInfoField_ = -1;  // 0: fullName, 1: birthDate, 2: phone
+    // Cac bien trang thai
+    int activeInfoField_ = -1;  // 0: ho ten, 1: ngay sinh, 2: so dien thoai
     sf::RectangleShape cursor_;
     sf::Clock cursorClock_;
     bool showCursor_ = true;

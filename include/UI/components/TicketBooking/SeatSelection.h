@@ -27,7 +27,7 @@ private:
     DLL<string> selectedSeatIds;
     int ticketPrice;
     
-    // Layout constants
+    // Hằng số bố cục
     static constexpr float kViewX = 174.f;
     static constexpr float kViewY = 220.f;
     static constexpr float kSeatSize = 30.f;
@@ -35,7 +35,7 @@ private:
     static constexpr int kRows = 9;     // A-I
     static constexpr int kCols = 9;     // 1-9
     
-    // Helper methods
+    // Các hàm hỗ trợ
     void initializeSeats();
     void updateSeatColors();
     char getRowLabel(int rowIndex) const;  // 0→'A', 1→'B', ..., 8→'I'
@@ -49,14 +49,14 @@ public:
     void handleClick(Vector2f mousePos, bool mousePressed);
     void draw(RenderWindow&);
     
-    // Getters
+    // Các hàm getter
     DLL<string> getSelectedSeats() const;
     int getTotalPrice() const;
     bool hasSelectedSeats() const;
     int  getSelectedCount() const;   // số ghế đang chọn
     int  getUnitPrice()     const;   // giá 1 ghế
     
-    // Format display
+    // Định dạng hiển thị
     string getSelectedSeatsDisplay() const;  // "A1, B2, C3, ..."
     string getFormattedPrice() const;        // "120.000 VND"
 };

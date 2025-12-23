@@ -1,9 +1,10 @@
 #include "UI/screens/HomeScreen.h"
+#include "utils/FileUtils.h"
 
 HomeScreen::HomeScreen(Font& font, RenderWindow& window)
     : BaseScreen(font), win(window)
 {
-    repo = make_unique<MovieRepository>("../data/movies.txt");
+    repo = make_unique<MovieRepository>(FileUtils::resolveDataPath("data/movies.txt"));
     slider = make_unique<PosterSlider>(font, win);
     slider->loadPosters(*repo, font);
 

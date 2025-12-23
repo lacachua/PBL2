@@ -26,28 +26,28 @@ public:
 
     explicit UserSelectPopup(sf::Font& font);
     
-    // Data
+    // Du lieu nguoi dung
     void setUsers(const std::vector<UserInfo>& users);
     void setTitle(const std::string& title);
     void setExtraFields(const std::vector<std::pair<std::string, std::string>>& fields); // Label, default value pairs
     
-    // Getters for extra field values
+    // Lay gia tri cac truong bo sung
     std::string getExtraFieldValue(size_t index) const;
     
-    // State
+    // Trang thai popup
     void open();
     void close();
     bool isOpen() const;
     
-    // Get selected users
+    // Lay danh sach nguoi dung da chon
     std::vector<UserInfo> getSelectedUsers() const;
     size_t getSelectedCount() const;
     
-    // Callbacks
+    // Ham goi lai
     void setOnConfirm(ConfirmCallback callback);
     void setOnCancel(CancelCallback callback);
     
-    // Event handling
+    // Xu ly su kien
     void handleEvent(const sf::Event& event, const sf::RenderWindow& window);
     void update(sf::Vector2f mousePos, bool mousePressed = false);
     void render(sf::RenderWindow& window);
@@ -58,33 +58,33 @@ private:
     
     std::string title_ = "Chọn người dùng";
     
-    // Users
+    // Danh sach nguoi dung
     std::vector<UserInfo> allUsers_;
     std::vector<size_t> filteredIndices_;
     std::set<size_t> selectedIndices_;
     std::string searchFilter_;
     
-    // Scroll
+    // Thong tin cuon
     float scrollOffset_ = 0.f;
     int hoveredIndex_ = -1;
     
-    // Extra input fields (e.g., days to expire, quantity)
+    // Cac truong nhap bo sung (vi du so ngay het han)
     std::vector<std::pair<std::string, std::unique_ptr<UIInputBox>>> extraFields_;
     
-    // UI Components
+    // Thanh phan giao dien
     std::unique_ptr<UIInputBox> searchBox_;
     std::unique_ptr<Button> btnSelectAll_;
     std::unique_ptr<Button> btnConfirm_;
     std::unique_ptr<Button> btnCancel_;
     
-    // Renderables
+    // Thanh phan dung de ve
     sf::RectangleShape overlay_;
     sf::RectangleShape background_;
     std::unique_ptr<sf::Text> titleText_;
     std::unique_ptr<sf::Text> selectedCountText_;
     sf::RectangleShape listBackground_;
     
-    // Layout constants
+    // Hang so bo cuc
     static constexpr float POPUP_WIDTH = 600.f;
     static constexpr float POPUP_HEIGHT = 580.f;
     static constexpr float PADDING = 24.f;
@@ -92,7 +92,7 @@ private:
     static constexpr float LIST_HEIGHT = 280.f;
     static constexpr int MAX_VISIBLE_ITEMS = 6;
     
-    // Colors
+    // Bang mau su dung
     sf::Color bgColor_{255, 255, 255};
     sf::Color borderColor_{210, 216, 224};
     sf::Color headerColor_{27, 38, 59};
@@ -105,11 +105,11 @@ private:
     sf::Color successColor_{40, 167, 69};
     sf::Color grayColor_{108, 117, 125};
     
-    // Callbacks
+    // Ham goi lai
     ConfirmCallback onConfirm_;
     CancelCallback onCancel_;
     
-    // Methods
+    // Cac ham ho tro
     void filterUsers();
     void toggleSelection(size_t index);
     void selectAll();

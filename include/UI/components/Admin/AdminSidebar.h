@@ -48,34 +48,34 @@ private:
     float height;
     Vector2f position;
     
-    // Colors
+    // Cau hinh mau sac
     Color bgColor;          // #0D1B2A
     Color textColor;        // #E9EEF5
     Color hoverColor;       // #1B263B
     Color activeColor;      // #1476AC
-    Color groupHeaderColor; // Slightly lighter
+    Color groupHeaderColor; // Sang hon mot chut
     
-    // Menu items
+    // Danh sach muc
     DLL<MenuItem> menuItems;
     int hoveredIndex;
     int activeIndex;
     
-    // Shapes
+    // Hinh chu nhat trang tri
     RectangleShape background;
     DLL<RectangleShape> itemBackgrounds;
     
-    // Text
+    // Van ban
     Font font;
     Font montserratFont;
     unique_ptr<Text> headerText;
     unique_ptr<Text> userNameText;
     DLL<unique_ptr<Text>> itemTexts;
     
-    // Callback for state change
+    // Ham goi lai khi doi trang thai
     function<void(AppState)> onStateChange;
     function<void()> onLogout;
     
-    // User info
+    // Thong tin nguoi dung
     string userName;
     RectangleShape userInfoBg;
     unique_ptr<SidebarRoundRectButton> logoutButton;

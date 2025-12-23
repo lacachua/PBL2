@@ -1,4 +1,5 @@
 #include "UI/components/TicketBooking/ShowtimeSection.h"
+#include "utils/FileUtils.h"
 #include "repositories/MovieRepository.h"
 #include "repositories/RoomRepository.h"
 #include <ctime>
@@ -304,7 +305,7 @@ void ShowtimeSection::draw(RenderWindow& window) {
 
 namespace {
 MovieRepository& getMovieRepo() {
-    static MovieRepository repo("../data/movies.txt");
+    static MovieRepository repo(FileUtils::resolveDataPath("data/movies.txt"));
     return repo;
 }
 

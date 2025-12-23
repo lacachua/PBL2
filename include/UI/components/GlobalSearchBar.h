@@ -19,7 +19,7 @@ private:
     bool isActive;
     bool showSuggestions;
     int selectedSuggestion;
-    int hoveredSuggestion;  // Track which suggestion is hovered
+    int hoveredSuggestion;  // Theo doi item dang duoc hover
     vector<SearchResult> suggestions;
     
     Font& font;
@@ -28,7 +28,7 @@ private:
     Clock blinkClock;
     bool showCursor;
     
-    // Store original position for repositioning
+    // Luu lai vi tri & kich thuoc goc de dat lai de dang
     Vector2f originalPosition;
     Vector2f originalSize;
     

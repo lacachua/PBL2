@@ -16,18 +16,18 @@ private:
     std::string currentEmail;
     bool userDataLoaded = false;
 
-    // Layout containers
+    // Cac khoi bo cuc
     RectangleShape panelBackground;
     RectangleShape contentCard;
     RectangleShape heroBanner;
     CircleShape avatarCircle;
 
-    // Hero section
+    // Khu vuc thong tin chinh
     Text heroNameText;
     Text heroMetaText;
     Text avatarInitialsText;
 
-    // Profile info card (reusable component)
+    // The hien lai ProfileInfoCard
     ProfileInfoCard profileCard_;
 
     void layoutElements();

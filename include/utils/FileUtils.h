@@ -3,6 +3,7 @@
 #include <vector>
 #include <fstream>
 #include <sstream>
+#include <array>
 #include <filesystem>
 #include "utils/StringUtils.h"
 
@@ -11,6 +12,21 @@ class FileUtils {
 public:
     static bool exists(const string& path) {
         return filesystem::exists(path);
+    }
+
+    // Resolve a relative data path across common working directories.
+    // Example: resolveDataPath("data/movies.txt") will try
+    // "data/movies.txt", "../data/movies.txt", "./data/movies.txt", "../../data/movies.txt".
+    static string resolveDataPath(const string& relative) {
+        namespace fs = std::filesystem;
+        const std::array<std::string, 4> prefixes = {"", "../", "./", "../../"};
+        for (const auto& prefix : prefixes) {
+            fs::path candidate = fs::path(prefix) / relative;
+            if (fs::exists(candidate)) {
+                return candidate.string();
+            }
+        }
+        return relative;
     }
 
     static bool ensureDirectoryExists(const string& dirPath) {

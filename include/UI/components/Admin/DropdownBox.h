@@ -19,12 +19,12 @@ private:
     RectangleShape dropdownPanel;
     vector<RectangleShape> optionBackgrounds;
     
-    RectangleShape arrow; // Triangle pointing down/up
+    RectangleShape arrow; // Mui ten chi trang thai dong/mo
     
     vector<string> options;
     int selectedIndex;
     bool isOpen;
-    bool enabled; // Added
+    bool enabled;
     
     float x, y, width, height;
     string label;
@@ -46,8 +46,8 @@ private:
 public:
     DropdownBox(Font& font, const string& label, float x, float y, float width, float height);
     
-    void setEnabled(bool enabled); // Added
-    bool isEnabled() const; // Added
+    void setEnabled(bool enabled);
+    bool isEnabled() const;
 
     void setOptions(const vector<string>& opts);
     void setMaxVisibleOptions(int count);

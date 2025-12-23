@@ -15,7 +15,7 @@ public:
     void draw(RenderWindow&, BookingState currentState);
     void update(Vector2f, bool, BookingState&);
     
-    // Navigation methods
+    // Các phương thức điều hướng
     bool isBackButtonClicked(Vector2f mousePos, bool mousePressed);
     bool isContinueButtonClicked(Vector2f mousePos, bool mousePressed);
     void handleNavigation(Vector2f mousePos, bool mousePressed, BookingState& currentState, bool canProceed);

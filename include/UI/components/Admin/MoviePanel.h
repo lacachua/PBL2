@@ -17,17 +17,17 @@ private:
     float width, height;
     Vector2f position;
     
-    // Repository
+    // Tang truy cap du lieu
     unique_ptr<AdminMovieRepository> repository;
     
-    // UI Components
+    // Thanh phan giao dien
     unique_ptr<Text> titleText;
     RectangleShape background;
     RectangleShape tableHeaderBg;
     DLL<RectangleShape> rowBackgrounds;
     DLL<RectangleShape> rowBorders;
     
-    // CRUD Buttons (custom, pixel-perfect)
+    // Cac nut CRUD tuy chinh
     RectangleShape btnAddBg;      // Thêm phim
     RectangleShape btnEditBg;     // Sửa thông tin
     RectangleShape btnDeleteBg;   // Xóa phim
@@ -41,19 +41,19 @@ private:
     bool btnEditPressed = false;
     bool btnDeletePressed = false;
     
-    // Reload icon button
+    // Nut tai lai bang bieu tuong
     Texture reloadTexture;
     Sprite reloadSprite;
     RectangleShape reloadButtonBg;
     bool btnReloadHover = false;
     bool btnReloadPressed = false;
     
-    // Popup state
+    // Trang thai cua hop thoai
     enum PopupType { NONE, ADD, EDIT, DELETE_CONFIRM };
     PopupType currentPopup;
     int selectedRow;
     
-    // Popup components
+    // Thanh phan trong popup
     RectangleShape popupBackground;
     RectangleShape popupOverlay;
     unique_ptr<Text> popupTitle;
@@ -61,14 +61,14 @@ private:
     unique_ptr<Button> btnPopupSave;
     unique_ptr<Button> btnPopupCancel;
     
-    // Notification
+    // Thong bao trang thai
     string notificationText;
     Clock notificationClock;
     RectangleShape notificationBg;
     unique_ptr<Text> notificationTextObj;
     bool notificationVisible = false;
 
-    // Selection warning popup
+    // Popup canh bao khi chua chon dong
     bool selectionWarningVisible = false;
     RectangleShape selectionWarningOverlay;
     RectangleShape selectionWarningBg;
@@ -78,11 +78,11 @@ private:
     bool selectionWarningButtonHover = false;
     string selectionWarningMessage;
     
-    // Table data
+    // Trang thai bang hien thi
     int scrollOffset;
     int hoveredRow;
     
-    // Constants for layout (adjusted for panel width ~1428px)
+    // Cac hang so bo cuc (toi uu cho panel ~1428px)
     static constexpr float TABLE_X = 40.f;      // Reduced left margin
     static constexpr float TABLE_Y = 120.f;
     static constexpr float TABLE_WIDTH = 1100.f; // Reduced from 1320 to fit in panel
@@ -101,7 +101,7 @@ private:
     static constexpr float COL_STATUS_X = 800.f;   // Adjusted
     static constexpr float COL_STATUS_WIDTH = 300.f;
     
-    // Colors
+    // Bang mau su dung
     Color bgColor = Color(244, 246, 250);      // #F4F6FA
     Color headerColor = Color(20, 118, 172);   // #1476AC
     Color rowColor = Color(255, 255, 255);     // #FFFFFF
@@ -110,7 +110,7 @@ private:
     Color borderColor = Color(201, 206, 214);  // #C9CED6
     Color textColor = Color(34, 34, 34);       // #222222
     
-    // Helper to draw rounded rectangle
+    // Ham ho tro ve hinh chu nhat bo goc
     
     void setupUI();
     void renderTable(RenderWindow& window);

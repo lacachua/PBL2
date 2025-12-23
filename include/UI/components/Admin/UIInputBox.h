@@ -30,7 +30,7 @@ public:
 
     UIInputBox(sf::Font& font, const Config& config = Config{});
     
-    // Text management
+    // Quan ly chuoi hien thi
     void setText(const std::string& text);
     const std::string& getText() const;
     void clear();
@@ -38,14 +38,14 @@ public:
     void setPlaceholder(const std::string& placeholder);
     const std::string& getPlaceholder() const;
     
-    // State
+    // Trang thai
     void setEnabled(bool enabled);
     bool isEnabled() const;
     
     void setFocus(bool focus);
     bool isFocused() const;
     
-    // Layout
+    // Bo cuc/vi tri
     void setPosition(sf::Vector2f pos);
     sf::Vector2f getPosition() const;
     sf::FloatRect getBounds() const;
@@ -53,14 +53,14 @@ public:
     float getWidth() const;
     float getHeight() const;
     
-    // Event handling
+    // Xu ly su kien
     void handleEvent(const sf::Event& event);
     void update(sf::Vector2f mousePos, bool mousePressed = false);
     
-    // Callback
+    // Ham goi lai
     void setOnTextChange(TextChangeCallback callback);
     
-    // Rendering
+    // Ve giao dien
     void render(sf::RenderTarget& target);
 
 private:
@@ -73,11 +73,11 @@ private:
     bool focused_ = false;
     bool enabled_ = true;
     
-    // Cursor blinking
+    // Dieu khien chop tat con tro
     sf::Clock cursorClock_;
     bool cursorVisible_ = true;
     
-    // Cached renderables
+    // Thanh phan ve da cache
     sf::RectangleShape background_;
     sf::RectangleShape border_;
     std::unique_ptr<sf::Text> textObj_;

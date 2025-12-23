@@ -37,10 +37,10 @@ private:
     float horizontalPadding = 10.f;
     
 public:
-    // Constructor with label
+    // Khoi tao kem nhan hien thi
     TextBox(Font& font, const string& label, float x, float y, float width, float height);
     
-    // Constructor without label (for use in popups)
+    // Khoi tao khong co nhan (dung trong popup)
     TextBox(Font& font, float width, float height);
     
     void setPlaceholder(const string& text);
