@@ -36,7 +36,6 @@ private:
     };
 
     ActionButton btnViewInfo;
-    ActionButton btnLock;
     ActionButton btnDelete;
     ActionButton btnRefresh;
     Texture reloadTexture;
@@ -56,7 +55,7 @@ private:
     int scrollOffset = 0;
 
     // Popups
-    enum class PopupType { None, ViewInfo, LockConfirm, DeleteConfirm };
+    enum class PopupType { None, ViewInfo, DeleteConfirm };
     PopupType activePopup = PopupType::None;
     int popupUserIndex = -1;
 
@@ -112,7 +111,6 @@ private:
 
     void closePopup();
     void openViewPopup();
-    void openLockPopup();
     void openDeletePopup();
     void rebuildDetailTexts(const User& user);
     const User* getPopupUser() const;

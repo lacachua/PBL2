@@ -4,13 +4,62 @@
 #include <algorithm>
 #include <cctype>
 #include <filesystem>
+#include <array>
+#include <vector>
+
+namespace {
+    std::string resolveUserFilePath(const std::string& rawPath) {
+        namespace fs = std::filesystem;
+        fs::path input(rawPath);
+        if (fs::exists(input)) {
+            return input.string();
+        }
+
+        std::vector<fs::path> tails;
+        tails.push_back(input);
+
+        // If path contains a "data" segment, try resolving from that segment.
+        {
+            auto it = std::find(input.begin(), input.end(), fs::path("data"));
+            if (it != input.end()) {
+                fs::path tail;
+                for (auto jt = it; jt != input.end(); ++jt) {
+                    tail /= *jt;
+                }
+                if (!tail.empty()) {
+                    tails.push_back(tail);
+                }
+            }
+        }
+
+        // Common fallbacks for this repository.
+        if (!input.filename().empty()) {
+            tails.push_back(input.filename());
+            if (input.filename() == fs::path("users.txt")) {
+                tails.push_back(fs::path("data") / "users.txt");
+            }
+        }
+
+        const std::array<std::string, 5> prefixes = {"./", "../", "../../", "../../../", ""};
+        for (const auto& tail : tails) {
+            for (const auto& prefix : prefixes) {
+                fs::path candidate = fs::path(prefix) / tail;
+                if (fs::exists(candidate)) {
+                    return candidate.string();
+                }
+            }
+        }
+
+        return rawPath;
+    }
+}
 
 UserRepository::UserRepository(const string& filepath) 
-    : filePath(filepath) {
+    : filePath(resolveUserFilePath(filepath)) {
     namespace fs = filesystem;
-    if (!fs::exists(filepath)) {
-        ofstream file(filepath);
-        file << "email|passwordHash|fullName|birthDate|phone|registeredAt|role|status\n";
+    if (!fs::exists(filePath)) {
+        ofstream file(filePath);
+        file << "email|passwordHash|fullName|birthDate|phone|registeredAt|role\n";
         file.close();
     }
     loadFromFile();
@@ -28,7 +77,7 @@ string UserRepository::normalizeEmail(const string& email) const {
 
 User UserRepository::parseLine(const string& line) const {
     stringstream ss(line);
-    string email, passwordHash, fullName, birthDate, phone, registeredAtStr, roleStr, statusStr;
+    string email, passwordHash, fullName, birthDate, phone, registeredAtStr, roleStr;
     
     getline(ss, email, '|');
     getline(ss, passwordHash, '|');
@@ -37,7 +86,8 @@ User UserRepository::parseLine(const string& line) const {
     getline(ss, phone, '|');
     getline(ss, registeredAtStr, '|');
     getline(ss, roleStr, '|');
-    getline(ss, statusStr, '|');
+    // Legacy compatibility: old files may include a trailing "status" column.
+    // We ignore it because account locking has been removed.
     
     time_t registeredAt = 0;
     try {
@@ -47,9 +97,8 @@ User UserRepository::parseLine(const string& line) const {
     }
     
     AppRole role = User::parseRole(roleStr);
-    UserStatus status = User::parseStatus(statusStr);
     
-    return User(email, passwordHash, fullName, birthDate, phone, registeredAt, role, status);
+    return User(email, passwordHash, fullName, birthDate, phone, registeredAt, role);
 }
 
 string UserRepository::serializeLine(const User& user) const {
@@ -60,8 +109,7 @@ string UserRepository::serializeLine(const User& user) const {
        << user.getBirthDate() << "|"
        << user.getPhone() << "|"
        << user.getRegisteredAt() << "|"
-       << user.getRoleString() << "|"
-       << user.getStatusString();
+       << user.getRoleString();
     return ss.str();
 }
 
@@ -95,7 +143,7 @@ void UserRepository::saveToFile() {
     if (!file.is_open()) return;
     
     // Write header
-    file << "email|passwordHash|fullName|birthDate|phone|registeredAt|role|status\n";
+    file << "email|passwordHash|fullName|birthDate|phone|registeredAt|role\n";
     
     // Write all users
     vector<User> allUsers = getAllUsers();
@@ -137,24 +185,6 @@ bool UserRepository::updateUser(const User& user) {
     
     // Update existing user (email remains the same - PRIMARY KEY)
     users.insert(key, user);
-    saveToFile();
-    return true;
-}
-
-bool UserRepository::lockUser(const string& email) {
-    User* user = findByEmail(email);
-    if (!user) return false;
-    
-    user->lock();
-    saveToFile();
-    return true;
-}
-
-bool UserRepository::unlockUser(const string& email) {
-    User* user = findByEmail(email);
-    if (!user) return false;
-    
-    user->unlock();
     saveToFile();
     return true;
 }

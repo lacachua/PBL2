@@ -1,8 +1,7 @@
 #pragma once
 #include <memory>
 #include <string>
-#include "models/IUser.h"
-#include "models/Guest.h"
+#include "models/User.h"
 #include "models/Customer.h"
 #include "models/Admin.h"
 
@@ -31,41 +30,39 @@ public:
      * @param birthDate Ngày sinh
      * @param phone Số điện thoại
      * @param registeredAt Thời điểm đăng ký
-     * @param status Trạng thái tài khoản
-     * @return unique_ptr<IUser> pointing to the correct derived class
+     * @return unique_ptr<User> pointing to the correct derived class
      */
-    static unique_ptr<IUser> createUser(
+    static unique_ptr<User> createUser(
         AppRole role,
         const string& email,
         const string& passwordHash,
         const string& fullName,
         const string& birthDate,
         const string& phone,
-        time_t registeredAt,
-        UserStatus status = UserStatus::Active
+        time_t registeredAt
     ) {
         switch (role) {
             case AppRole::Admin:
-                return make_unique<Admin>(email, passwordHash, fullName, 
-                                          birthDate, phone, registeredAt, status);
+                return make_unique<Admin>(email, passwordHash, fullName,
+                                          birthDate, phone, registeredAt);
             
             case AppRole::Customer:
-                return make_unique<Customer>(email, passwordHash, fullName, 
-                                             birthDate, phone, registeredAt, status);
+                return make_unique<Customer>(email, passwordHash, fullName,
+                                             birthDate, phone, registeredAt);
             
             case AppRole::Guest:
             default:
-                return make_unique<Guest>(email, passwordHash, fullName, 
-                                          birthDate, phone, registeredAt, status);
+                return make_unique<User>(email, passwordHash, fullName,
+                                         birthDate, phone, registeredAt, AppRole::Guest);
         }
     }
     
     /**
      * @brief Tạo Guest mặc định (chưa đăng nhập)
-     * @return unique_ptr<IUser> pointing to Guest
+     * @return unique_ptr<User> for Guest role
      */
-    static unique_ptr<IUser> createGuest() {
-        return make_unique<Guest>();
+    static unique_ptr<User> createGuest() {
+        return make_unique<User>("", "", "", "", "", 0, AppRole::Guest);
     }
     
     /**
@@ -75,9 +72,9 @@ public:
      * @param fullName Họ tên
      * @param birthDate Ngày sinh
      * @param phone Số điện thoại
-     * @return unique_ptr<IUser> pointing to Customer
+     * @return unique_ptr<User> pointing to Customer
      */
-    static unique_ptr<IUser> createCustomer(
+    static unique_ptr<User> createCustomer(
         const string& email,
         const string& passwordHash,
         const string& fullName,
@@ -95,10 +92,10 @@ public:
      * @param fullName Họ tên
      * @param birthDate Ngày sinh
      * @param phone Số điện thoại
-     * @param adminLevel Cấp độ admin (optional)
-     * @return unique_ptr<IUser> pointing to Admin
+     * @param adminLevel Cấp độ admin (unused)
+     * @return unique_ptr<User> pointing to Admin
      */
-    static unique_ptr<IUser> createAdmin(
+    static unique_ptr<User> createAdmin(
         const string& email,
         const string& passwordHash,
         const string& fullName,
@@ -106,17 +103,17 @@ public:
         const string& phone,
         const string& adminLevel = "normal"
     ) {
+        (void)adminLevel;
         return make_unique<Admin>(email, passwordHash, fullName, 
-                                  birthDate, phone, time(nullptr), 
-                                  UserStatus::Active, adminLevel);
+                                  birthDate, phone, time(nullptr));
     }
     
     /**
-     * @brief Clone một user (deep copy với đúng type)
+     * @brief Clone một user (deep copy)
      * @param user User cần clone
-     * @return unique_ptr<IUser> pointing to cloned user
+     * @return unique_ptr<User> pointing to cloned user
      */
-    static unique_ptr<IUser> clone(const IUser& user) {
+    static unique_ptr<User> clone(const User& user) {
         return createUser(
             user.getRole(),
             user.getEmail(),
@@ -124,8 +121,7 @@ public:
             user.getFullName(),
             user.getBirthDate(),
             user.getPhone(),
-            user.getRegisteredAt(),
-            user.getStatus()
+            user.getRegisteredAt()
         );
     }
 };

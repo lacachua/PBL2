@@ -23,40 +23,40 @@ Admin::Admin(const string& email,
              const string& birthDate,
              const string& phone,
              time_t registeredAt)
-    : User(email, passwordHash, fullName, birthDate, phone, registeredAt, AppRole::Admin, UserStatus::Active)
+    : User(email, passwordHash, fullName, birthDate, phone, registeredAt, AppRole::Admin)
 {
 }
 
 bool Admin::canManageMovies() const {
-    return isActive() && getRole() == AppRole::Admin;
+    return getRole() == AppRole::Admin;
 }
 
 bool Admin::canManageShowtimes() const {
-    return isActive() && getRole() == AppRole::Admin;
+    return getRole() == AppRole::Admin;
 }
 
 bool Admin::canManageRooms() const {
-    return isActive() && getRole() == AppRole::Admin;
+    return getRole() == AppRole::Admin;
 }
 
 bool Admin::canManageCombos() const {
-    return isActive() && getRole() == AppRole::Admin;
+    return getRole() == AppRole::Admin;
 }
 
 bool Admin::canManageVouchers() const {
-    return isActive() && getRole() == AppRole::Admin;
+    return getRole() == AppRole::Admin;
 }
 
 bool Admin::canManageUsers() const {
-    return isActive() && getRole() == AppRole::Admin;
+    return getRole() == AppRole::Admin;
 }
 
 bool Admin::canViewRevenue() const {
-    return isActive() && getRole() == AppRole::Admin;
+    return getRole() == AppRole::Admin;
 }
 
 bool Admin::canViewOverview() const {
-    return isActive() && getRole() == AppRole::Admin;
+    return getRole() == AppRole::Admin;
 }
 
 string Admin::getAdminDisplayName() const {
@@ -64,7 +64,7 @@ string Admin::getAdminDisplayName() const {
 }
 
 bool Admin::isValidAdmin() const {
-    return getRole() == AppRole::Admin && isActive();
+    return getRole() == AppRole::Admin;
 }
 
 bool Admin::hasAdminAccess() const {

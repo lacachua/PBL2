@@ -18,10 +18,9 @@ public:
     
     Guest(const string& email, const string& passwordHash,
           const string& fullName, const string& birthDate,
-          const string& phone, time_t registeredAt,
-          UserStatus status = UserStatus::Active)
-        : IUser(email, passwordHash, fullName, birthDate, phone, 
-                registeredAt, AppRole::Guest, status) {}
+                    const string& phone, time_t registeredAt)
+                : IUser(email, passwordHash, fullName, birthDate, phone,
+                                registeredAt, AppRole::Guest) {}
 
     // ===== IMPLEMENT PURE VIRTUAL METHODS =====
     

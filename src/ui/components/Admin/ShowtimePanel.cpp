@@ -374,10 +374,9 @@ void ShowtimePanel::loadShowtimes() {
 
 void ShowtimePanel::refreshDropdowns() {
     const string todayStr = getTodayDateString();
-    const auto endStr = [&]() {
-        using namespace std::chrono;
-        auto now = system_clock::now() + hours(24 * 4);
-        time_t raw = system_clock::to_time_t(now);
+    // Admin wants to view 6 days (today..today+5). Booking UI remains 5 days.
+    using namespace std::chrono;
+    auto formatYmd = [](time_t raw) -> string {
         tm local{};
 #ifdef _WIN32
         localtime_s(&local, &raw);
@@ -389,14 +388,14 @@ void ShowtimePanel::refreshDropdowns() {
             << setw(2) << setfill('0') << (local.tm_mon + 1) << '-'
             << setw(2) << setfill('0') << local.tm_mday;
         return oss.str();
-    }();
+    };
 
-    set<string> uniqueDates;
-    for (const auto& item : allShowtimes) {
-        if (item.date < todayStr || item.date > endStr) continue;
-        uniqueDates.insert(item.date);
+    dateOptions.clear();
+    auto now = system_clock::now();
+    for (int i = 0; i < 6; ++i) {
+        time_t raw = system_clock::to_time_t(now + hours(24 * i));
+        dateOptions.push_back(formatYmd(raw));
     }
-    dateOptions.assign(uniqueDates.begin(), uniqueDates.end());
 
     if (dateDropdown) {
         if (!dateOptions.empty()) {

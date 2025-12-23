@@ -44,7 +44,6 @@ void UserPanel::setupUI() {
     tableHeaderBg.setFillColor(headerColor);
 
     setupButton(btnViewInfo, "Xem thông tin", Color(20, 118, 172), Color(34, 156, 218), {172.f, 44.f});
-    setupButton(btnLock, "Khóa tài khoản", Color(233, 164, 0), Color(247, 186, 40), {186.f, 44.f});
     setupButton(btnDelete, "Xóa tài khoản", Color(211, 47, 47), Color(226, 83, 83), {176.f, 44.f});
     setupButton(btnRefresh, "", Color(20, 118, 172), Color(30, 138, 192), {48.f, 48.f});
 
@@ -113,9 +112,6 @@ void UserPanel::layoutElements() {
     btnViewInfo.box.setPosition(Vector2f(nextX, buttonRowY));
     nextX += btnViewInfo.box.getSize().x + BUTTON_SPACING;
 
-    btnLock.box.setPosition(Vector2f(nextX, buttonRowY));
-    nextX += btnLock.box.getSize().x + BUTTON_SPACING;
-
     btnDelete.box.setPosition(Vector2f(nextX, buttonRowY));
 
     const float refreshX = position.x + TABLE_X + TABLE_WIDTH - btnRefresh.box.getSize().x;
@@ -131,7 +127,6 @@ void UserPanel::layoutElements() {
     };
 
     centerLabel(btnViewInfo);
-    centerLabel(btnLock);
     centerLabel(btnDelete);
     centerLabel(btnRefresh);
 
@@ -196,14 +191,14 @@ void UserPanel::renderTable(RenderWindow& window) {
     window.draw(tableBodyBg);
     window.draw(tableHeaderBg);
 
-    static const std::array<std::string, 6> headers = {
-        "STT", "Email", "Họ và tên", "Số điện thoại", "Ngày đăng ký", "Trạng thái"
+    static const std::array<std::string, 5> headers = {
+        "STT", "Email", "Họ và tên", "Số điện thoại", "Ngày đăng ký"
     };
-    static const std::array<float, 6> columnWidths = {
-        70.f, 260.f, 230.f, 160.f, 190.f, 190.f
+    static const std::array<float, 5> columnWidths = {
+        70.f, 300.f, 260.f, 190.f, 280.f
     };
 
-    std::array<float, 6> columnLefts{};
+    std::array<float, 5> columnLefts{};
     columnLefts[0] = tableHeaderBg.getPosition().x;
     for (size_t i = 1; i < columnLefts.size(); ++i) {
         columnLefts[i] = columnLefts[i - 1] + columnWidths[i - 1];
@@ -274,20 +269,16 @@ void UserPanel::renderTable(RenderWindow& window) {
         }
 
         const User& user = userList[idx];
-        std::array<std::string, 6> values = {
+        std::array<std::string, 5> values = {
             std::to_string(idx + 1),
             user.getEmail(),
             user.getFullName(),
             user.getPhone(),
-            formatDate(user.getRegisteredAt()),
-            user.isLocked() ? "Khóa" : "Hoạt động"
+            formatDate(user.getRegisteredAt())
         };
 
         for (size_t col = 0; col < values.size(); ++col) {
             Color cellColor = textColor;
-            if (col == values.size() - 1) {
-                cellColor = user.isLocked() ? Color(220, 53, 69) : Color(40, 167, 69);
-            }
 
             Text cell(font, sf::String::fromUtf8(values[col].begin(), values[col].end()), 14);
             cell.setFillColor(cellColor);
@@ -339,7 +330,6 @@ void UserPanel::rebuildDetailTexts(const User& user) {
         {"Ngày sinh", user.getBirthDate().empty() ? "-" : user.getBirthDate()},
         {"Số điện thoại", user.getPhone()},
         {"Ngày đăng ký", formatDate(user.getRegisteredAt())},
-        {"Trạng thái", user.isLocked() ? "Khóa" : "Hoạt động"},
     };
 
     detailEntries.reserve(rows.size());
@@ -385,33 +375,6 @@ void UserPanel::openViewPopup() {
 
     setupButton(popupBtnPrimary, "Đã hiểu", Color(20, 118, 172), Color(17, 98, 144), {260.f, 56.f});
     popupBtnSecondary.label.reset();
-}
-
-void UserPanel::openLockPopup() {
-    if (selectedRow < 0 || selectedRow >= static_cast<int>(userList.size())) {
-        showNotification("Chưa chọn khách hàng nào.", Color(211, 47, 47));
-        return;
-    }
-    popupUserIndex = selectedRow;
-    const User& user = userList[popupUserIndex];
-    activePopup = PopupType::LockConfirm;
-
-    popupPanel.setSize(Vector2f(POPUP_W, POPUP_H_CONFIRM));
-    popupPanel.setPosition(Vector2f((1728.f - POPUP_W) / 2.f, (972.f - POPUP_H_CONFIRM) / 2.f + 15.f));
-
-    if (popupTitle) {
-        const std::string title = user.isLocked() ? "Xác nhận mở khóa" : "Xác nhận khóa";
-        popupTitle->setString(sf::String::fromUtf8(title.begin(), title.end()));
-        FloatRect tb = popupTitle->getLocalBounds();
-        popupTitle->setPosition(Vector2f(
-            popupPanel.getPosition().x + (popupPanel.getSize().x - tb.size.x) / 2.f - tb.position.x,
-            popupPanel.getPosition().y + 32.f
-        ));
-    }
-
-    setupButton(popupBtnPrimary, user.isLocked() ? "Mở khóa" : "Khóa tài khoản", Color(233, 164, 0), Color(247, 186, 40), {260.f, 56.f});
-    setupButton(popupBtnSecondary, "Hủy", Color(201, 206, 214), Color(170, 176, 186), {260.f, 56.f});
-    if (popupBtnSecondary.label) popupBtnSecondary.label->setFillColor(Color(33, 37, 41));
 }
 
 void UserPanel::openDeletePopup() {
@@ -483,13 +446,7 @@ void UserPanel::renderPopup(RenderWindow& window) {
 
     // Confirm popups
     std::string message;
-    if (activePopup == PopupType::LockConfirm) {
-        message = user->isLocked()
-            ? ("Bạn có chắc muốn mở khóa tài khoản\n" + user->getEmail() + " ?")
-            : ("Bạn có chắc muốn khóa tài khoản\n" + user->getEmail() + " ?");
-    } else {
-        message = "Bạn có chắc muốn xóa tài khoản\n" + user->getEmail() + " ?";
-    }
+    message = "Bạn có chắc muốn xóa tài khoản\n" + user->getEmail() + " ?";
 
     Text msg(font, sf::String::fromUtf8(message.begin(), message.end()), 20);
     msg.setFillColor(Color(33, 37, 41));
@@ -531,7 +488,6 @@ void UserPanel::renderButtons(RenderWindow& window) {
     };
 
     drawButton(btnViewInfo);
-    drawButton(btnLock);
     drawButton(btnDelete);
 
     RoundedRectRenderer::draw(window, btnRefresh.box.getPosition(), btnRefresh.box.getSize(), BUTTON_RADIUS, btnRefresh.box.getFillColor());
@@ -611,16 +567,6 @@ void UserPanel::handleEvent(const Event& event, const RenderWindow& window) {
                         return;
                     }
 
-                    if (activePopup == PopupType::LockConfirm) {
-                        bool ok = user->isLocked()
-                            ? repository->unlockUser(user->getEmail())
-                            : repository->lockUser(user->getEmail());
-                        closePopup();
-                        refreshData();
-                        showNotification(ok ? "Cập nhật trạng thái thành công" : "Không thể cập nhật trạng thái", ok ? Color(20, 118, 172) : Color(211, 47, 47));
-                        return;
-                    }
-
                     if (activePopup == PopupType::DeleteConfirm) {
                         bool ok = repository->deleteUser(user->getEmail());
                         closePopup();
@@ -641,11 +587,6 @@ void UserPanel::handleEvent(const Event& event, const RenderWindow& window) {
 
             if (btnViewInfo.box.getGlobalBounds().contains(mousePos)) {
                 openViewPopup();
-                return;
-            }
-
-            if (btnLock.box.getGlobalBounds().contains(mousePos)) {
-                openLockPopup();
                 return;
             }
 
@@ -684,7 +625,6 @@ void UserPanel::update(Vector2f mousePos, bool mousePressed) {
     }
 
     updateButton(btnViewInfo, mousePos);
-    updateButton(btnLock, mousePos);
     updateButton(btnDelete, mousePos);
     updateButton(btnRefresh, mousePos);
 

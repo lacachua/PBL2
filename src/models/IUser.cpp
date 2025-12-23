@@ -10,11 +10,3 @@ AppRole IUser::parseRole(const string& roleStr) {
     if (lower == "customer") return AppRole::Customer;
     return AppRole::Guest;
 }
-
-UserStatus IUser::parseStatus(const string& statusStr) {
-    string lower = statusStr;
-    transform(lower.begin(), lower.end(), lower.begin(), ::tolower);
-    
-    if (lower == "locked") return UserStatus::Locked;
-    return UserStatus::Active;
-}

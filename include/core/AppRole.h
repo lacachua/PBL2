@@ -5,8 +5,3 @@ enum class AppRole {
     Customer,
     Admin
 };
-
-enum class UserStatus {
-    Active,
-    Locked
-};

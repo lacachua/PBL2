@@ -43,6 +43,9 @@ private:
     // ===== DATA LOADING =====
     static vector<MovieData> loadMovies(const string& moviesPath);
     static vector<string> loadRooms(const string& roomsPath);
+
+    // Remove movies that are past end_date (today > end_date). Keeps IDs stable; does not touch showtimes.
+    static void purgeExpiredMoviesFromFile(const string& moviesPath);
     
     // Load all showtimes from file
     static vector<ShowtimeData> loadShowtimes(const string& filepath);

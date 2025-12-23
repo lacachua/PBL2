@@ -37,18 +37,23 @@ vector<string> AdminMovieRepository::splitString(const string& str, char delimit
 }
 
 string AdminMovieRepository::generateNewId() {
-    for (auto it = data.rbegin(); it != data.rend(); ++it) {
-        if (it->empty()) continue;
-        const string& candidate = (*it)[0];
-        if (isValidMovieId(candidate)) {
-            int num = stoi(candidate.substr(1)) + 1;
-            stringstream ss;
-            ss << "F" << setfill('0') << setw(4) << num;
-            return ss.str();
+    int maxNum = 0;
+    for (const auto& row : data) {
+        if (row.empty()) continue;
+        const string& candidate = row[0];
+        if (!isValidMovieId(candidate)) continue;
+        try {
+            int n = stoi(candidate.substr(1));
+            if (n > maxNum) maxNum = n;
+        } catch (...) {
+            continue;
         }
     }
 
-    return "F0001";
+    int next = maxNum + 1;
+    stringstream ss;
+    ss << "F" << setfill('0') << setw(4) << next;
+    return ss.str();
 }
 
 void AdminMovieRepository::loadFromFile() {

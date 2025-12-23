@@ -13,7 +13,7 @@ App::App()
 {
     window.setFramerateLimit(60);
 
-    ShowtimeCleanupService::maintainShowtimes("../data/showtimes.txt", 5);
+    ShowtimeCleanupService::maintainShowtimes("../data/showtimes.txt", 6);
 
     authService = make_unique<AuthService>("../data/users.txt");
 

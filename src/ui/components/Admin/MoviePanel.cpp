@@ -1,5 +1,6 @@
 #include "UI/components/Admin/MoviePanel.h"
 #include "UI/components/Admin/RoundedRectRenderer.h"
+#include "services/ShowtimeCleanupService.h"
 #include <algorithm>
 #include <iostream>
 #include <stdexcept>
@@ -67,8 +68,110 @@ std::string computeStatus(const std::string& start, const std::string& end) {
     const int e = dateKeyDdMmYyyy(end);
     if (s == 0 || e == 0) return "Đang chiếu";
     if (today < s) return "Sắp chiếu";
+    // end_date is treated as the first day the movie STOPs showing (exclusive bound).
     if (today >= e) return "Ngừng chiếu";
     return "Đang chiếu";
+}
+
+bool parseIsoYyyyMmDd(const std::string& s, int& y, int& m, int& d) {
+    y = m = d = 0;
+    if (s.size() < 10) return false;
+    try {
+        y = std::stoi(s.substr(0, 4));
+        m = std::stoi(s.substr(5, 2));
+        d = std::stoi(s.substr(8, 2));
+    } catch (...) {
+        return false;
+    }
+    return y >= 1900 && m >= 1 && m <= 12 && d >= 1 && d <= 31;
+}
+
+std::string isoToDdMmYyyy(const std::string& iso) {
+    int y, m, d;
+    if (!parseIsoYyyyMmDd(iso, y, m, d)) return "";
+    return formatDdMmYyyy(d, m, y);
+}
+
+std::string todayIsoYyyyMmDd() {
+    std::time_t now = std::time(nullptr);
+    std::tm* t = std::localtime(&now);
+    std::stringstream out;
+    out << (t->tm_year + 1900) << "-" << std::setfill('0') << std::setw(2) << (t->tm_mon + 1)
+        << "-" << std::setfill('0') << std::setw(2) << t->tm_mday;
+    return out.str();
+}
+
+std::string ddMmYyyyToIsoYyyyMmDd(const std::string& ddmmyyyy) {
+    int d, m, y;
+    if (!parseDdMmYyyy(ddmmyyyy, d, m, y)) return "";
+    std::stringstream out;
+    out << y << "-" << std::setfill('0') << std::setw(2) << m << "-" << std::setfill('0') << std::setw(2) << d;
+    return out.str();
+}
+
+std::string addDaysIsoYyyyMmDd(const std::string& iso, int days) {
+    int y, m, d;
+    if (!parseIsoYyyyMmDd(iso, y, m, d)) return "";
+    std::tm t{};
+    t.tm_year = y - 1900;
+    t.tm_mon = m - 1;
+    t.tm_mday = d;
+    t.tm_hour = 12;
+    std::time_t tt = std::mktime(&t);
+    if (tt == (std::time_t)-1) return "";
+    tt += static_cast<std::time_t>(days) * 24 * 60 * 60;
+    std::tm* outTm = std::localtime(&tt);
+    if (!outTm) return "";
+    std::stringstream out;
+    out << (outTm->tm_year + 1900) << "-" << std::setfill('0') << std::setw(2) << (outTm->tm_mon + 1)
+        << "-" << std::setfill('0') << std::setw(2) << outTm->tm_mday;
+    return out.str();
+}
+
+bool tryGetLastBookedShowDateIsoForMovie(const std::string& movieId, std::string& outLastIso) {
+    outLastIso.clear();
+    if (movieId.empty()) return false;
+
+    std::unordered_set<std::string> bookedShowtimeIds;
+    {
+        std::ifstream tf("../data/tickets.txt");
+        if (!tf.is_open()) return false;
+        std::string line;
+        bool first = true;
+        while (std::getline(tf, line)) {
+            if (first) { first = false; continue; }
+            if (line.empty()) continue;
+            std::stringstream ss(line);
+            std::string ticketId, showtimeId;
+            if (!std::getline(ss, ticketId, '|')) continue;
+            if (!std::getline(ss, showtimeId, '|')) continue;
+            if (!showtimeId.empty()) bookedShowtimeIds.insert(showtimeId);
+        }
+    }
+    if (bookedShowtimeIds.empty()) return false;
+
+    {
+        std::ifstream sf("../data/showtimes.txt");
+        if (!sf.is_open()) return false;
+        std::string line;
+        bool first = true;
+        while (std::getline(sf, line)) {
+            if (first) { first = false; continue; }
+            if (line.empty()) continue;
+            std::stringstream ss(line);
+            std::string showtimeId, mid, room, dateIso;
+            if (!std::getline(ss, showtimeId, '|')) continue;
+            if (!std::getline(ss, mid, '|')) continue;
+            if (!std::getline(ss, room, '|')) continue;
+            if (!std::getline(ss, dateIso, '|')) continue;
+            if (mid != movieId) continue;
+            if (bookedShowtimeIds.count(showtimeId) == 0) continue;
+            if (dateIso.size() < 10) continue;
+            if (outLastIso.empty() || dateIso > outLastIso) outLastIso = dateIso;
+        }
+    }
+
+    return !outLastIso.empty();
 }
 }
 
@@ -215,7 +318,7 @@ void MoviePanel::openAddPopup() {
     const float inputStartY = popupY + 100;
     const float inputSpacing = 76.f;
     
-    // Fields definition (11 TextBox fields)
+    // Fields definition (12 TextBox fields)
     vector<pair<string, string>> fields = {
         // Left column (0-5)
         {"Tên phim*", "Nhập tên phim"},
@@ -224,8 +327,9 @@ void MoviePanel::openAddPopup() {
         {"Ngôn ngữ*", "Tiếng Việt, English"},
         {"Thể loại*", "Hành động, Tâm lý"},
         {"Thời lượng (phút)*", "120"},
-        // Right column (6-10)
+        // Right column (6-11)
         {"Ngày khởi chiếu*", "dd/mm/yyyy"},
+        {"Ngày ngừng chiếu", "dd/mm/yyyy (để trống = +1 tháng)"},
         {"Đạo diễn*", "Tên đạo diễn"},
         {"Diễn viên*", "Danh sách diễn viên"},
         {"Tóm tắt*", "Mô tả phim"},
@@ -311,6 +415,7 @@ void MoviePanel::openEditPopup() {
         {"Thể loại*", "Hành động, Tâm lý"},
         {"Thời lượng (phút)*", "120"},
         {"Ngày khởi chiếu*", "dd/mm/yyyy"},
+        {"Ngày ngừng chiếu", "dd/mm/yyyy"},
         {"Đạo diễn*", "Tên đạo diễn"},
         {"Diễn viên*", "Danh sách diễn viên"},
         {"Tóm tắt*", "Mô tả phim"},
@@ -336,11 +441,11 @@ void MoviePanel::openEditPopup() {
         inputBoxes[4]->setValue(record[5]);   // genres
         inputBoxes[5]->setValue(record[6]);   // duration_min
         inputBoxes[6]->setValue(record[7]);   // release_date (start_date)
-        // record[8] is end_date (auto)
-        inputBoxes[7]->setValue(record.size() >= 10 ? record[9] : "");   // director
-        inputBoxes[8]->setValue(record.size() >= 11 ? record[10] : "");  // cast
-        inputBoxes[9]->setValue(record.size() >= 12 ? record[11] : "");  // synopsis
-        inputBoxes[10]->setValue(record.size() >= 13 ? record[12] : ""); // poster_path
+        inputBoxes[7]->setValue(record.size() >= 9 ? record[8] : "");    // end_date
+        inputBoxes[8]->setValue(record.size() >= 10 ? record[9] : "");   // director
+        inputBoxes[9]->setValue(record.size() >= 11 ? record[10] : "");  // cast
+        inputBoxes[10]->setValue(record.size() >= 12 ? record[11] : ""); // synopsis
+        inputBoxes[11]->setValue(record.size() >= 13 ? record[12] : ""); // poster_path
     }
     
     // Buttons (same as Add popup)
@@ -428,7 +533,7 @@ void MoviePanel::closePopup() {
 }
 
 void MoviePanel::handleAdd() {
-    if (inputBoxes.getSize() < 11) return;
+    if (inputBoxes.getSize() < 12) return;
     
     // Get all 11 field values from TextBoxes
     string title = inputBoxes[0]->getValue();
@@ -438,12 +543,31 @@ void MoviePanel::handleAdd() {
     string genres = inputBoxes[4]->getValue();
     string duration = inputBoxes[5]->getValue();
     string releaseDate = inputBoxes[6]->getValue();
-    string director = inputBoxes[7]->getValue();
-    string cast = inputBoxes[8]->getValue();
-    string synopsis = inputBoxes[9]->getValue();
-    string posterPath = inputBoxes[10]->getValue();
-    // Auto end_date + status
-    string endDate = addOneMonthDdMmYyyy(releaseDate);
+    string endDateInput = inputBoxes[7]->getValue();
+    string director = inputBoxes[8]->getValue();
+    string cast = inputBoxes[9]->getValue();
+    string synopsis = inputBoxes[10]->getValue();
+    string posterPath = inputBoxes[11]->getValue();
+    // Enforce: new movies can only start showing from today+5 (e.g., today 23 -> 28).
+    {
+        const string todayIso = todayIsoYyyyMmDd();
+        const string minStartIso = addDaysIsoYyyyMmDd(todayIso, 5);
+        const string minStartDd = isoToDdMmYyyy(minStartIso);
+
+        if (releaseDate.empty()) {
+            // Default to today+5 if not provided.
+            releaseDate = minStartDd.empty() ? todayDdMmYyyy() : minStartDd;
+        } else {
+            const string releaseIso = ddMmYyyyToIsoYyyyMmDd(releaseDate);
+            if (releaseIso.empty() || minStartIso.empty() || releaseIso < minStartIso) {
+                showNotification("Ngày khởi chiếu phải từ " + (minStartDd.empty() ? "sau 5 ngày" : minStartDd) + " trở đi.");
+                return;
+            }
+        }
+    }
+
+    // end_date + status
+    string endDate = endDateInput.empty() ? addOneMonthDdMmYyyy(releaseDate) : endDateInput;
     string status = computeStatus(releaseDate, endDate);
     
     // Validate required fields
@@ -461,7 +585,7 @@ void MoviePanel::handleAdd() {
         language.empty() ? "Vietnamese" : language,    // 4. language
         genres.empty() ? "Action" : genres,            // 5. genres
         duration.empty() ? "120" : duration,          // 6. duration_min
-        releaseDate.empty() ? todayDdMmYyyy() : releaseDate, // 7. release_date (start_date)
+        releaseDate,                                  // 7. release_date (start_date)
         endDate,                                       // 8. end_date
         director.empty() ? "Unknown" : director,      // 9. director
         cast.empty() ? "Unknown" : cast,              // 10. cast
@@ -473,13 +597,16 @@ void MoviePanel::handleAdd() {
     repository->addRecord(record);
     repository->saveToFile();
     repository->loadFromFile();
+
+    // Refresh showtimes immediately so Admin can see the schedule (today..today+5).
+    ShowtimeCleanupService::maintainShowtimes("../data/showtimes.txt", 6);
     
     closePopup();
     showNotification("Đã thêm phim mới thành công!");
 }
 
 void MoviePanel::handleEdit() {
-    if (selectedRow < 0 || inputBoxes.getSize() < 11) return;
+    if (selectedRow < 0 || inputBoxes.getSize() < 12) return;
     
     // Get all 11 field values from TextBoxes
     string title = inputBoxes[0]->getValue();
@@ -489,19 +616,63 @@ void MoviePanel::handleEdit() {
     string genres = inputBoxes[4]->getValue();
     string duration = inputBoxes[5]->getValue();
     string releaseDate = inputBoxes[6]->getValue();
-    string director = inputBoxes[7]->getValue();
-    string cast = inputBoxes[8]->getValue();
-    string synopsis = inputBoxes[9]->getValue();
-    string posterPath = inputBoxes[10]->getValue();
-    string endDate = addOneMonthDdMmYyyy(releaseDate);
+    string endDateInput = inputBoxes[7]->getValue();
+    string director = inputBoxes[8]->getValue();
+    string cast = inputBoxes[9]->getValue();
+    string synopsis = inputBoxes[10]->getValue();
+    string posterPath = inputBoxes[11]->getValue();
+    string endDate = endDateInput.empty() ? addOneMonthDdMmYyyy(releaseDate) : endDateInput;
     string status = computeStatus(releaseDate, endDate);
     
     // Get existing record
     vector<string> record = repository->getRecord(selectedRow);
     if (record.empty()) return;
 
+    // For consistency with scheduling rules: do not allow setting release_date earlier than today+5.
+    // (Admin can still edit other fields; if release_date is empty/invalid, block save.)
+    {
+        const string todayIso = todayIsoYyyyMmDd();
+        const string minStartIso = addDaysIsoYyyyMmDd(todayIso, 5);
+        const string minStartDd = isoToDdMmYyyy(minStartIso);
+        const string releaseIso = ddMmYyyyToIsoYyyyMmDd(releaseDate);
+        if (releaseIso.empty() || minStartIso.empty() || releaseIso < minStartIso) {
+            showNotification("Ngày khởi chiếu phải từ " + (minStartDd.empty() ? "sau 5 ngày" : minStartDd) + " trở đi.");
+            return;
+        }
+    }
+
     if (record.size() < 14) record.resize(14);
     
+    // Constraint: end_date is the STOP date (exclusive). Booking shows 5 days: today..today+4.
+    // Only allow stop date from today+5 onward (e.g., today 23 -> allow from 28).
+    {
+        const string todayIso = todayIsoYyyyMmDd();
+        const string minStopIso = addDaysIsoYyyyMmDd(todayIso, 5);
+        const string newEndIso = ddMmYyyyToIsoYyyyMmDd(endDate);
+        if (!todayIso.empty() && !minStopIso.empty() && !newEndIso.empty()) {
+            if (newEndIso < minStopIso) {
+                const string minStopDd = isoToDdMmYyyy(minStopIso);
+                showNotification("Chỉ được ngừng chiếu từ " + (minStopDd.empty() ? "ngày sau 5 ngày" : minStopDd) + " trở đi.");
+                return;
+            }
+        }
+    }
+
+    // Also ensure we do not stop on/before a day that already has BOOKED showtimes for this movie.
+    // Because end_date is the stop date (exclusive), any booked show on date >= end_date would be invalid.
+    {
+        const string movieId = record[0];
+        const string newEndIso = ddMmYyyyToIsoYyyyMmDd(endDate);
+        string lastBookedIso;
+        if (!movieId.empty() && !newEndIso.empty() && tryGetLastBookedShowDateIsoForMovie(movieId, lastBookedIso)) {
+            if (!lastBookedIso.empty() && lastBookedIso >= newEndIso) {
+                const string minDd = isoToDdMmYyyy(addDaysIsoYyyyMmDd(lastBookedIso, 1));
+                showNotification("Không thể ngừng chiếu vì đã có vé. Chỉ được đặt từ " + (minDd.empty() ? "ngày sau" : minDd) + " trở đi.");
+                return;
+            }
+        }
+    }
+
     // Update all fields (keep ID at index 0)
     record[1] = title;
     record[2] = ageRating;
@@ -520,6 +691,9 @@ void MoviePanel::handleEdit() {
     repository->updateRecord(selectedRow, record);
     repository->saveToFile();
     repository->loadFromFile();
+
+    // Refresh showtimes immediately so Admin can verify day+5 (6th day) correctness.
+    ShowtimeCleanupService::maintainShowtimes("../data/showtimes.txt", 6);
     
     closePopup();
     showNotification("Đã cập nhật thành công!");
@@ -528,13 +702,44 @@ void MoviePanel::handleEdit() {
 
 void MoviePanel::handleDelete() {
     if (selectedRow < 0) return;
-    
-    repository->deleteRecord(selectedRow);
+
+    vector<string> record = repository->getRecord(selectedRow);
+    if (record.empty()) return;
+    if (record.size() < 14) record.resize(14);
+
+    const string movieId = record[0];
+    const string todayIso = todayIsoYyyyMmDd();
+
+    // Do not remove the record immediately.
+    // Instead, mark it as stopped so Admin can distinguish movies that were "deleted".
+    // - If it still has future showtimes, stop at the last scheduled show date.
+    // - Otherwise stop at today.
+    // end_date is stop date (exclusive). Choose the earliest valid stop date:
+    // - At least today+5 (Booking window is 5 days)
+    // - After the last BOOKED showtime day (so we never stop on a day that still has booked showtimes)
+    string stopIso = addDaysIsoYyyyMmDd(todayIso, 5);
+
+    string lastBookedIso;
+    if (tryGetLastBookedShowDateIsoForMovie(movieId, lastBookedIso)) {
+        string afterLastBooked = addDaysIsoYyyyMmDd(lastBookedIso, 1);
+        if (!afterLastBooked.empty() && afterLastBooked > stopIso) stopIso = afterLastBooked;
+    }
+
+    string stopDdMmYyyy = isoToDdMmYyyy(stopIso);
+    if (stopDdMmYyyy.empty()) stopDdMmYyyy = addDaysIsoYyyyMmDd(todayIso, 5).empty() ? todayDdMmYyyy() : isoToDdMmYyyy(addDaysIsoYyyyMmDd(todayIso, 5));
+
+    record[8] = stopDdMmYyyy;
+    record[13] = "Ngừng chiếu vào " + stopDdMmYyyy;
+
+    repository->updateRecord(selectedRow, record);
     repository->saveToFile();
     repository->loadFromFile();
-    
+
+    // Refresh showtimes immediately (6 days) so day+5 (e.g. 28) is regenerated for remaining movies.
+    ShowtimeCleanupService::maintainShowtimes("../data/showtimes.txt", 6);
+
     closePopup();
-    showNotification("Đã xóa thành công");
+    showNotification("Đã ngừng chiếu vào " + stopDdMmYyyy);
     selectedRow = -1;
 }
 
@@ -825,8 +1030,9 @@ void MoviePanel::renderTable(RenderWindow& window) {
         float ratio; // ratio of TABLE_WIDTH
     };
 
+    // Make status column wider to display e.g. "Ngừng chiếu vào ngày DD/MM/YYYY".
     static const array<ColumnSpec, 5> columns = {{{"ID Phim", 0.10f},
-        {"Tên phim", 0.36f}, {"Thời lượng", 0.16f}, {"Ngày chiếu", 0.18f}, {"Trạng thái", 0.20f}}};
+        {"Tên phim", 0.32f}, {"Thời lượng", 0.14f}, {"Ngày chiếu", 0.16f}, {"Trạng thái", 0.28f}}};
 
     vector<float> columnWidths;
     columnWidths.reserve(columns.size());

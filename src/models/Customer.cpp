@@ -23,24 +23,24 @@ Customer::Customer(const string& email,
                    const string& birthDate,
                    const string& phone,
                    time_t registeredAt)
-    : User(email, passwordHash, fullName, birthDate, phone, registeredAt, AppRole::Customer, UserStatus::Active)
+    : User(email, passwordHash, fullName, birthDate, phone, registeredAt, AppRole::Customer)
 {
 }
 
 bool Customer::canBookTicket() const {
-    return isActive() && getRole() == AppRole::Customer;
+    return getRole() == AppRole::Customer;
 }
 
 bool Customer::canUseVoucher() const {
-    return isActive() && getRole() == AppRole::Customer;
+    return getRole() == AppRole::Customer;
 }
 
 bool Customer::canViewPersonalInfo() const {
-    return isActive() && getRole() == AppRole::Customer;
+    return getRole() == AppRole::Customer;
 }
 
 bool Customer::canViewBookingHistory() const {
-    return isActive() && getRole() == AppRole::Customer;
+    return getRole() == AppRole::Customer;
 }
 
 string Customer::getDisplayName() const {
@@ -48,5 +48,5 @@ string Customer::getDisplayName() const {
 }
 
 bool Customer::isValidCustomer() const {
-    return getRole() == AppRole::Customer && isActive();
+    return getRole() == AppRole::Customer;
 }

@@ -27,8 +27,6 @@ public:
     User* findByEmail(const string& email);
     bool addUser(const User& user);
     bool updateUser(const User& user);
-    bool lockUser(const string& email);
-    bool unlockUser(const string& email);
     bool deleteUser(const string& email);
 
     vector<User> getAllUsers() const;

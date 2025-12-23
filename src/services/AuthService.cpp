@@ -43,8 +43,7 @@ bool AuthService::registerUser(const string& email,
         birthDate,
         phone,
         time(nullptr),
-        role,
-        UserStatus::Active
+        role
     );
     
     bool success = repository->addUser(newUser);
@@ -76,11 +75,6 @@ bool AuthService::login(const string& email, const string& password) {
     
     if (!user) {
         return false; // User not found
-    }
-    
-    // Check if account is locked
-    if (user->isLocked()) {
-        return false; // Account locked
     }
     
     // Verify password
@@ -139,19 +133,6 @@ User* AuthService::getUser(const string& email) {
 
 bool AuthService::emailExists(const string& email) {
     return repository->exists(email);
-}
-
-bool AuthService::lockUserAccount(const string& email) {
-    // Don't allow locking yourself
-    if (isLoggedIn() && currentUserEmail == email) {
-        return false;
-    }
-    
-    return repository->lockUser(email);
-}
-
-bool AuthService::unlockUserAccount(const string& email) {
-    return repository->unlockUser(email);
 }
 
 bool AuthService::changeUserRole(const string& email, AppRole newRole) {

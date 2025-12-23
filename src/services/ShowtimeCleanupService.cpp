@@ -19,13 +19,37 @@ bool parseTicketLine(const std::string& line, std::string& outShowtimeId, std::s
     if (!std::getline(ss, outDateYyyyMmDd, '|')) return false;
     return !outShowtimeId.empty() && outDateYyyyMmDd.size() >= 10;
 }
+
+bool extractDdMmYyyyFromStatus(const std::string& status, std::string& outDdMmYyyy) {
+    outDdMmYyyy.clear();
+    // Look for a substring matching dd/mm/yyyy.
+    // We accept both "Ngừng chiếu vào ngày DD/MM/YYYY" and "Ngừng chiếu vào DD/MM/YYYY".
+    for (size_t i = 0; i + 9 < status.size(); ++i) {
+        const char c0 = status[i];
+        if (c0 < '0' || c0 > '9') continue;
+        const std::string sub = status.substr(i, 10);
+        if (sub[2] != '/' || sub[5] != '/') continue;
+        auto isDigit = [](char c) { return c >= '0' && c <= '9'; };
+        if (!isDigit(sub[0]) || !isDigit(sub[1]) || !isDigit(sub[3]) || !isDigit(sub[4]) ||
+            !isDigit(sub[6]) || !isDigit(sub[7]) || !isDigit(sub[8]) || !isDigit(sub[9])) {
+            continue;
+        }
+        outDdMmYyyy = sub;
+        return true;
+    }
+    return false;
+}
 }
 
 deque<MovieData> ShowtimeCleanupService::movieQueue;
 vector<ShowtimeData> ShowtimeCleanupService::tempShowtimes;
 
 void ShowtimeCleanupService::maintainShowtimes(const string& showtimesPath, int daysToGenerate) {
-    const int windowDays = max(1, min(daysToGenerate, 5));
+    // Admin wants 6-day scheduling window; Booking UI still shows only 5 days.
+    const int windowDays = max(1, min(daysToGenerate, 6));
+
+    // Cleanup expired movies first so they won't be considered for (re)generation.
+    purgeExpiredMoviesFromFile("../data/movies.txt");
 
     time_t now = time(nullptr);
     tm* nowTm = localtime(&now);
@@ -79,9 +103,9 @@ void ShowtimeCleanupService::maintainShowtimes(const string& showtimesPath, int 
         return yy + "-" + mm + "-" + dd;
     };
     time_t now2 = time(nullptr);
-    const time_t future4 = now2 + (static_cast<time_t>(4) * 24 * 60 * 60);
-    tm* future4Tm = localtime(&future4);
-    const string todayPlus4 = formatDate(future4Tm);
+    const time_t futureWindowEnd = now2 + (static_cast<time_t>(windowDays - 1) * 24 * 60 * 60);
+    tm* futureWindowEndTm = localtime(&futureWindowEnd);
+    const string todayPlusWindowEnd = formatDate(futureWindowEndTm);
 
     vector<MovieData> playable;
     playable.reserve(movies.size());
@@ -160,7 +184,7 @@ void ShowtimeCleanupService::maintainShowtimes(const string& showtimesPath, int 
 
         // Determine eligible movies for THIS show date based on rule:
         // - "Đang chiếu": always eligible if show date in [start,end)
-        // - "Sắp chiếu": only if start_date within next 4 days AND show date >= start_date
+        // - "Sắp chiếu": only if start_date within the generated window AND show date >= start_date
         vector<MovieData> dayEligible;
         dayEligible.reserve(playable.size());
         for (const auto& m : playable) {
@@ -171,15 +195,15 @@ void ShowtimeCleanupService::maintainShowtimes(const string& showtimesPath, int 
                 continue;
             }
             if (!endYmd.empty() && dateStr >= endYmd) {
-                // show date at/after end
+                // show date at/after stop date
                 continue;
             }
 
             if (m.status == "Đang chiếu") {
                 dayEligible.push_back(m);
             } else if (m.status == "Sắp chiếu") {
-                // start date must be within next 4 days
-                if (!startYmd.empty() && startYmd <= todayPlus4) {
+                // start date must be within generated window
+                if (!startYmd.empty() && startYmd <= todayPlusWindowEnd) {
                     dayEligible.push_back(m);
                 }
             }
@@ -299,6 +323,102 @@ void ShowtimeCleanupService::maintainShowtimes(const string& showtimesPath, int 
     saveShowtimes(showtimesPath, kept);
 }
 
+void ShowtimeCleanupService::purgeExpiredMoviesFromFile(const string& moviesPath) {
+    using std::string;
+    using std::vector;
+
+    auto split = [](const string& s, char delim) -> vector<string> {
+        vector<string> out;
+        std::stringstream ss(s);
+        string tok;
+        while (std::getline(ss, tok, delim)) out.push_back(tok);
+        return out;
+    };
+
+    auto toYmd = [](const string& ddmmyyyy) -> string {
+        string dd, mm, yy;
+        std::stringstream ss(ddmmyyyy);
+        std::getline(ss, dd, '/');
+        std::getline(ss, mm, '/');
+        std::getline(ss, yy, '/');
+        if (dd.empty() || mm.empty() || yy.empty()) return "";
+        if (dd.size() == 1) dd = "0" + dd;
+        if (mm.size() == 1) mm = "0" + mm;
+        return yy + "-" + mm + "-" + dd;
+    };
+
+    std::ifstream in(moviesPath);
+    if (!in.is_open()) return;
+
+    string header;
+    if (!std::getline(in, header)) return;
+
+    // Handle BOM on header
+    if (header.size() >= 3 &&
+        (unsigned char)header[0] == 0xEF &&
+        (unsigned char)header[1] == 0xBB &&
+        (unsigned char)header[2] == 0xBF) {
+        header = header.substr(3);
+    }
+
+    time_t now = time(nullptr);
+    tm* nowTm = localtime(&now);
+    const string todayIso = formatDate(nowTm); // YYYY-MM-DD
+
+    vector<string> keptLines;
+    keptLines.reserve(256);
+
+    string line;
+    while (std::getline(in, line)) {
+        if (line.empty()) continue;
+
+        if (line.size() >= 3 &&
+            (unsigned char)line[0] == 0xEF &&
+            (unsigned char)line[1] == 0xBB &&
+            (unsigned char)line[2] == 0xBF) {
+            line = line.substr(3);
+        }
+
+        vector<string> cols = split(line, '|');
+        // Normalize to 14 columns:
+        // 12 cols: ...|release_date|director|cast|synopsis|poster_path
+        // 13 cols: ...|release_date|director|cast|synopsis|poster_path|status
+        // 14 cols: ...|release_date|end_date|director|cast|synopsis|poster_path|status
+        if (cols.size() == 12) {
+            // Insert end_date after release_date
+            cols.insert(cols.begin() + 8, "");
+            cols.push_back("Đang chiếu");
+        } else if (cols.size() == 13) {
+            cols.insert(cols.begin() + 8, "");
+        }
+        if (cols.size() < 14) {
+            // Unknown format; keep as-is
+            keptLines.push_back(line);
+            continue;
+        }
+
+        const string endIso = toYmd(cols[8]);
+        if (!endIso.empty() && todayIso > endIso) {
+            // Expired: remove from movies.txt
+            continue;
+        }
+
+        // Re-serialize normalized row to keep schema consistent
+        std::stringstream out;
+        for (size_t i = 0; i < cols.size(); i++) {
+            if (i) out << '|';
+            out << cols[i];
+        }
+        keptLines.push_back(out.str());
+    }
+    in.close();
+
+    std::ofstream out(moviesPath, std::ios::trunc);
+    if (!out.is_open()) return;
+    out << header << "\n";
+    for (const auto& l : keptLines) out << l << "\n";
+}
+
 unordered_set<string> ShowtimeCleanupService::loadLockedShowtimeIdsFromTickets(const string& ticketsPath, const string& todayStr) {
     unordered_set<string> locked;
     ifstream file(ticketsPath);
@@ -322,7 +442,7 @@ unordered_set<string> ShowtimeCleanupService::loadLockedShowtimeIdsFromTickets(c
 int ShowtimeCleanupService::statusPriority(const string& status) {
     // Higher is better.
     // Exclude "Ngừng chiếu" by returning -1.
-    if (status == "Ngừng chiếu") return -1;
+    if (status.rfind("Ngừng chiếu", 0) == 0) return -1;
     if (status == "Đang chiếu") return 2;
     if (status == "Sắp chiếu") return 1;
     return 0; // unknown/empty
@@ -532,6 +652,16 @@ vector<MovieData> ShowtimeCleanupService::loadMovies(const string& moviesPath) {
             getline(ss, token, '|'); // synopsis
             getline(ss, token, '|'); // poster_path
             if (getline(ss, token, '|')) movie.status = token; else movie.status.clear();
+        }
+
+        // If Admin marked the movie as stopped with a specific date in the status column,
+        // treat that date as the stop date (end_date, exclusive).
+        // This ensures we do NOT generate showtimes on/after that date.
+        if (!movie.status.empty() && movie.status.rfind("Ngừng chiếu", 0) == 0) {
+            std::string stopDdMmYyyy;
+            if (extractDdMmYyyyFromStatus(movie.status, stopDdMmYyyy)) {
+                movie.end_date = stopDdMmYyyy;
+            }
         }
 
         if (!movie.id.empty()) {

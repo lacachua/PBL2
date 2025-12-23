@@ -24,22 +24,21 @@ protected:
     string phone;
     time_t registeredAt;    // Unix timestamp
     AppRole role;
-    UserStatus status;
 
 public:
     // ===== CONSTRUCTORS & DESTRUCTOR =====
     
     IUser() 
         : email(""), passwordHash(""), fullName(""), birthDate(""),
-          phone(""), registeredAt(0), role(AppRole::Guest), status(UserStatus::Active) {}
+                    phone(""), registeredAt(0), role(AppRole::Guest) {}
     
     IUser(const string& email, const string& passwordHash,
           const string& fullName, const string& birthDate,
           const string& phone, time_t registeredAt,
-          AppRole role = AppRole::Guest, UserStatus status = UserStatus::Active)
+                    AppRole role = AppRole::Guest)
         : email(email), passwordHash(passwordHash), fullName(fullName),
           birthDate(birthDate), phone(phone), registeredAt(registeredAt),
-          role(role), status(status) {}
+                    role(role) {}
     
     virtual ~IUser() = default;
 
@@ -73,11 +72,7 @@ public:
     string getPhone() const { return phone; }
     time_t getRegisteredAt() const { return registeredAt; }
     AppRole getRole() const { return role; }
-    UserStatus getStatus() const { return status; }
     string getUsername() const { return fullName; }
-    
-    bool isActive() const { return status == UserStatus::Active; }
-    bool isLocked() const { return status == UserStatus::Locked; }
 
     // ===== COMMON SETTERS (Email is IMMUTABLE - no setter) =====
     
@@ -85,10 +80,6 @@ public:
     void setFullName(const string& name) { fullName = name; }
     void setBirthDate(const string& date) { birthDate = date; }
     void setPhone(const string& phoneNum) { phone = phoneNum; }
-    void setStatus(UserStatus s) { status = s; }
-    
-    void lock() { status = UserStatus::Locked; }
-    void unlock() { status = UserStatus::Active; }
 
     // ===== HELPER METHODS =====
     
@@ -101,10 +92,5 @@ public:
         }
     }
     
-    string getStatusString() const {
-        return (status == UserStatus::Active) ? "active" : "locked";
-    }
-    
     static AppRole parseRole(const string& roleStr);
-    static UserStatus parseStatus(const string& statusStr);
 };

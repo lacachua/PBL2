@@ -33,8 +33,6 @@ public:
 
     User* getUser(const string&);
     bool emailExists(const string&);
-    bool lockUserAccount(const string&);
-    bool unlockUserAccount(const string&);
     bool changeUserRole(const string&, AppRole);
     UserRepository* getRepository();
     void ensureDefaultAdmin();
