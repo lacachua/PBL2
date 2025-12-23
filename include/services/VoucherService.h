@@ -22,6 +22,13 @@ public:
     
     ~VoucherService() override;
     void initialize();
+
+    // Compatibility APIs used by customer booking/account UI
+    vector<VoucherDisplay> getVouchersByUser(const string& email);
+    double applyVoucher(const string& email, const string& voucherCode,
+                        int subtotal, bool commit = false);
+    const VoucherDef* getDefinition(const string& code) const;
+
     vector<VoucherDef> getAllDefinitions() const;
     bool addVoucherDefinition(const VoucherDef& def);
     bool updateVoucherDefinition(const VoucherDef& def);
@@ -55,6 +62,8 @@ private:
     string definitionPath;
     string walletPath;
     string usersPath;
+
+    VoucherManager voucherManager;
     
     vector<VoucherDef> definitions;
     vector<AutoProvisionConfig> autoProvisionConfigs;

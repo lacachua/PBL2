@@ -10,7 +10,8 @@
 using namespace std;
 
 VoucherService::VoucherService(const string& defPath, const string& walletPath, const string& usersPath)
-    : definitionPath(defPath), walletPath(walletPath), usersPath(usersPath) {
+    : definitionPath(defPath), walletPath(walletPath), usersPath(usersPath),
+      voucherManager(defPath, walletPath) {
     loadDefinitions();
     loadAutoProvisionConfigs();
 }
@@ -21,6 +22,25 @@ VoucherService::~VoucherService() {
 
 void VoucherService::initialize() {
     AppEventSystem::getInstance().subscribe(shared_from_this());
+}
+
+// ===== Compatibility APIs (Customer UI) =====
+
+vector<VoucherDisplay> VoucherService::getVouchersByUser(const string& email) {
+    voucherManager.loadData();
+    return voucherManager.getVouchersByUser(email);
+}
+
+double VoucherService::applyVoucher(const string& email, const string& voucherCode,
+                                   int subtotal, bool commit) {
+    voucherManager.loadData();
+    return voucherManager.applyVoucher(email, voucherCode, static_cast<double>(subtotal), commit);
+}
+
+const VoucherDef* VoucherService::getDefinition(const string& code) const {
+    auto it = voucherManager.voucherLookup.find(code);
+    if (it == voucherManager.voucherLookup.end()) return nullptr;
+    return &it->second;
 }
 
 // ===== Helper methods =====
