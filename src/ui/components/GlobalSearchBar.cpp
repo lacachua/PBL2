@@ -2,9 +2,17 @@
 #include <iostream>
 
 GlobalSearchBar::GlobalSearchBar(Font& f, Vector2f position, Vector2f size) 
-    : font(f), inputText(f), placeholderText(f), isActive(false), showSuggestions(false), 
-      selectedSuggestion(-1), hoveredSuggestion(-1), searchManager(nullptr), showCursor(false),
-      originalPosition(position), originalSize(size) {
+        : inputText(f),
+            placeholderText(f),
+            isActive(false),
+            showSuggestions(false),
+            selectedSuggestion(-1),
+            hoveredSuggestion(-1),
+            font(f),
+            searchManager(nullptr),
+            showCursor(false),
+            originalPosition(position),
+            originalSize(size) {
     
     // Input box styling - TRANSPARENT (chỉ thấy ảnh search_bar.png)
     inputBox.setSize(size);

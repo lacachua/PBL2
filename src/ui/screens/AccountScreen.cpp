@@ -4,10 +4,10 @@ using namespace std;
 
 AccountScreen::AccountScreen(Font& f, AuthService& auth) 
     : BaseScreen(f),
-      authService(&auth),
       menuItem1(f, L"THÔNG TIN KHÁCH HÀNG", 300.f, 60.f, 18),
       menuItem2(f, L"LỊCH SỬ ĐẶT VÉ", 300.f, 60.f, 18),
-      menuItem3(f, L"VOUCHER CỦA TÔI", 300.f, 60.f, 18)
+    menuItem3(f, L"VOUCHER CỦA TÔI", 300.f, 60.f, 18),
+    authService(&auth)
 {
 	setGlobalSearchEnabled(false);
 
@@ -160,6 +160,10 @@ void AccountScreen::update(Vector2f mousePos, bool mousePressed, const Event* ev
     else if (currentTab == AccountTab::MY_GIFTS && voucherListView) {
         voucherListView->update(mousePos, mouseJustPressed, cardPos, mainCardBg.getSize());
     }
+}
+
+void AccountScreen::update(Vector2f mousePos, bool mousePressed, AppState& state) {
+    update(mousePos, mousePressed, nullptr, state);
 }
 
 void AccountScreen::draw(RenderWindow& window) {

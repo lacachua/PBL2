@@ -59,9 +59,6 @@ DetailScreen::DetailScreen(Font& headerFont, Font& btnFont, Font& titleFnt, Font
         button_font(btnFont),               // Font cho nút quay lại (TextButton)
         title_font(titleFnt),               // Font cho tiêu đề phim và nút đặt vé
         detail_font(detailFnt),             // Font cho nội dung chi tiết
-        movie(detail),
-        backBtn(button_font, L"← Quay lại", 18, {160.f, 40.f}),   // Dùng button_font
-        bookBtn(title_font, L"ĐẶT VÉ NGAY", 180.f, 40.f, 30),     // Dùng title_font
         poster_tex(detail.posterPath),
         poster(poster_tex),
         title_text(title_font, detail.title, 66),                  // Dùng title_font
@@ -75,15 +72,18 @@ DetailScreen::DetailScreen(Font& headerFont, Font& btnFont, Font& titleFnt, Font
         cast_text(detail_font, String(), 20),
         synopsis_header(title_font, L"NỘI DUNG PHIM", 36),
         synopsis_text(detail_font, String(), 20),
+        backBtn(button_font, L"← Quay lại", 18, {160.f, 40.f}),   // Dùng button_font
+        bookBtn(title_font, L"ĐẶT VÉ NGAY", 180.f, 40.f, 30),     // Dùng title_font
+        movie(detail),
         icon1("../assets/elements/genres.png"),
-        genreIcon(icon1),
         icon2("../assets/elements/duration_time.png"),
-        durationIcon(icon2),
         icon3("../assets/elements/country.png"),
-        countryIcon(icon3),
         icon4("../assets/elements/language.png"),
-        languageIcon(icon4),
         icon5("../assets/elements/ageRating.png"),
+        genreIcon(icon1),
+        durationIcon(icon2),
+        countryIcon(icon3),
+        languageIcon(icon4),
         ageRatingIcon(icon5)
 {
     // Initialize global search bar with movie data

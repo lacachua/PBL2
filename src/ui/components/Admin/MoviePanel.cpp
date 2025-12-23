@@ -73,10 +73,13 @@ std::string computeStatus(const std::string& start, const std::string& end) {
 }
 
 MoviePanel::MoviePanel(Font& font, float width, float height)
-        : font(font), width(width), height(height), currentPopup(NONE),
-            selectedRow(-1), scrollOffset(0), hoveredRow(-1), 
+        : font(font), width(width), height(height),
             reloadTexture("../assets/elements/reload.png"),
-            reloadSprite(reloadTexture) {
+            reloadSprite(reloadTexture),
+            currentPopup(NONE),
+            selectedRow(-1),
+            scrollOffset(0),
+            hoveredRow(-1) {
     
     // Initialize repository
     repository = make_unique<AdminMovieRepository>("../data/movies.txt");

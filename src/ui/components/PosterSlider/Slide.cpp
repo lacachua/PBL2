@@ -2,8 +2,8 @@
 using namespace std;
 
 Slide::Slide(const Texture& texture, const Font& font) 
-    :   detail_button(font, L"Xem chi tiết", 150.f, 40.f, 18),
-        poster_sprite(texture)
+    :   poster_sprite(texture),
+        detail_button(font, L"Xem chi tiết", 150.f, 40.f, 18)
 {
     poster_sprite.setScale({0.32f, 0.32f});
 }

@@ -23,6 +23,7 @@ private:
 public:
     HomeScreen(Font&, RenderWindow&);
     void update(Vector2f, bool, AppState&) override;
+    void handleEvent(const Event& event) override;
     void handleEvent(Vector2f, bool, AppState&, const Event* event = nullptr);
     void draw(RenderWindow&) override;
     void drawHeaderOnly(RenderWindow&);

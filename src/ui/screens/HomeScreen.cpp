@@ -43,6 +43,10 @@ void HomeScreen::handleEvent(Vector2f mousePos, bool mousePressed, AppState& sta
     }
 }
 
+void HomeScreen::handleEvent(const Event& event) {
+    BaseScreen::handleEvent(event);
+}
+
 void HomeScreen::draw(RenderWindow& window) {
     window.draw(background_sprite);
     window.draw(searchBar_sprite);

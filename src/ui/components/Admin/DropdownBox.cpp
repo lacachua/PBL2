@@ -3,11 +3,16 @@
 #include <iostream>
 
 DropdownBox::DropdownBox(Font& font, const string& label, float x, float y, float width, float height)
-        : font(font), x(x), y(y), width(width), height(height), label(label),
-            selectedIndex(0), isOpen(false),
-            bgColor(255, 255, 255), hoverColor(230, 230, 230), 
-            selectedColor(100, 149, 237), borderColor(200, 200, 200),
-            textColor(50, 50, 50), maxVisibleOptions(0), firstVisibleIndex(0), optionHeight(40.f), enabled(true) {
+    : font(font),
+      selectedIndex(0),
+      isOpen(false),
+      enabled(true),
+      x(x), y(y), width(width), height(height),
+      label(label),
+      bgColor(255, 255, 255), hoverColor(230, 230, 230),
+      selectedColor(100, 149, 237), borderColor(200, 200, 200),
+      textColor(50, 50, 50),
+      maxVisibleOptions(0), firstVisibleIndex(0), optionHeight(40.f) {
     
     // Label text
     labelText = make_unique<Text>(font, String::fromUtf8(label.begin(), label.end()), 14);

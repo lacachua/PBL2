@@ -57,7 +57,7 @@ void EditableTable::calculateColumnWidths() {
     // If no custom widths, distribute equally
     if (columnWidths.empty()) {
         float availableWidth = width - scrollBarWidth - padding * 3;
-        int colWidth = availableWidth / headers.size();
+        int colWidth = static_cast<int>(availableWidth / static_cast<float>(headers.size()));
         columnWidths.clear();
         for (size_t i = 0; i < headers.size(); i++) {
             columnWidths.push_back(colWidth);
@@ -75,7 +75,7 @@ void EditableTable::addRow(const vector<string>& rowData, bool editable) {
 }
 
 void EditableTable::updateRow(int row, const vector<string>& newData) {
-    if (row < 0 || row >= rows.size()) return;
+    if (row < 0 || row >= static_cast<int>(rows.size())) return;
     
     for (size_t i = 0; i < newData.size() && i < rows[row].size(); i++) {
         rows[row][i].value = newData[i];
@@ -83,7 +83,7 @@ void EditableTable::updateRow(int row, const vector<string>& newData) {
 }
 
 void EditableTable::deleteRow(int row) {
-    if (row < 0 || row >= rows.size()) return;
+    if (row < 0 || row >= static_cast<int>(rows.size())) return;
     
     rows.erase(rows.begin() + row);
     if (selectedRow == row) {
@@ -129,7 +129,7 @@ void EditableTable::updateScrollBar() {
 }
 
 FloatRect EditableTable::getCellBounds(int row, int col) const {
-    if (col >= columnWidths.size()) return FloatRect();
+    if (col < 0 || col >= static_cast<int>(columnWidths.size())) return FloatRect();
     
     float cellX = x + padding;
     for (int i = 0; i < col; i++) {
@@ -156,11 +156,12 @@ pair<int, int> EditableTable::getCellAtPosition(Vector2f mousePos) const {
     
     // Calculate row
     int row = (mousePos.y - (y + padding + headerHeight) + scrollOffset) / rowHeight;
-    if (row < 0 || row >= rows.size()) return {-1, -1};
+    if (row < 0 || row >= static_cast<int>(rows.size())) return {-1, -1};
     
     // Calculate column
     float cellX = x + padding;
-    for (int col = 0; col < columnWidths.size(); col++) {
+    const int colCount = static_cast<int>(columnWidths.size());
+    for (int col = 0; col < colCount; col++) {
         if (mousePos.x >= cellX && mousePos.x < cellX + columnWidths[col]) {
             return {row, col};
         }
@@ -338,7 +339,8 @@ void EditableTable::render(RenderWindow& window) {
     float viewTop = y + padding + headerHeight;
     float viewBottom = y + height - padding;
     
-    for (int row = 0; row < rows.size(); row++) {
+    const int rowCount = static_cast<int>(rows.size());
+    for (int row = 0; row < rowCount; row++) {
         float rowY = y + padding + headerHeight + row * rowHeight - scrollOffset;
         
         // Skip if row is outside visible area
@@ -368,7 +370,9 @@ void EditableTable::render(RenderWindow& window) {
         
         // Draw cell text
         cellX = x + padding;
-        for (int col = 0; col < rows[row].size() && col < columnWidths.size(); col++) {
+        const int rowSize = static_cast<int>(rows[row].size());
+        const int widthCount = static_cast<int>(columnWidths.size());
+        for (int col = 0; col < rowSize && col < widthCount; col++) {
             string displayText = rows[row][col].value;
             
             // If editing this cell, show edit buffer with cursor
@@ -396,7 +400,7 @@ void EditableTable::render(RenderWindow& window) {
             window.draw(cellText);
             
             // Draw vertical separator
-            if (col < rows[row].size() - 1) {
+            if (col < rowSize - 1) {
                 RectangleShape vSeparator(Vector2f(1, rowHeight));
                 vSeparator.setPosition(Vector2f(cellX + columnWidths[col], rowY));
                 vSeparator.setFillColor(borderColor);
@@ -415,7 +419,7 @@ void EditableTable::render(RenderWindow& window) {
 }
 
 vector<string> EditableTable::getRowData(int row) const {
-    if (row < 0 || row >= rows.size()) return {};
+    if (row < 0 || row >= static_cast<int>(rows.size())) return {};
     
     vector<string> data;
     for (const auto& cell : rows[row]) {

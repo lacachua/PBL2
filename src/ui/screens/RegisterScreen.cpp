@@ -24,14 +24,14 @@ RegisterScreen::RegisterScreen(const Font& font, AuthService& authRef)
     : auth(authRef),
       overlay({0.f, 0.f}),
       card({620.f, 650.f}),
-      title(font, L"Đăng ký tài khoản", 30),
       registerBtn({252.f, 44.f}),
       backBtn({141.f, 44.f}),
+    cursor({2.f, 36.f}),
+    title(font, L"Đăng ký tài khoản", 30),
       registerBtnText(font, L"Đăng ký", 20),
       backBtnText(font, L"Quay lại", 20),
       closeX(font, L"X", 24),
-      msg(font, L"", 16),
-      cursor({2.f, 36.f})
+    msg(font, L"", 16)
 {
     // ... (Phần Constructor giữ nguyên như cũ của bạn) ...
     // Để tiết kiệm chỗ hiển thị, tôi không copy lại phần khởi tạo UI dài dòng

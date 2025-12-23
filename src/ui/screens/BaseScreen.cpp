@@ -8,8 +8,8 @@ bool BaseScreen::logoutRequested = false;
 BaseScreen::BaseScreen(Font& f)
 	:   font(f),
 		background_tex("../assets/elements/background.png"),
-		searchBar_tex("../assets/elements/search_bar.png"),
 		background_sprite(background_tex),
+		searchBar_tex("../assets/elements/search_bar.png"),
 		searchBar_sprite(searchBar_tex),
 		accountButton(f, L"Thông tin cá nhân", 18, {0.f, 0.f}),
 		logoutButton(f, L"Đăng xuất", 18, {0.f, 0.f})

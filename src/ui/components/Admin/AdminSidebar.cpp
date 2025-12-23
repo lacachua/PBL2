@@ -59,9 +59,10 @@ void SidebarRoundRectButton::draw(RenderWindow& window) const {
 }
 
 AdminSidebar::AdminSidebar(float w, float h, const string& uName)
-    : width(w), height(h), userName(uName), hoveredIndex(-1), activeIndex(0),
+    : width(w), height(h), hoveredIndex(-1), activeIndex(0),
     font("../assets/fonts/AMPLE_MEDIUM.ttf"),
-    montserratFont("../assets/fonts/Montserrat_SemiBold.ttf") {
+    montserratFont("../assets/fonts/Montserrat_SemiBold.ttf"),
+    userName(uName) {
     
     // Colors
     bgColor = Color(13, 27, 42);         // #0D1B2A

@@ -44,18 +44,27 @@ static String utf8(const char* text) {
 }
 
 ConfirmationView::ConfirmationView(Font& f) 
-        : font(f),
-      homeButton(f, utf8("Quay lại trang chủ"), 300.f, 60.f, 20),
-      titleText(f, utf8("ĐẶT VÉ THÀNH CÔNG"), 32),
-      labelTicketId(f, utf8("Mã vé"), 20), valueTicketId(f, String(), 20),
-      labelCustomer(f, utf8("Khách hàng"), 20), valueCustomer(f, String(), 20),
-      labelEmail(f, utf8("Email"), 20), valueEmail(f, String(), 20),
-      labelMovie(f, utf8("Phim"), 20), valueMovie(f, String(), 20),
-      labelRoom(f, utf8("Phòng"), 20), valueRoom(f, String(), 20),
-      labelDateTime(f, utf8("Ngày & Giờ"), 20), valueDateTime(f, String(), 20),
-      labelSeats(f, utf8("Ghế"), 20), valueSeats(f, String(), 20),
-      labelCombo(f, utf8("Combo"), 20), valueCombo(f, String(), 20),
-      labelTotal(f, utf8("Tổng cộng"), 24), valueTotal(f, String(), 24)
+                : font(f),
+            homeButton(f, utf8("Quay lại trang chủ"), 300.f, 60.f, 20),
+            titleText(f, utf8("ĐẶT VÉ THÀNH CÔNG"), 32),
+            labelTicketId(f, utf8("Mã vé"), 20),
+            labelCustomer(f, utf8("Khách hàng"), 20),
+            labelEmail(f, utf8("Email"), 20),
+            labelMovie(f, utf8("Phim"), 20),
+            labelRoom(f, utf8("Phòng"), 20),
+            labelDateTime(f, utf8("Ngày & Giờ"), 20),
+            labelSeats(f, utf8("Ghế"), 20),
+            labelCombo(f, utf8("Combo"), 20),
+            labelTotal(f, utf8("Tổng cộng"), 24),
+            valueTicketId(f, String(), 20),
+            valueCustomer(f, String(), 20),
+            valueEmail(f, String(), 20),
+            valueMovie(f, String(), 20),
+            valueRoom(f, String(), 20),
+            valueDateTime(f, String(), 20),
+            valueSeats(f, String(), 20),
+            valueCombo(f, String(), 20),
+            valueTotal(f, String(), 24)
 {
     initializeUI();
 }

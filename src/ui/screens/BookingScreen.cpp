@@ -26,8 +26,8 @@ BookingScreen::BookingScreen(Font& f, const String& movieId)
       currentState(BookingState::suatchieu),
       showtimeSection(f, movieId, ShowtimeRepository().loadFromFile("../data/showtimes.txt")),
       seatRepo("../data/RoomStatusAtShowtime.txt"),
-      ticketRepo("../data/tickets.txt"),
-      bookingService(make_unique<BookingService>())
+    bookingService(make_unique<BookingService>()),
+    ticketRepo("../data/tickets.txt")
 {
 	setGlobalSearchEnabled(false);
 

@@ -40,6 +40,7 @@ public:
     AccountScreen(Font& f, AuthService& auth);
     
     void setCurrentUser(const string& email);
+    void update(Vector2f mousePos, bool mousePressed, AppState& state) override;
     void update(Vector2f mousePos, bool mousePressed, const Event* event, AppState& state);
     void draw(RenderWindow& window) override;
     
