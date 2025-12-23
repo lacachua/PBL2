@@ -511,7 +511,7 @@ void TicketPanel::handleEvent(const Event& event, const RenderWindow& window) {
         }
     }
 
-    if (const auto* moveEvent = event.getIf<Event::MouseMoved>()) {
+    if (event.getIf<Event::MouseMoved>()) {
         Vector2f mp = window.mapPixelToCoords(Mouse::getPosition(window));
         hoveredRow = hitTestRow(mp);
         if (btnView) btnView->update(mp);

@@ -4,7 +4,6 @@
 #include <sstream>
 #include <algorithm>
 #include <cctype>
-#include <iostream>
 #include <ctime>
 #include <array>
 
@@ -130,7 +129,7 @@ vector<RoomPanel::RoomInfo> RoomPanel::loadRooms(const string& path) {
     vector<RoomInfo> result;
     ifstream file(path);
     if (!file.is_open()) {
-        cerr << "[RoomPanel] Cannot open rooms file: " << path << "\n";
+        showNotification("Không thể mở file: " + path);
         return result;
     }
 
@@ -153,7 +152,7 @@ unordered_map<string, RoomPanel::MovieInfo> RoomPanel::loadMovies(const string& 
     unordered_map<string, MovieInfo> movies;
     ifstream file(path);
     if (!file.is_open()) {
-        cerr << "[RoomPanel] Cannot open movies file: " << path << "\n";
+        showNotification("Không thể mở file: " + path);
         return movies;
     }
     string line;
@@ -176,7 +175,7 @@ unordered_map<string, RoomPanel::MovieInfo> RoomPanel::loadMovies(const string& 
 void RoomPanel::loadShowtimes(const string& path, const unordered_map<string, MovieInfo>& movies) {
     ifstream file(path);
     if (!file.is_open()) {
-        cerr << "[RoomPanel] Cannot open showtimes file: " << path << "\n";
+        showNotification("Không thể mở file: " + path);
         return;
     }
     string line;
@@ -324,7 +323,7 @@ void RoomPanel::loadCache() {
 void RoomPanel::saveCache() {
     ofstream file(cacheFilePath, ios::trunc);
     if (!file.is_open()) {
-        cerr << "[RoomPanel] Cannot write cache file: " << cacheFilePath << "\n";
+        showNotification("Không thể ghi file cache: " + cacheFilePath);
         return;
     }
 

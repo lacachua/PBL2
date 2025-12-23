@@ -23,25 +23,13 @@ class ShowtimeSeatRepository {
 private:
     string filePath;
     DLL<ShowtimeSeatStatus> statusList;
-
-    // Helper: Parse booked seats string "A1, B2, C3" -> DLL<string>
     DLL<string> parseBookedSeats(const string& bookedStr);
-
-    // Helper: Convert DLL<string> -> "A1, B2, C3"
     string formatBookedSeats(const DLL<string>& seats);
 
 public:
     ShowtimeSeatRepository(const string& path = "../data/RoomStatusAtShowtime.txt");
-
-    // Load dữ liệu từ file
     void loadFromFile();
-
-    // Lấy danh sách ghế đã đặt cho 1 suất chiếu cụ thể
     DLL<string> getBookedSeats(const string& showtimeId, const string& roomId);
-
-    // Thêm ghế đã đặt mới (khi user xác nhận đặt vé)
     void addBookedSeats(const string& showtimeId, const string& roomId, const DLL<string>& newSeats);
-
-    // Lưu toàn bộ dữ liệu về file
     void saveToFile();
 };

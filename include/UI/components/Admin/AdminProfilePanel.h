@@ -7,25 +7,25 @@
 
 class AdminProfilePanel {
 private:
-    sf::Font& font;
+    Font& font;
     float width;
     float height;
-    sf::Vector2f position;
+    Vector2f position;
     AuthService* authService;
     User* currentUser = nullptr;
     std::string currentEmail;
     bool userDataLoaded = false;
 
     // Layout containers
-    sf::RectangleShape panelBackground;
-    sf::RectangleShape contentCard;
-    sf::RectangleShape heroBanner;
-    sf::CircleShape avatarCircle;
+    RectangleShape panelBackground;
+    RectangleShape contentCard;
+    RectangleShape heroBanner;
+    CircleShape avatarCircle;
 
     // Hero section
-    sf::Text heroNameText;
-    sf::Text heroMetaText;
-    sf::Text avatarInitialsText;
+    Text heroNameText;
+    Text heroMetaText;
+    Text avatarInitialsText;
 
     // Profile info card (reusable component)
     ProfileInfoCard profileCard_;
@@ -37,11 +37,11 @@ private:
     std::wstring buildInitials(const std::string& source) const;
 
 public:
-    AdminProfilePanel(sf::Font& font, float width, float height, AuthService* authService);
+    AdminProfilePanel(Font& font, float width, float height, AuthService* authService);
 
-    void setPosition(sf::Vector2f pos);
-    void handleEvent(const sf::Event& event, const sf::RenderWindow& window);
-    void update(sf::Vector2f mousePos, bool mousePressed);
-    void render(sf::RenderWindow& window);
+    void setPosition(Vector2f pos);
+    void handleEvent(const Event& event, const RenderWindow& window);
+    void update(Vector2f mousePos, bool mousePressed);
+    void render(RenderWindow& window);
     void reload();
 };

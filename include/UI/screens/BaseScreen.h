@@ -17,6 +17,8 @@ class BaseScreen {
         Texture searchBar_tex;
         Sprite searchBar_sprite;
         DLL<TextButton> buttons;
+
+        bool globalSearchEnabled = true;
         
         // Global search bar for all screens
         unique_ptr<GlobalSearchBar> globalSearchBar;
@@ -54,6 +56,9 @@ class BaseScreen {
         
         // Initialize search functionality (to be called by derived classes with movie data)
         void initializeGlobalSearch(const DLL<MovieDetail>& movies);
+
+        // Enable/disable search UI and behavior for specific screens
+        void setGlobalSearchEnabled(bool enabled);
         
         // Get selected movie index from global search
         int getSelectedMovieIndexFromSearch() const;

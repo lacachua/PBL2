@@ -11,23 +11,6 @@
 #include "UI/components/Admin/UIScrollableList.h"
 #include "UI/components/Button.h"
 
-/**
- * @brief Reusable User Selection Popup Component
- * 
- * Features:
- * - Search/filter users
- * - Multi-select with checkboxes
- * - Select all / Deselect all
- * - Scrollable list with view culling
- * - Configurable callbacks
- * 
- * Usage:
- *   UserSelectPopup popup(font);
- *   popup.setUsers(users);
- *   popup.setOnConfirm([](const std::set<int>& selected) { ... });
- *   popup.open();
- */
-
 struct UserInfo {
     std::string email;
     std::string name;

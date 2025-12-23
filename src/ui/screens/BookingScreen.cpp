@@ -1,5 +1,4 @@
 #include "UI/screens/BookingScreen.h"
-#include "repositories/MovieRepository.h"
 #include "UI/components/TicketBooking/VoucherDisplayState.h"
 #include <fstream>
 #include <sstream>
@@ -30,13 +29,11 @@ BookingScreen::BookingScreen(Font& f, const String& movieId)
       ticketRepo("../data/tickets.txt"),
       bookingService(make_unique<BookingService>())
 {
+	setGlobalSearchEnabled(false);
+
     // Khởi tạo seatSelection lần đầu
     seatSelection = make_unique<SeatSelection>(font);
     // loginPopup sẽ được tạo khi cần (nullptr ban đầu)
-    
-    // Initialize global search bar with movie data
-    MovieRepository repo("../data/movies.txt");
-    initializeGlobalSearch(repo.getAllMovies());
 }
 
 void BookingScreen::getUserInfo(const string& email, string& fullName, string& phone) {
@@ -51,11 +48,8 @@ void BookingScreen::getUserInfo(const string& email, string& fullName, string& p
 
 void BookingScreen::update(Vector2f mousePos, bool mousePressed, AppState& state) {
     BaseScreen::update(mousePos, mousePressed, state);
-    
-    // Don't process booking logic if search is active
-    if (globalSearchBar && globalSearchBar->isInputActive()) return;
 
-    BookingState prevState = currentState;
+
     header.update(mousePos, mousePressed, currentState);
 
     // ----- Bước 1: chọn suất chiếu -----
@@ -66,7 +60,7 @@ void BookingScreen::update(Vector2f mousePos, bool mousePressed, AppState& state
 
         // Khi user vừa chọn xong suất chiếu -> tạo lại SeatSelection mới
         if (currentState == BookingState::ghengoi) {
-            seatSelection = make_unique<SeatSelection>(font); // 💥 reset hoàn toàn
+            seatSelection = make_unique<SeatSelection>(font);
             seatSelection->setTicketPrice(showtimeSection.getSelectedPrice());
 
             string showtimeIdStr = showtimeSection.getSelectedShowtimeId().toAnsiString();

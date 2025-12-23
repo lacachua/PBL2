@@ -25,8 +25,6 @@ struct GeneratedShowtime {
 
 class ShowtimeGenerator {
 public:
-    // Generate showtimes for next N days starting from today
-    // Sử dụng thuật toán Round-Robin with Greedy Slot Filling
     static void generateShowtimesFile(const string& outputPath, int numDays = 30);
     
 private:

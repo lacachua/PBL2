@@ -141,6 +141,7 @@ bool Button::isPressed() const {
 }
 
 void Button::update(Vector2f mousePos, bool mousePressed, Color hover, Color normal) {
+    (void)mousePressed;
     hovered = box.getGlobalBounds().contains(mousePos);
 
     if (hovered) {

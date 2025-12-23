@@ -17,6 +17,7 @@ void TextButton::update(const Vector2f& mousePos) {
 }
 
 bool TextButton::isClicked(const Vector2f& mousePos, bool mousePressed) const {
+    (void)mousePos;
     return hovered && mousePressed;
 }
 

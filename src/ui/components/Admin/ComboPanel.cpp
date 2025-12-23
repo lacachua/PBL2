@@ -494,6 +494,7 @@ void ComboPanel::renderNotification(RenderWindow& window) {
 }
 
 void ComboPanel::handleEvent(const Event& event, const RenderWindow& window) {
+    (void)window;
     if (currentPopup != NONE) {
         // Tab navigation between input fields
         if (const auto* keyEvent = event.getIf<Event::KeyPressed>()) {

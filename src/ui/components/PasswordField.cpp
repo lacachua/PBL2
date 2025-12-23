@@ -126,6 +126,7 @@ void PasswordField::handleEvent(const sf::Event& event, sf::Vector2f mousePos, b
 }
 
 void PasswordField::update(sf::Vector2f mousePos) {
+    (void)mousePos;
     // Cursor blinking
     if (cursorClock_.getElapsedTime().asSeconds() >= 0.5f) {
         cursorVisible_ = !cursorVisible_;

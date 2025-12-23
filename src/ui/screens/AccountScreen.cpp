@@ -1,6 +1,4 @@
 ﻿#include "UI/screens/AccountScreen.h"
-#include "repositories/MovieRepository.h"
-#include <iostream>
 
 using namespace std;
 
@@ -11,13 +9,11 @@ AccountScreen::AccountScreen(Font& f, AuthService& auth)
       menuItem2(f, L"LỊCH SỬ ĐẶT VÉ", 300.f, 60.f, 18),
       menuItem3(f, L"VOUCHER CỦA TÔI", 300.f, 60.f, 18)
 {
+	setGlobalSearchEnabled(false);
+
     personalInfoView = make_unique<PersonalInfoView>(f, auth);
     purchaseHistoryView = make_unique<PurchaseHistoryView>(f);
     voucherListView = make_unique<VoucherListView>(f);
-    
-    // Initialize global search bar with movie data
-    MovieRepository repo("../data/movies.txt");
-    initializeGlobalSearch(repo.getAllMovies());
     
     mainCardBg.setFillColor(Color(0, 24, 48, 235));
     mainCardBg.setOutlineThickness(1.f);
@@ -55,7 +51,6 @@ void AccountScreen::setCurrentUser(const string& email) {
 
 void AccountScreen::updatePositions(Vector2u windowSize) {
     float windowW = static_cast<float>(windowSize.x);
-    float windowH = static_cast<float>(windowSize.y);
     
     float sidebarWidth = windowW * 0.22f;
     float sidebarX = 0.f;
@@ -90,14 +85,8 @@ void AccountScreen::updatePositions(Vector2u windowSize) {
 
 void AccountScreen::update(Vector2f mousePos, bool mousePressed, const Event* event, AppState& state) {
     BaseScreen::update(mousePos, mousePressed, state);
-    
-    // Handle events for global search bar
-    if (event) {
-        BaseScreen::handleEvent(*event);
-    }
-    
-    // Don't process account screen logic if search is active
-    if (globalSearchBar && globalSearchBar->isInputActive()) return;
+
+	(void)event;
     
     Color hoverColor(50, 70, 100, 230);
     Color activeColor = Color(65, 135, 220, 255);

@@ -11,12 +11,6 @@
 using namespace sf;
 using namespace std;
 
-/**
- * @brief Movie CRUD Panel với layout chính xác theo spec
- * 
- * Layout: (x=340, y=120), size=(1320x680)
- * Table columns: ID(100), Tên phim(400), Thời lượng(140), Ngày chiếu(180)
- */
 class MoviePanel {
 private:
     Font& font;

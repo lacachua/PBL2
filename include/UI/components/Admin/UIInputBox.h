@@ -6,23 +6,6 @@
 #include <memory>
 #include <cstdint>
 
-/**
- * @brief Reusable Input Box Component
- * 
- * Features:
- * - Self-managed focus handling
- * - Placeholder text support
- * - Visual feedback (border color on focus)
- * - Search icon option
- * - Debounced text change callback
- * 
- * Usage:
- *   UIInputBox searchBox(font);
- *   searchBox.setPlaceholder("Search users...");
- *   searchBox.setOnTextChange([](const std::string& text) { ... });
- *   searchBox.handleEvent(event);
- *   searchBox.render(target);
- */
 class UIInputBox {
 public:
     struct Config {

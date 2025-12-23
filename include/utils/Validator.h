@@ -1,5 +1,4 @@
-#ifndef VALIDATOR_H
-#define VALIDATOR_H
+#pragma once
 
 #include <string>
 #include <cctype>
@@ -26,5 +25,3 @@ public:
     // Full name validation - không chứa số
     static bool isValidFullName(const string& fullName);
 };
-
-#endif

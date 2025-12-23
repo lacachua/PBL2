@@ -9,14 +9,12 @@
 using namespace std;
 using namespace sf;
 
-// Forward declaration to avoid circular dependency
 struct MovieDetail {
     String movie_id;
     wstring title, age_rating, country, language, genres, duration_min, release_date, director, cast, synopsis, posterPath;
-    wstring status; // Optional (may be missing in movies.txt)
+    wstring status;
 };
 
-// Structure to hold search results with movie index
 struct SearchResult {
     string title;
     int movieIndex;
@@ -32,7 +30,7 @@ private:
     
 public:
     MovieSearchManager();
-    void loadMovies(const DLL<MovieDetail>& movieList);  // Thay đổi parameter
+    void loadMovies(const DLL<MovieDetail>& movieList);
     vector<SearchResult> searchMovies(const string& query, int limit = 5);
-    int getMovieCount() const;  // Đổi từ size() sang getSize()
+    int getMovieCount() const;
 };

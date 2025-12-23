@@ -45,7 +45,7 @@ BaseScreen::BaseScreen(Font& f)
 
 void BaseScreen::update(Vector2f mousePos, bool mousePressed, AppState& state) {
 	// Handle global search bar updates
-	if (globalSearchBar) {
+	if (globalSearchEnabled && globalSearchBar) {
 		globalSearchBar->update(mousePos, mousePressed);
 
 		// Check if a movie was selected from search
@@ -55,11 +55,11 @@ void BaseScreen::update(Vector2f mousePos, bool mousePressed, AppState& state) {
 			state = AppState::MOVIE_DETAILS;
 			return;
 		}
-	}
 
-	// Don't process other UI if search box is active
-	if (globalSearchBar && globalSearchBar->isInputActive()) {
-		return;
+		// Don't process other UI if search box is active
+		if (globalSearchBar->isInputActive()) {
+			return;
+		}
 	}
 
 	// Tự động cập nhật text nút đăng nhập dựa vào trạng thái
@@ -125,18 +125,19 @@ void BaseScreen::update(Vector2f mousePos, bool mousePressed, AppState& state) {
 }
 
 void BaseScreen::handleEvent(const Event& event) {
-	if (globalSearchBar) {
+	if (globalSearchEnabled && globalSearchBar) {
 		globalSearchBar->handleEvent(event);
 	}
 }
 
 void BaseScreen::draw(RenderWindow& window) {
 	window.draw(background_sprite);
-	window.draw(searchBar_sprite);
+	if (globalSearchEnabled) {
+		window.draw(searchBar_sprite);
+	}
 	for (int i = 0; i < buttons.getSize(); i++)
 		buttons[i].draw(window);
 
-	// NOTE: GlobalSearchBar and dropdown will be drawn in drawOverlay() to ensure they're on top
 }
 
 void BaseScreen::drawOverlay(RenderWindow& window) {
@@ -148,7 +149,7 @@ void BaseScreen::drawOverlay(RenderWindow& window) {
 	}
 
 	// Draw global search bar and suggestions on top of all content
-	if (globalSearchBar) {
+	if (globalSearchEnabled && globalSearchBar) {
 		globalSearchBar->draw(window);
 	}
 }
@@ -158,12 +159,27 @@ void BaseScreen::setAccountButtonText(const String& text) {
 }
 
 void BaseScreen::initializeGlobalSearch(const DLL<MovieDetail>& movies) {
+	if (!globalSearchEnabled) {
+		return;
+	}
 	if (!globalSearchManager) {
 		globalSearchManager = make_unique<MovieSearchManager>();
 	}
 	globalSearchManager->loadMovies(movies);
 	if (globalSearchBar) {
 		globalSearchBar->setSearchManager(globalSearchManager.get());
+	}
+}
+
+void BaseScreen::setGlobalSearchEnabled(bool enabled) {
+	globalSearchEnabled = enabled;
+	selectedMovieIndexFromSearch = -1;
+
+	if (!globalSearchEnabled) {
+		if (globalSearchBar) {
+			globalSearchBar->clear();
+		}
+		globalSearchManager.reset();
 	}
 }
 

@@ -5,12 +5,6 @@
 
 using namespace sf;
 
-static Text makeText(const Font& font, const String& str, unsigned size) {
-    Text t(font, str, size);
-    t.setFillColor(Color::Black);
-    return t;
-}
-
 LoginScreen::LoginScreen(const Font& font, AuthService& authRef)
     : auth(authRef),
       overlay({0.f, 0.f}),
@@ -79,6 +73,8 @@ wstring LoginScreen::bullets(size_t n) {
 }
 
 void LoginScreen::handleEvent(const Event& event, AppState& state, string& user, string& email, bool& successFlag) {
+    (void)user;
+    (void)email;
     if (const auto* keyEvent = event.getIf<Event::KeyPressed>()) {
         auto code = keyEvent->code;
         if (code == Keyboard::Key::Escape) {

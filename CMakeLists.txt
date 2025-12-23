@@ -33,6 +33,13 @@ target_include_directories(app PRIVATE
 # Link với SFML 3
 target_link_libraries(app PRIVATE SFML::Graphics SFML::Window SFML::Network SFML::System)
 
+# Warnings (helps spot unused code and risky patterns)
+if(MSVC)
+    target_compile_options(app PRIVATE /W4)
+else()
+    target_compile_options(app PRIVATE -Wall -Wextra -Wpedantic)
+endif()
+
 # Fix conflict cho Windows
 if(WIN32)
     target_compile_definitions(app PRIVATE NOMINMAX WIN32_LEAN_AND_MEAN)

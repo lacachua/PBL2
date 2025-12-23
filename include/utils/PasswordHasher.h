@@ -1,6 +1,4 @@
-#ifndef PASSWORDHASHER_H
-#define PASSWORDHASHER_H
-
+#pragma once
 #include <string>
 #include <sstream>
 #include <iomanip>
@@ -8,8 +6,6 @@ using namespace std;
 
 class PasswordHasher {
 private:
-    // Simple hash function (for educational purposes)
-    // In production, use bcrypt or Argon2
     static unsigned long djb2Hash(const string& str);
     
 public:
@@ -24,5 +20,3 @@ public:
     
     static string getStrengthLabel(int score);
 };
-
-#endif

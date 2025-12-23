@@ -14,19 +14,6 @@
 using namespace sf;
 using namespace std;
 
-/**
- * @brief Voucher Management Panel for Admin
- * 
- * Features:
- * - Hiển thị danh sách voucher definitions
- * - Thêm/Sửa/Xóa voucher definition
- * - Cấp voucher đồng loạt cho tất cả active users
- * - Xem danh sách users đang có voucher
- * - Thêm/Xóa voucher cho từng user cụ thể
- * 
- * Layout:
- * [Left Panel - Voucher Definitions] [Right Panel - User Vouchers]
- */
 class VoucherPanel {
 public:
     VoucherPanel(Font& font, float width, float height);

@@ -9,9 +9,6 @@
 using namespace sf;
 using namespace std;
 
-/**
- * @brief TextBox component for input fields in popups
- */
 class TextBox {
 private:
     Font& font;

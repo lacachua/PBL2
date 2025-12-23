@@ -5,7 +5,6 @@
 #include <algorithm>
 #include <chrono>
 #include <iomanip>
-#include <iostream>
 #include <map>
 
 using namespace std;
@@ -513,8 +512,6 @@ void VoucherService::handleUserRegistered(const UserRegisteredEvent& event) {
     for (const auto& config : autoProvisionConfigs) {
         if (config.enabled) {
             giveVoucherToUser(event.email, config.voucherCode, config.daysToExpire, config.quantity);
-            cout << "[VoucherService] Auto-provisioned voucher " << config.voucherCode 
-                 << " to new user: " << event.email << endl;
         }
     }
 }

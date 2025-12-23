@@ -3,7 +3,6 @@
 #include <sstream>
 #include <iomanip>
 #include <algorithm>
-#include <iostream>
 
 // Static members initialization
 deque<MovieInfo> ShowtimeGenerator::movieQueue;
@@ -15,7 +14,6 @@ vector<MovieInfo> ShowtimeGenerator::loadMovies(const string& moviesPath) {
     vector<MovieInfo> movies;
     ifstream file(moviesPath);
     if (!file.is_open()) {
-        cerr << "Cannot open movies file: " << moviesPath << endl;
         return movies;
     }
     
@@ -27,10 +25,6 @@ vector<MovieInfo> ShowtimeGenerator::loadMovies(const string& moviesPath) {
         string token;
         MovieInfo movie;
 
-        // Legacy:
-        // movie_id|title|age_rating|country|language|genres|duration_min|release_date|director|cast|synopsis|poster_path
-        // New:
-        // movie_id|title|age_rating|country|language|genres|duration_min|release_date|end_date|director|cast|synopsis|poster_path|status
         getline(ss, movie.id, '|');        // 0: movie_id
         getline(ss, movie.title, '|');     // 1: title
         getline(ss, token, '|');           // 2: age_rating (skip)
@@ -64,7 +58,6 @@ vector<string> ShowtimeGenerator::loadRooms(const string& roomsPath) {
     vector<string> rooms;
     ifstream file(roomsPath);
     if (!file.is_open()) {
-        cerr << "Cannot open rooms file: " << roomsPath << endl;
         return rooms;
     }
     
@@ -104,6 +97,7 @@ bool ShowtimeGenerator::hasConflict(const string& movieId, int startMinute, int 
 }
 
 MovieInfo ShowtimeGenerator::selectNextMovie(int startMinute, int endMinute, const string& roomId) {
+    (void)endMinute;
     if (movieQueue.empty()) {
         return {"", "", 120};
     }
@@ -154,11 +148,9 @@ void ShowtimeGenerator::generateShowtimesFile(const string& outputPath, int numD
     vector<string> rooms = loadRooms("../data/rooms.txt");
     
     if (movies.empty()) {
-        cerr << "No movies found!" << endl;
         return;
     }
     if (rooms.empty()) {
-        cerr << "No rooms found!" << endl;
         return;
     }
     
@@ -173,7 +165,6 @@ void ShowtimeGenerator::generateShowtimesFile(const string& outputPath, int numD
     
     ofstream file(outputPath);
     if (!file.is_open()) {
-        cerr << "Cannot write to file: " << outputPath << endl;
         return;
     }
     
@@ -249,7 +240,6 @@ void ShowtimeGenerator::generateShowtimesFile(const string& outputPath, int numD
     }
     
     file.close();
-    cout << "Generated " << globalCounter << " showtimes for " << numDays << " days." << endl;
 }
 
 // ==================== UTILITIES ====================

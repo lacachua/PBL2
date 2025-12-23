@@ -8,117 +8,63 @@
 #include "services/VoucherManager.h"
 #include "repositories/UserRepository.h"
 
-/**
- * @brief Data Transfer Object for booking information
- * 
- * Follows Single Responsibility: Only holds booking data
- */
 struct BookingInfo {
     // Customer info
-    std::string customerEmail;
-    std::string customerName;
-    std::string customerPhone;
+    string customerEmail;
+    string customerName;
+    string customerPhone;
     
     // Showtime info
-    std::string showtimeId;
-    std::string movieId;
-    std::string movieName;
-    std::string roomId;
-    std::string roomName;
-    std::string date;
-    std::string time;
+    string showtimeId;
+    string movieId;
+    string movieName;
+    string roomId;
+    string roomName;
+    string date;
+    string time;
     int ticketPrice = 0;
     
     // Seats
-    std::vector<std::string> selectedSeats;
-    std::string seatsDisplay;
+    vector<string> selectedSeats;
+    string seatsDisplay;
     int totalSeats = 0;
     
     // Combos
     struct ComboItem {
-        std::string comboId;
-        std::string comboName;
+        string comboId;
+        string comboName;
         int price = 0;
         int quantity = 0;
     };
-    std::vector<ComboItem> selectedCombos;
+    vector<ComboItem> selectedCombos;
     int comboTotalPrice = 0;
     
     // Voucher & Total
-    std::string voucherCode;
+    string voucherCode;
     int voucherDiscount = 0;
     int totalPrice = 0;
 };
 
-/**
- * @brief Service class handling all booking business logic
- * 
- * Follows:
- * - Single Responsibility: Only handles booking operations
- * - Dependency Inversion: Depends on abstractions (repositories)
- * - Open/Closed: Can extend without modifying
- */
 class BookingService {
 private:
-    std::unique_ptr<UserRepository> userRepository;
+    unique_ptr<UserRepository> userRepository;
     VoucherManager voucherManager;
     TicketRepository ticketRepository;
     ShowtimeSeatRepository seatRepository;
 
 public:
-    BookingService(const std::string& usersPath = "../data/users.txt",
-                   const std::string& ticketsPath = "../data/tickets.txt",
-                   const std::string& seatsPath = "../data/RoomStatusAtShowtime.txt");
+    BookingService(const string& usersPath = "../data/users.txt",
+                   const string& ticketsPath = "../data/tickets.txt",
+                   const string& seatsPath = "../data/RoomStatusAtShowtime.txt");
     
-    /**
-     * @brief Get user info by email
-     * @param email User's email
-     * @param fullName Output: user's full name
-     * @param phone Output: user's phone
-     */
-    void getUserInfo(const std::string& email, std::string& fullName, std::string& phone);
-    
-    /**
-     * @brief Apply voucher to booking
-     * @param email User's email
-     * @param voucherCode Voucher code to apply
-     * @param subtotal Current subtotal
-     * @param commit If true, mark voucher as used
-     * @return Discount amount (0 if invalid)
-     */
-    double applyVoucher(const std::string& email, const std::string& voucherCode, 
+    void getUserInfo(const string& email, string& fullName, string& phone);
+    double applyVoucher(const string& email, const string& voucherCode, 
                         int subtotal, bool commit = false);
-    
-    /**
-     * @brief Get vouchers available for user
-     */
-    std::vector<VoucherDisplay> getUserVouchers(const std::string& email);
-    
-    /**
-     * @brief Create and save ticket
-     * @param info Booking information
-     * @return Created ticket
-     */
+    vector<VoucherDisplay> getUserVouchers(const string& email);
     Ticket createTicket(const BookingInfo& info);
-    
-    /**
-     * @brief Save booked seats to repository
-     */
-    void saveBookedSeats(const std::string& showtimeId, const std::string& roomId,
-                         const std::vector<std::string>& seats);
-    
-    /**
-     * @brief Get booked seats for a showtime
-     */
-    DLL<std::string> getBookedSeats(const std::string& showtimeId, const std::string& roomId);
-    
-    /**
-     * @brief Calculate total price with discount
-     */
+    void saveBookedSeats(const string& showtimeId, const string& roomId,
+                         const vector<string>& seats);
+    DLL<string> getBookedSeats(const string& showtimeId, const string& roomId);
     int calculateTotal(int subtotal, int voucherDiscount);
-    
-    /**
-     * @brief Format combo list for storage
-     */
-    static std::string formatCombosForStorage(const std::vector<BookingInfo::ComboItem>& combos);
+    static string formatCombosForStorage(const vector<BookingInfo::ComboItem>& combos);
 };

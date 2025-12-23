@@ -58,6 +58,7 @@ namespace {
 SummaryPanel::SummaryPanel(Font& f) : font(f) {}
 
 void SummaryPanel::draw(RenderWindow& window, const String& movieName, const String& room, const String& date, const String& time, int ticketPrice, bool hasSelectedShowtime) {
+    (void)ticketPrice;
     float boxX = PanelX;
     float boxY = PanelY;
     float yPos = boxY + 20.f;

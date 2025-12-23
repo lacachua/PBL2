@@ -1,5 +1,4 @@
 #include "UI/screens/AdminScreen.h"
-#include <iostream>
 
 AdminScreen::AdminScreen(Font& font, RenderWindow& win, AppState& state, AuthService* auth)
     : BaseScreen(font), window(win), appState(state), authService(auth), currentPanelState(AppState::ADMIN_DASHBOARD) {
@@ -95,7 +94,6 @@ void AdminScreen::switchPanel(AppState newState) {
 }
 
 void AdminScreen::handleAdminLogout() {
-    cout << "[AdminScreen] Logging out...\n";
     BaseScreen::handleLogout();
 }
 

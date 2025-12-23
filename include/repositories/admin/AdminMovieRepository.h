@@ -1,5 +1,4 @@
-#ifndef ADMIN_MOVIE_REPOSITORY_H
-#define ADMIN_MOVIE_REPOSITORY_H
+#pragma once
 
 #include <string>
 #include <vector>
@@ -8,12 +7,6 @@
 
 using namespace std;
 
-/**
- * @brief Repository để xử lý file movies.txt cho Admin Panel
- * 
- * Note: Đây là tầng data-access (repositories). UI panel chỉ nên gọi service,
- * và service gọi repository này.
- */
 class AdminMovieRepository {
 private:
     string filePath;
@@ -36,5 +29,3 @@ public:
     vector<string> getRecord(int index) const;
     int getRecordCount() const;
 };
-
-#endif

@@ -192,6 +192,7 @@ void HeaderBar::draw(RenderWindow& window, BookingState currentState) {
 }
 
 void HeaderBar::update(Vector2f mousePos, bool mousePressed, BookingState& currentState) {
+    (void)currentState;
     back_button.update(mousePos, mousePressed, Color::Red, Color::White);
     continue_button.update(mousePos, mousePressed, Color(71, 246, 74), Color::White);
 }

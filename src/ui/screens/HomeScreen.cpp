@@ -51,7 +51,6 @@ void HomeScreen::draw(RenderWindow& window) {
     
     slider->draw(window);
     
-    // NOTE: GlobalSearchBar is drawn in drawOverlay() to ensure it's on top
     
     if (isUserLoggedIn() && showDropdown) {
         window.draw(dropdownBox);
@@ -66,7 +65,6 @@ void HomeScreen::drawHeaderOnly(RenderWindow& window) {
     for (int i = 0; i < buttons.getSize(); i++)
         buttons[i].draw(window);
     
-    // NOTE: GlobalSearchBar is drawn in drawOverlay() to ensure it's on top
     
     if (isUserLoggedIn() && showDropdown) {
         window.draw(dropdownBox);

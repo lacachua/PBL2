@@ -1266,12 +1266,8 @@ void VoucherPanel::openAddVoucherPopup() {
     
     inputBoxes.clear();
     inputLabels.clear();
-    
-    float startY = 70.f;
-    float labelX = 24.f;
-    float inputX = 130.f;
+
     float inputWidth = 360.f;
-    float rowHeight = 55.f;
     
     vector<string> labels = {"Mã voucher:", "Loại (1/2):", "Giá trị:", "HĐ tối thiểu:", "Mô tả:"};
     

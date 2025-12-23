@@ -11,12 +11,6 @@
 using namespace sf;
 using namespace std;
 
-/**
- * @brief User Management Panel
- * 
- * Layout: (x=340, y=120), size=(1320x680)
- * Table columns: Email(250), Tên(250), SĐT(150), Vai trò(150), Trạng thái(150)
- */
 class UserPanel {
 private:
     Font& font;

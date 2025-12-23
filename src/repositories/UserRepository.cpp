@@ -7,7 +7,6 @@
 
 UserRepository::UserRepository(const string& filepath) 
     : filePath(filepath) {
-    // Ensure file exists
     namespace fs = filesystem;
     if (!fs::exists(filepath)) {
         ofstream file(filepath);
@@ -174,15 +173,13 @@ bool UserRepository::deleteUser(const string& email) {
 
 vector<User> UserRepository::getAllUsers() const {
     vector<User> result;
-    
-    // Use forEach to iterate through all users
-    // Need to cast away const to use forEach (HashTable issue)
+
     auto& mutableUsers = const_cast<HashTable<string, User>&>(users);
-    
-    mutableUsers.forEach([&result](const string& key, User& user) {
+
+    mutableUsers.forEach([&result](const string&, User& user) {
         result.push_back(user);
     });
-    
+
     return result;
 }
 

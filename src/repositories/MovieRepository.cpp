@@ -20,11 +20,6 @@ void MovieRepository::loadMovies() {
         while (std::getline(ss, token, '|')) {
             cols.push_back(token);
         }
-
-        // Supported formats:
-        // - 12 cols: movie_id|title|age_rating|country|language|genres|duration_min|release_date|director|cast|synopsis|poster_path
-        // - 13 cols: ...|poster_path|status
-        // - 14 cols: movie_id|title|age_rating|country|language|genres|duration_min|release_date|end_date|director|cast|synopsis|poster_path|status
         if (cols.size() < 12) continue;
 
         MovieDetail m;

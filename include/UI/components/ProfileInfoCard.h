@@ -6,11 +6,6 @@
 #include "UI/components/Button.h"
 #include "UI/components/PasswordField.h"
 
-/**
- * Reusable Profile Info Card Component
- * Contains: Personal Info fields + Password Change fields
- * Can be used in both User Account Screen and Admin Profile Panel
- */
 class ProfileInfoCard {
 public:
     // Configuration struct for flexible customization

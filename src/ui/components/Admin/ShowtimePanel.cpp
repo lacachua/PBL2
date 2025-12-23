@@ -5,7 +5,6 @@
 #include <algorithm>
 #include <cctype>
 #include <iomanip>
-#include <iostream>
 #include <set>
 #include <sstream>
 
@@ -286,7 +285,7 @@ void ShowtimePanel::loadMovies() {
     TextTableRepository repo;
     const vector<string> lines = repo.readDataLinesSkipHeader(moviesFile);
     if (lines.empty()) {
-        cerr << "[ShowtimePanel] Cannot open movies file: " << moviesFile << "\n";
+        showNotification("Không thể mở file: " + moviesFile);
         return;
     }
 
@@ -308,7 +307,7 @@ void ShowtimePanel::loadRooms() {
     TextTableRepository repo;
     const vector<string> lines = repo.readDataLinesSkipHeader(roomsFile);
     if (lines.empty()) {
-        cerr << "[ShowtimePanel] Cannot open rooms file: " << roomsFile << "\n";
+        showNotification("Không thể mở file: " + roomsFile);
         return;
     }
 
@@ -344,7 +343,7 @@ void ShowtimePanel::loadShowtimes() {
     TextTableRepository repo;
     const vector<string> lines = repo.readDataLinesSkipHeader(showtimeFile);
     if (lines.empty()) {
-        cerr << "[ShowtimePanel] Cannot open showtimes file: " << showtimeFile << "\n";
+        showNotification("Không thể mở file: " + showtimeFile);
         return;
     }
 

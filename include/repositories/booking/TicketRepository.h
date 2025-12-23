@@ -1,9 +1,7 @@
 #pragma once
 
 #include <string>
-
 #include <SFML/System/String.hpp>
-
 using namespace std;
 using namespace sf;
 

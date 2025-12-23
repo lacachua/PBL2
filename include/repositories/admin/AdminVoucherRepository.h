@@ -3,39 +3,31 @@
 #include <string>
 #include <vector>
 #include <unordered_map>
+#include <utility>
 #include <functional>
 
-/**
- * @brief Định nghĩa voucher (loại voucher có thể tạo)
- */
 struct VoucherDefinition {
     std::string code;           // Mã voucher (unique key)
-    int type = 1;               // 1: fixed amount, 2: percentage
-    double value = 0.0;         // Giá trị giảm (VND hoặc %)
-    double minBill = 0.0;       // Hóa đơn tối thiểu để áp dụng
+    int type = 1;          // 1: fixed amount, 2: percentage
+    double value = 0.0;    // Giá trị giảm (VND hoặc %)
+    double minBill = 0.0;  // Hóa đơn tối thiểu để áp dụng
     std::string description;    // Mô tả voucher
 
     VoucherDefinition() = default;
     VoucherDefinition(const std::string& c, int t, double v, double m, const std::string& d);
 };
 
-/**
- * @brief Voucher đã được cấp cho user
- */
 struct UserVoucherEntry {
     std::string email;          // Email người nhận
     std::string code;           // Mã voucher
-    int status = 1;             // 1: usable, 0: used/expired
+    int status = 1;        // 1: usable, 0: used/expired
     std::string expiryDate;     // Ngày hết hạn (YYYYMMDD)
-    int quantity = 1;           // Số lượng còn lại
+    int quantity = 1;      // Số lượng còn lại
 
     UserVoucherEntry() = default;
     UserVoucherEntry(const std::string& e, const std::string& c, int s, const std::string& exp, int qty);
 };
 
-/**
- * @brief Thông tin user đang sở hữu voucher (để hiển thị trong admin)
- */
 struct VoucherUserInfo {
     std::string email;
     std::string fullName;
@@ -44,9 +36,6 @@ struct VoucherUserInfo {
     int status;
 };
 
-/**
- * @brief Repository quản lý voucher cho Admin Panel
- */
 class AdminVoucherRepository {
 public:
     AdminVoucherRepository(

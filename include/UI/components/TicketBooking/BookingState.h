@@ -51,10 +51,7 @@ struct BookingData {
     std::string ticketId;
     int totalPrice = 0;
     
-    // Helper method to format combo display with line breaks
     std::string getFormattedComboDisplay(int maxPerLine = 2) const;
-    
-    // Helper method for purchase history (max 2 combos, then "...")
     std::string getComboDisplayForHistory() const;
     
     void clear();

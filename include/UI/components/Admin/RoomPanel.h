@@ -1,6 +1,4 @@
-#ifndef ROOM_PANEL_H
-#define ROOM_PANEL_H
-
+#pragma once
 #include <SFML/Graphics.hpp>
 #include <string>
 #include <vector>
@@ -122,5 +120,3 @@ public:
     void update(Vector2f mousePos, bool mousePressed);
     void render(RenderWindow& window);
 };
-
-#endif

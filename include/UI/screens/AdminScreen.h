@@ -1,5 +1,4 @@
-#ifndef ADMIN_SCREEN_H
-#define ADMIN_SCREEN_H
+#pragma once
 
 #include "UI/screens/BaseScreen.h"
 #include "UI/components/Admin/AdminSidebar.h"
@@ -15,12 +14,6 @@
 #include "services/AuthService.h"
 #include <memory>
 
-/**
- * @brief Main Admin Screen với Sidebar + Dynamic Panel
- * 
- * Layout:
- * [Sidebar 260px] [Main Panel - remaining width]
- */
 class AdminScreen : public BaseScreen {
 private:
     RenderWindow& window;
@@ -53,5 +46,3 @@ public:
     void update(Vector2f mousePos, bool mousePressed, AppState& state) override;
     void render();
 };
-
-#endif

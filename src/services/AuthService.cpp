@@ -1,5 +1,4 @@
 #include "services/AuthService.h"
-#include <iostream>
 
 using namespace std;
 
@@ -174,12 +173,11 @@ void AuthService::ensureDefaultAdmin() {
     if (!repository->exists("admin@cinexine.vn")) {
         registerUser(
             "admin@cinexine.vn",
-            "admin123",  // CHANGE THIS IN PRODUCTION!
+            "admin123",
             "Nguyễn Văn Quản Trị",
             "01/01/1990",
             "0900000000",
             AppRole::Admin
         );
-        cout << "[AuthService] Created default admin: admin@cinexine.vn / admin123\n";
     }
 }

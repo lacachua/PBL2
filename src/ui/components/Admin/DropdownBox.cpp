@@ -230,8 +230,6 @@ void DropdownBox::handleEvent(const Event& event, const Vector2f& mousePos) {
 void DropdownBox::update() {
     // Update hover effects for dropdown options
     if (isOpen) {
-        Vector2i mousePixelPos = Mouse::getPosition();
-        // Note: This needs window reference to be accurate, simplified for now
     }
 }
 

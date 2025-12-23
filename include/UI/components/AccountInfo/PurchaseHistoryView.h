@@ -22,9 +22,9 @@ private:
     int itemsPerPage = 5;
     RectangleShape prevButton, nextButton;
     Text prevButtonText, nextButtonText, pageInfoText;
-    std::filesystem::file_time_type lastTicketsWriteTime{};
+    filesystem::file_time_type lastTicketsWriteTime{};
     bool hasLoadedTickets = false;
-     const std::filesystem::path ticketsFilePath = "../data/tickets.txt";
+     const filesystem::path ticketsFilePath = "../data/tickets.txt";
     
 public:
     PurchaseHistoryView(const Font& f);

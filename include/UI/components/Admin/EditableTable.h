@@ -1,5 +1,4 @@
-#ifndef EDITABLE_TABLE_H
-#define EDITABLE_TABLE_H
+#pragma once
 
 #include <SFML/Graphics.hpp>
 #include <vector>
@@ -10,16 +9,6 @@
 using namespace sf;
 using namespace std;
 
-/**
- * @brief Inline-editable table component (SFML 3 compatible)
- * 
- * Features:
- * - Click cell to edit
- * - Scroll support
- * - Row selection
- * - Blue theme matching reference UI
- * - Text created dynamically in render (no Text storage)
- */
 class EditableTable {
 public:
     struct Cell {
@@ -99,5 +88,3 @@ public:
     void updateRow(int row, const vector<string>& newData);
     void deleteRow(int row);
 };
-
-#endif

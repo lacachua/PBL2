@@ -5,20 +5,6 @@
 #include <functional>
 #include <memory>
 
-/**
- * @brief Reusable Checkbox Item Component
- * 
- * Features:
- * - Self-managed checked/unchecked state
- * - Hover and click visual feedback
- * - Customizable colors and sizes
- * - Callback on state change
- * 
- * Usage:
- *   UICheckboxItem checkbox(font, "Option 1", 200.f);
- *   checkbox.setPosition({100, 100});
- *   checkbox.setOnToggle([](bool checked) { ... });
- */
 class UICheckboxItem {
 public:
     struct Config {

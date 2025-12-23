@@ -6,23 +6,6 @@
 #include <memory>
 #include <string>
 
-/**
- * @brief Reusable Scrollable List Component with View Culling
- * 
- * Features:
- * - sf::View-based clipping for proper scroll behavior
- * - View culling: only renders visible items
- * - Customizable scrollbar
- * - Mouse wheel and drag scroll support
- * - Generic item rendering via callback
- * 
- * Usage:
- *   UIScrollableList<User> list(bounds);
- *   list.setItems(users);
- *   list.setItemHeight(36.f);
- *   list.setRenderItem([](User& u, sf::Vector2f pos, sf::RenderTarget& target) { ... });
- *   list.render(target);
- */
 template<typename T>
 class UIScrollableList {
 public:

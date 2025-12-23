@@ -171,6 +171,7 @@ pair<int, int> EditableTable::getCellAtPosition(Vector2f mousePos) const {
 }
 
 void EditableTable::handleEvent(const Event& event, const RenderWindow& window) {
+    (void)window;
     // Handle keyboard input for editing
     if (isEditing) {
         if (const auto* textEvent = event.getIf<Event::TextEntered>()) {

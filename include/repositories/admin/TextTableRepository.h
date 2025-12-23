@@ -2,22 +2,16 @@
 
 #include <string>
 #include <vector>
+using namespace std;
 
 class TextTableRepository {
 public:
-    // Reads all non-empty lines in file. If file can't be opened, returns empty.
-    std::vector<std::string> readAllLines(const std::string& path) const;
-
-    // Reads data lines (skips the first line/header). If file has < 2 lines, returns empty.
-    std::vector<std::string> readDataLinesSkipHeader(const std::string& path) const;
-
-    // Truncates file and writes optional header + data lines.
-    void writeDataLines(const std::string& path,
-                        const std::string& headerLine,
-                        const std::vector<std::string>& dataLines) const;
-
-    // Appends data lines. If file doesn't exist or is empty and headerLine != "", writes header first.
-    void appendDataLines(const std::string& path,
-                         const std::string& headerLine,
-                         const std::vector<std::string>& dataLines) const;
+    vector<string> readAllLines(const string& path) const;
+    vector<string> readDataLinesSkipHeader(const string& path) const;
+    void writeDataLines(const string& path,
+                        const string& headerLine,
+                        const vector<string>& dataLines) const;
+    void appendDataLines(const string& path,
+                         const string& headerLine,
+                         const vector<string>& dataLines) const;
 };

@@ -23,21 +23,14 @@ struct MovieData {
     int duration;  // phút
     string release_date; // start_date (dd/mm/yyyy)
     string end_date;     // dd/mm/yyyy
-    string status;       // optional persisted, but generator may derive
+    string status;
 };
 
 class ShowtimeCleanupService {
 public:
-    // Main function: Clean expired showtimes and add new ones
     static void maintainShowtimes(const string& showtimesPath, int daysToGenerate = 7);
-    
-    // Remove showtimes that have passed current date/time
     static void removeExpiredShowtimes(const string& showtimesPath);
-    
-    // Add new showtimes for upcoming days if needed (Round-Robin algorithm)
     static void addNewShowtimes(const string& showtimesPath, int daysToGenerate);
-    
-    // Force regenerate all showtimes from scratch using Round-Robin
     static void forceRegenerate(const string& showtimesPath, int daysToGenerate = 30);
     
 private:
@@ -90,5 +83,5 @@ private:
     // ===== SAFETY / STATUS HELPERS =====
     static bool isReleaseOnOrBeforeShowDate(const string& releaseDateDdMmYyyy, const string& showDateYyyyMmDd);
     static int statusPriority(const string& status);
-    static std::unordered_set<string> loadLockedShowtimeIdsFromTickets(const string& ticketsPath, const string& todayStr);
+    static unordered_set<string> loadLockedShowtimeIdsFromTickets(const string& ticketsPath, const string& todayStr);
 };

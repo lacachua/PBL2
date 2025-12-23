@@ -2,7 +2,6 @@
 
 #include "models/User.h"
 #include "data-structures/HashTable.h"
-
 #include <string>
 #include <vector>
 

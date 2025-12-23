@@ -2,7 +2,7 @@
 
 #include "UI/components/PosterSlider/IPosterProvider.h"
 #include "data-structures/DLL.h"
-#include "services/MovieSearchManager.h" // MovieDetail
+#include "services/MovieSearchManager.h"
 
 #include <SFML/System/String.hpp>
 
@@ -10,19 +10,17 @@
 
 class MovieRepository : public IPosterProvider {
 private:
-    sf::String filePath;
+    String filePath;
     DLL<MovieDetail> movies;
     int selectedIndex = -1;
 
     void loadMovies();
 
 public:
-    MovieRepository(const sf::String& path);
+    MovieRepository(const String& path);
+    String getMovieTitleById(const String& movieId) const;
 
-    // Returns movieId if not found
-    sf::String getMovieTitleById(const sf::String& movieId) const;
-
-    DLL<sf::String> getPosterPaths() override;
+    DLL<String> getPosterPaths() override;
 
     void setSelectedIndex(int index);
     int getSelectedIndex() const;

@@ -5,10 +5,8 @@
 #include <algorithm>
 #include <unordered_set>
 #include <unordered_map>
-#include <iostream>
 
 namespace {
-// tickets.txt has: ticket_id|showtime_id|title|date|time|...
 bool parseTicketLine(const std::string& line, std::string& outShowtimeId, std::string& outDateYyyyMmDd) {
     if (line.empty()) return false;
     std::stringstream ss(line);
@@ -22,13 +20,10 @@ bool parseTicketLine(const std::string& line, std::string& outShowtimeId, std::s
 }
 }
 
-// Static members initialization
 deque<MovieData> ShowtimeCleanupService::movieQueue;
 vector<ShowtimeData> ShowtimeCleanupService::tempShowtimes;
 
 void ShowtimeCleanupService::maintainShowtimes(const string& showtimesPath, int daysToGenerate) {
-    // Hard requirement: only keep showtimes for today and the next 4 days.
-    // Also remove any expired showtimes (past time).
     const int windowDays = max(1, min(daysToGenerate, 5));
 
     time_t now = time(nullptr);
@@ -40,10 +35,8 @@ void ShowtimeCleanupService::maintainShowtimes(const string& showtimesPath, int 
     tm* endTm = localtime(&endTime);
     const string endStr = formatDate(endTm);
 
-    // Load locked showtime IDs (future tickets) so we never delete/modify booked future showtimes.
     const unordered_set<string> lockedShowtimeIds = loadLockedShowtimeIdsFromTickets("../data/tickets.txt", todayStr);
 
-    // Load valid movies once; used to filter out invalid movie IDs from existing showtimes
     vector<MovieData> movies = loadMovies("../data/movies.txt");
     unordered_set<string> validMovieIds;
     validMovieIds.reserve(movies.size());
@@ -354,8 +347,6 @@ bool ShowtimeCleanupService::isReleaseOnOrBeforeShowDate(const string& releaseDa
 }
 
 void ShowtimeCleanupService::forceRegenerate(const string& showtimesPath, int daysToGenerate) {
-    cout << "Force regenerating all showtimes using Round-Robin algorithm..." << endl;
-    
     // Xóa cache cũ của RoomPanel để tránh conflict
     remove("../data/room_schedule_cache.txt");
     
@@ -364,15 +355,11 @@ void ShowtimeCleanupService::forceRegenerate(const string& showtimesPath, int da
     vector<string> rooms = loadRooms("../data/rooms.txt");
     
     if (movies.empty()) {
-        cerr << "No movies found!" << endl;
         return;
     }
     if (rooms.empty()) {
-        cerr << "No rooms found!" << endl;
         return;
     }
-    
-    cout << "Loaded " << movies.size() << " movies and " << rooms.size() << " rooms." << endl;
     
     // Initialize Round-Robin queue
     movieQueue.clear();
@@ -459,8 +446,6 @@ void ShowtimeCleanupService::forceRegenerate(const string& showtimesPath, int da
     
     // Save all showtimes
     saveShowtimes(showtimesPath, allShowtimes);
-    
-    cout << "Generated " << globalCounter << " showtimes for " << daysToGenerate << " days." << endl;
 }
 
 void ShowtimeCleanupService::removeExpiredShowtimes(const string& showtimesPath) {
@@ -482,7 +467,6 @@ vector<MovieData> ShowtimeCleanupService::loadMovies(const string& moviesPath) {
     vector<MovieData> movies;
     ifstream file(moviesPath);
     if (!file.is_open()) {
-        cerr << "Cannot open movies file: " << moviesPath << endl;
         return movies;
     }
     
@@ -550,7 +534,6 @@ vector<string> ShowtimeCleanupService::loadRooms(const string& roomsPath) {
     vector<string> rooms;
     ifstream file(roomsPath);
     if (!file.is_open()) {
-        cerr << "Cannot open rooms file: " << roomsPath << endl;
         return rooms;
     }
     
@@ -694,7 +677,6 @@ void ShowtimeCleanupService::addNewShowtimes(const string& showtimesPath, int da
         vector<string> rooms = loadRooms("../data/rooms.txt");
         
         if (movies.empty() || rooms.empty()) {
-            cerr << "Cannot load movies or rooms for showtime generation" << endl;
             return;
         }
         
@@ -779,7 +761,6 @@ void ShowtimeCleanupService::addNewShowtimes(const string& showtimesPath, int da
         existingShowtimes.insert(existingShowtimes.end(), newShowtimes.begin(), newShowtimes.end());
         saveShowtimes(showtimesPath, existingShowtimes);
         
-        cout << "Generated " << newShowtimes.size() << " new showtimes using Round-Robin algorithm." << endl;
     }
 }
 

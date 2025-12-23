@@ -3,10 +3,6 @@
 #include <string>
 #include <memory>
 
-/**
- * Reusable password input field with show/hide toggle
- * Can be used across Login, Register, PersonalInfoView, AdminProfilePanel
- */
 class PasswordField {
 public:
     PasswordField(const sf::Font& font, float width = 280.f, float height = 42.f);

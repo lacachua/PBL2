@@ -4,7 +4,6 @@
 #include <algorithm>
 #include <array>
 #include <iomanip>
-#include <iostream>
 #include <sstream>
 
 using sf::Event;
@@ -50,7 +49,6 @@ void UserPanel::setupUI() {
     setupButton(btnRefresh, "", Color(20, 118, 172), Color(30, 138, 192), {48.f, 48.f});
 
     if (!reloadTexture.loadFromFile("../assets/elements/reload.png")) {
-        std::cerr << "[UserPanel] Warning: Failed to load reload icon.\n";
         const std::string fallback = "Refresh";
         btnRefresh.label = make_unique<Text>(font, sf::String::fromUtf8(fallback.begin(), fallback.end()), 14);
         btnRefresh.label->setFillColor(Color::White);
@@ -581,6 +579,7 @@ void UserPanel::showNotification(const string& message, const Color& color) {
 }
 
 void UserPanel::handleEvent(const Event& event, const RenderWindow& window) {
+    (void)window;
     if (const auto* scroll = event.getIf<Event::MouseWheelScrolled>()) {
         if (scroll->wheel == sf::Mouse::Wheel::Vertical) {
             const int maxRows = static_cast<int>((TABLE_HEIGHT - HEADER_HEIGHT) / ROW_HEIGHT);

@@ -103,7 +103,6 @@ void MoviePanel::setupUI() {
     // CRUD Buttons (aligned top-left, evenly spaced)
     const float btnW = 150.f;
     const float btnH = 44.f;
-    const float spacing = 18.f;
 
     // Add button
     btnAddBg.setSize(Vector2f(btnW, btnH));
@@ -206,7 +205,6 @@ void MoviePanel::openAddPopup() {
     
     // TWO COLUMNS LAYOUT
     // Left column: 6 fields (0-5), Right column: 5 fields (6-10) + dropdown
-    const float colSpacing = 40.f;  // Space between columns
     const float leftColX = popupX + 40;
     const float rightColX = popupX + popupW / 2 + 20;
     const float inputW = 420.f;  // Increased from 400 to 420 for better fit
@@ -295,7 +293,6 @@ void MoviePanel::openEditPopup() {
     vector<string> record = repository->getRecord(selectedRow);
     
     // TWO COLUMNS LAYOUT (same as Add)
-    const float colSpacing = 40.f;
     const float leftColX = popupX + 40;
     const float rightColX = popupX + popupW / 2 + 20;
     const float inputW = 420.f;
@@ -719,9 +716,6 @@ void MoviePanel::update(Vector2f mousePos, bool mousePressed) {
             }
         }
     }
-    
-    // Adjust mouse position for panel offset
-    Vector2f localPos = mousePos - position;
     
     // Update buttons
     if (currentPopup == NONE) {

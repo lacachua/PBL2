@@ -1,27 +1,40 @@
 #pragma once
-
-#include <vector>
-#include <algorithm>
 #include <cstddef>
 #include "DLL.h"
 
-/**
- * Generic B-Tree implementation used for fast range queries on revenue data.
- * Key must be comparable with < and > operators.
- */
 template <typename Key, typename Value, int MinDegree = 3>
 class BTree {
 private:
+    template <typename T>
+    static void dllInsertAt(DLL<T>& list, int index, const T& value) {
+        const int n = list.getSize();
+        if (index < 0 || index > n) throw out_of_range("BTree dllInsertAt index out of range");
+
+        list.push_back(value);
+        for (int i = n - 1; i >= index; --i) {
+            list[i + 1] = list[i];
+        }
+        list[index] = value;
+    }
+
+    template <typename T>
+    static void dllTruncate(DLL<T>& list, int newSize) {
+        if (newSize < 0) newSize = 0;
+        while (list.getSize() > newSize) {
+            list.pop_back();
+        }
+    }
+
     struct Node {
         bool leaf;
-        std::vector<Key> keys;
-        std::vector<Value> values;
-        std::vector<Node*> children;
+        DLL<Key> keys;
+        DLL<Value> values;
+        DLL<Node*> children;
 
         explicit Node(bool isLeaf) : leaf(isLeaf) {}
         ~Node() {
-            for (Node* child : children) {
-                delete child;
+            for (auto* cur = children.getHead(); cur; cur = cur->next) {
+                delete cur->data;
             }
         }
     };
@@ -32,82 +45,83 @@ private:
         delete node;
     }
 
-    void splitChild(Node* parent, std::size_t childIndex) {
-        Node* fullChild = parent->children[childIndex];
+    void splitChild(Node* parent, size_t childIndex) {
+        Node* fullChild = parent->children[static_cast<int>(childIndex)];
         Node* newChild = new Node(fullChild->leaf);
 
-        const std::size_t mid = MinDegree - 1;
+        const size_t mid = MinDegree - 1;
 
-        // Save the promoted key/value before mutating vectors
-        const Key promotedKey = fullChild->keys[mid];
-        const Value promotedValue = fullChild->values[mid];
+        const Key promotedKey = fullChild->keys[static_cast<int>(mid)];
+        const Value promotedValue = fullChild->values[static_cast<int>(mid)];
 
         // Move keys and values to new child
-        for (std::size_t i = 0; i < MinDegree - 1; ++i) {
-            newChild->keys.push_back(fullChild->keys[mid + 1 + i]);
-            newChild->values.push_back(fullChild->values[mid + 1 + i]);
+        for (size_t i = 0; i < MinDegree - 1; ++i) {
+            newChild->keys.push_back(fullChild->keys[static_cast<int>(mid + 1 + i)]);
+            newChild->values.push_back(fullChild->values[static_cast<int>(mid + 1 + i)]);
         }
 
         // Move children if not leaf
         if (!fullChild->leaf) {
-            for (std::size_t i = 0; i < MinDegree; ++i) {
-                newChild->children.push_back(fullChild->children[mid + 1 + i]);
-            }
-            fullChild->children.resize(mid + 1);
+            for (size_t i = 0; i < MinDegree; ++i)
+                newChild->children.push_back(fullChild->children[static_cast<int>(mid + 1 + i)]);
+            dllTruncate(fullChild->children, static_cast<int>(mid + 1));
         }
 
-        fullChild->keys.resize(mid);
-        fullChild->values.resize(mid);
+        dllTruncate(fullChild->keys, static_cast<int>(mid));
+        dllTruncate(fullChild->values, static_cast<int>(mid));
 
-        parent->children.insert(parent->children.begin() + childIndex + 1, newChild);
-        parent->keys.insert(parent->keys.begin() + childIndex, promotedKey);
-        parent->values.insert(parent->values.begin() + childIndex, promotedValue);
+        dllInsertAt(parent->children, static_cast<int>(childIndex + 1), newChild);
+        dllInsertAt(parent->keys, static_cast<int>(childIndex), promotedKey);
+        dllInsertAt(parent->values, static_cast<int>(childIndex), promotedValue);
     }
 
     void insertNonFull(Node* node, const Key& key, const Value& value) {
-        int i = static_cast<int>(node->keys.size()) - 1;
+        int i = node->keys.getSize() - 1;
 
         if (node->leaf) {
             // Insert key/value in order
-            node->keys.emplace_back();
-            node->values.emplace_back();
-            while (i >= 0 && key < node->keys[static_cast<std::size_t>(i)]) {
-                node->keys[static_cast<std::size_t>(i + 1)] = node->keys[static_cast<std::size_t>(i)];
-                node->values[static_cast<std::size_t>(i + 1)] = node->values[static_cast<std::size_t>(i)];
+            node->keys.push_back(key);
+            node->values.push_back(value);
+            while (i >= 0 && key < node->keys[i]) {
+                node->keys[i + 1] = node->keys[i];
+                node->values[i + 1] = node->values[i];
                 --i;
             }
-            node->keys[static_cast<std::size_t>(i + 1)] = key;
-            node->values[static_cast<std::size_t>(i + 1)] = value;
-        } else {
-            while (i >= 0 && key < node->keys[static_cast<std::size_t>(i)]) {
+            node->keys[i + 1] = key;
+            node->values[i + 1] = value;
+        } 
+        else {
+            while (i >= 0 && key < node->keys[i]) {
                 --i;
             }
             ++i;
 
-            if (node->children[static_cast<std::size_t>(i)]->keys.size() == 2 * MinDegree - 1) {
-                splitChild(node, static_cast<std::size_t>(i));
-                if (key > node->keys[static_cast<std::size_t>(i)]) {
+            if (node->children[i]->keys.getSize() == 2 * MinDegree - 1) {
+                splitChild(node, static_cast<size_t>(i));
+                if (key > node->keys[i]) {
                     ++i;
                 }
             }
-            insertNonFull(node->children[static_cast<std::size_t>(i)], key, value);
+            insertNonFull(node->children[i], key, value);
         }
     }
 
     void rangeCollect(Node* node, const Key& start, const Key& end, DLL<Value>& out) const {
-        if (!node) {
+        if (!node)
             return;
-        }
 
-        std::size_t i = 0;
-        while (i < node->keys.size() && node->keys[i] < start) {
+        int i = 0;
+        const int keyCount = node->keys.getSize();
+        const int childCount = node->children.getSize();
+
+        while (i < keyCount && node->keys[i] < start) {
             if (!node->leaf) {
                 rangeCollect(node->children[i], start, end, out);
             }
             ++i;
         }
 
-        while (i < node->keys.size() && node->keys[i] <= end) {
+        while (i < keyCount && node->keys[i] <= end) {
             if (!node->leaf) {
                 rangeCollect(node->children[i], start, end, out);
             }
@@ -115,7 +129,7 @@ private:
             ++i;
         }
 
-        if (!node->leaf && i < node->children.size()) {
+        if (!node->leaf && i < childCount) {
             rangeCollect(node->children[i], start, end, out);
         }
     }
@@ -139,16 +153,16 @@ public:
             return;
         }
 
-        if (root->keys.size() == 2 * MinDegree - 1) {
+        if (root->keys.getSize() == 2 * MinDegree - 1) {
             Node* newRoot = new Node(false);
             newRoot->children.push_back(root);
             splitChild(newRoot, 0);
 
-            std::size_t i = 0;
+            size_t i = 0;
             if (newRoot->keys[0] < key) {
                 i = 1;
             }
-            insertNonFull(newRoot->children[i], key, value);
+            insertNonFull(newRoot->children[static_cast<int>(i)], key, value);
             root = newRoot;
         } 
         else insertNonFull(root, key, value);
