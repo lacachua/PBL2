@@ -20,7 +20,7 @@ private:
     AuthService& auth;
 
     RectangleShape overlay, card, emailBox, passBox, btn, eyeToggleArea, caret;
-    Text title, emailPH, passPH, btnText, linkForgot, linkCreate, closeX, emailDisplay, passDisplay, msg;
+    Text title, emailPH, passPH, btnText, linkCreate, closeX, emailDisplay, passDisplay, msg;
     Texture eyeOpenTexture, eyeClosedTexture;
     unique_ptr<Sprite> eyeSprite;
     wstring emailInput, passInput;

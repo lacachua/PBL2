@@ -25,7 +25,7 @@ RegisterScreen::RegisterScreen(const Font& font, AuthService& authRef)
       overlay({0.f, 0.f}),
       card({620.f, 650.f}),
       registerBtn({252.f, 44.f}),
-      backBtn({141.f, 44.f}),
+            backBtn({200.f, 44.f}),
     cursor({2.f, 36.f}),
     title(font, L"Đăng ký tài khoản", 30),
       registerBtnText(font, L"Đăng ký", 20),

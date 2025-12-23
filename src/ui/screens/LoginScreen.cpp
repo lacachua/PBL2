@@ -8,7 +8,7 @@ using namespace sf;
 LoginScreen::LoginScreen(const Font& font, AuthService& authRef)
     : auth(authRef),
       overlay({0.f, 0.f}),
-      card({460.f, 380.f}),
+            card({460.f, 340.f}),
       emailBox({360.f, 44.f}),
       passBox({360.f, 44.f}),
       btn({360.f, 44.f}),
@@ -18,7 +18,6 @@ LoginScreen::LoginScreen(const Font& font, AuthService& authRef)
       emailPH(font, L"Nhập email của bạn", 18),
       passPH(font, L"Nhập mật khẩu", 18),
       btnText(font, L"Tiếp tục", 20),
-      linkForgot(font, L"Quên mật khẩu?", 16),
       linkCreate(font, L"Tạo tài khoản ngay", 16),
       closeX(font, L"X", 24),
       emailDisplay(font, L"", 18),
@@ -43,7 +42,6 @@ LoginScreen::LoginScreen(const Font& font, AuthService& authRef)
     btn.setFillColor(Color(100, 149, 237));
     btnText.setFillColor(Color::White);
 
-    linkForgot.setFillColor(Color(90, 90, 90));
     linkCreate.setFillColor(Color(36, 95, 180));
     closeX.setFillColor(Color(90, 90, 90));
 
@@ -179,12 +177,12 @@ void LoginScreen::draw(RenderWindow& window) {
     Vector2f center({size.x * 0.5f, size.y * 0.5f});
     card.setPosition(center);
 
-    title.setPosition({center.x - 90.f, center.y - 160.f});
+    title.setPosition({center.x - 90.f, center.y - 150.f});
 
-    emailBox.setPosition({center.x - 180.f, center.y - 96.f});
+    emailBox.setPosition({center.x - 180.f, center.y - 88.f});
     emailPH.setPosition({emailBox.getPosition().x + 12.f, emailBox.getPosition().y + 10.f});
 
-    passBox.setPosition({center.x - 180.f, center.y - 42.f});
+    passBox.setPosition({center.x - 180.f, center.y - 36.f});
     passPH.setPosition({passBox.getPosition().x + 12.f, passBox.getPosition().y + 10.f});
 
     // Eye toggle - show/hide password icon
@@ -214,16 +212,16 @@ void LoginScreen::draw(RenderWindow& window) {
         });
     }
 
-    btn.setPosition({center.x - 181.f, center.y + 14.f});
+    // Keep a small gap below the password box to avoid overlap
+    btn.setPosition({center.x - 181.f, center.y + 20.f});
     btnText.setPosition({btn.getPosition().x + 125.f, btn.getPosition().y + 6.f});
 
-    linkForgot.setPosition({center.x - 180.f, center.y + 70.f});
-    linkCreate.setPosition({center.x - 180.f, center.y + 96.f});
+    linkCreate.setPosition({center.x - 180.f, center.y + 78.f});
 
     closeX.setPosition({card.getPosition().x + card.getSize().x/2.f - 28.f,
                         card.getPosition().y - card.getSize().y/2.f + 8.f});
 
-    msg.setPosition({center.x - 180.f, center.y + 132.f});
+    msg.setPosition({center.x - 180.f, center.y + 110.f});
 
     // vẽ
     window.draw(overlay);
@@ -234,7 +232,6 @@ void LoginScreen::draw(RenderWindow& window) {
     window.draw(passBox);
     window.draw(btn);
     window.draw(btnText);
-    window.draw(linkForgot);
     window.draw(linkCreate);
     window.draw(closeX);
     window.draw(msg);
