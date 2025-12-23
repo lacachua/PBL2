@@ -2,6 +2,7 @@
 #include <fstream>
 #include <sstream>
 #include <iomanip>
+#include <iostream>
 #include <algorithm>
 #include <unordered_set>
 #include <unordered_map>
@@ -469,7 +470,7 @@ void ShowtimeCleanupService::removeExpiredShowtimes(const string& showtimesPath)
     int removedCount = originalCount - validShowtimes.size();
     if (removedCount > 0) {
         saveShowtimes(showtimesPath, validShowtimes);
-        cout << "Removed " << removedCount << " old showtimes from previous days." << endl;
+        std::cout << "Removed " << removedCount << " old showtimes from previous days." << std::endl;
     }
 }
 
