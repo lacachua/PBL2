@@ -17,7 +17,12 @@ VoucherService::VoucherService(const string& defPath, const string& walletPath, 
 }
 
 VoucherService::~VoucherService() {
-    AppEventSystem::getInstance().unsubscribe(shared_from_this());
+    // Never call shared_from_this() in a destructor: when the last shared_ptr
+    // releases the object, shared_from_this() would throw std::bad_weak_ptr.
+    // If we are still owned by a shared_ptr, we can safely unsubscribe.
+    if (auto self = weak_from_this().lock()) {
+        AppEventSystem::getInstance().unsubscribe(self);
+    }
 }
 
 void VoucherService::initialize() {
