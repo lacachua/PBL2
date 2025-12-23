@@ -75,6 +75,42 @@ std::string computeStatus(const std::string& start, const std::string& end) {
     return "Đang chiếu";
 }
 
+bool tryExtractDdMmYyyyFromText(const std::string& text, std::string& outDdMmYyyy) {
+    outDdMmYyyy.clear();
+    if (text.size() < 10) return false;
+    for (size_t i = 0; i + 10 <= text.size(); ++i) {
+        const char c0 = text[i];
+        if (c0 < '0' || c0 > '9') continue;
+
+        const std::string candidate = text.substr(i, 10);
+        int d, m, y;
+        if (parseDdMmYyyy(candidate, d, m, y)) {
+            outDdMmYyyy = candidate;
+            return true;
+        }
+    }
+    return false;
+}
+
+bool tryGetScheduledStopDateIfAlreadyDeleted(const std::vector<std::string>& record, std::string& outDdMmYyyy) {
+    outDdMmYyyy.clear();
+    if (record.size() < 14) return false;
+    const std::string& status = record[13];
+    if (status.find("Ngừng chiếu vào") == std::string::npos && status.find("ngừng chiếu vào") == std::string::npos) {
+        return false;
+    }
+
+    if (tryExtractDdMmYyyyFromText(status, outDdMmYyyy)) return true;
+
+    int d, m, y;
+    if (parseDdMmYyyy(record[8], d, m, y)) {
+        outDdMmYyyy = record[8];
+        return true;
+    }
+
+    return true;
+}
+
 bool parseIsoYyyyMmDd(const std::string& s, int& y, int& m, int& d) {
     y = m = d = 0;
     if (s.size() < 10) return false;
@@ -781,6 +817,19 @@ void MoviePanel::handleDelete() {
     vector<string> record = repository->getRecord(selectedRow);
     if (record.empty()) return;
     if (record.size() < 14) record.resize(14);
+
+    {
+        string scheduledStopDdMmYyyy;
+        if (tryGetScheduledStopDateIfAlreadyDeleted(record, scheduledStopDdMmYyyy)) {
+            closePopup();
+            if (!scheduledStopDdMmYyyy.empty()) {
+                showNotification("Phim sẽ được xóa vào ngày " + scheduledStopDdMmYyyy);
+            } else {
+                showNotification("Phim sẽ được xóa vào ngày đã đặt trước đó");
+            }
+            return;
+        }
+    }
 
     const string movieId = record[0];
     const string todayIso = todayIsoYyyyMmDd();

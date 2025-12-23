@@ -1,10 +1,7 @@
 email|code|status|expiry_date|quantity
-admin@cinexine.vn|WELCOME|1|20260215|1
-admin@cinexine.vn|METIZ|1|20260111|1
-admin@cinexine.vn|NGUYENVU|1|20260117|2
 vanvu41ht1@gmail.com|WELCOME|1|20260215|1
 vanvu41ht1@gmail.com|METIZ|1|20260111|1
-vanvu41ht1@gmail.com|NGUYENVU|1|20260117|2
+vanvu41ht1@gmail.com|NGUYENVU|1|20260117|1
 ntctuyen@gmail.com|WELCOME|1|20260215|0
 ntctuyen@gmail.com|METIZ|1|20260111|1
 ntctuyen@gmail.com|NGUYENVU|1|20260117|1
