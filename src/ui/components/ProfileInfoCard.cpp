@@ -336,6 +336,9 @@ void ProfileInfoCard::saveInfoChange() {
         BaseScreen::setLoggedInUser(newFullName, currentEmail_);
     }
     
+    // Persist changes to file
+    authService_->getRepository()->saveToFile();
+    
     userDataLoaded_ = false;
     setUser(currentEmail_);
     
@@ -375,6 +378,9 @@ void ProfileInfoCard::savePasswordChange() {
     if (authService_ && authService_->getRepository()) {
         authService_->getRepository()->saveToFile();
     }
+    
+    // Persist changes to file
+    authService_->getRepository()->saveToFile();
     
     showPwdMessage(L"Đổi mật khẩu thành công!", false);
     

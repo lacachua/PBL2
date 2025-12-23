@@ -2,6 +2,8 @@
 
 #include <fstream>
 #include <sstream>
+#include <string>
+using namespace std;
 
 DLL<Showtime> ShowtimeRepository::loadFromFile(const String& path) {
     DLL<Showtime> showtimes;

@@ -75,6 +75,22 @@ static int timeToMinutes(const String& timeStr) {
     return hour * 60 + minute;
 }
 
+// Helper function để lấy ngày hôm nay dạng YYYY-MM-DD
+static string getTodayDateStr() {
+    time_t now = time(nullptr);
+    tm* nowTm = localtime(&now);
+    char buffer[11];
+    strftime(buffer, sizeof(buffer), "%Y-%m-%d", nowTm);
+    return string(buffer);
+}
+
+// Helper function để lấy thời gian hiện tại dạng phút
+static int getCurrentTimeMinutes() {
+    time_t now = time(nullptr);
+    tm* nowTm = localtime(&now);
+    return nowTm->tm_hour * 60 + nowTm->tm_min;
+}
+
 void ShowtimeSection::loadShowtimesForDate(int dateIndex) {
     dateButtons.clear();
     timeButtons.clear();
@@ -84,6 +100,10 @@ void ShowtimeSection::loadShowtimesForDate(int dateIndex) {
 
     // Lọc theo ngày + movieId (nếu có)
     String targetDate = availableDates[dateIndex];
+    string targetDateStr = targetDate.toAnsiString();
+    string todayStr = getTodayDateStr();
+    bool isToday = (targetDateStr == todayStr);
+    int currentMinutes = getCurrentTimeMinutes();
     
     // Thu thập vào vector tạm để sort
     vector<Showtime> tempShowtimes;
@@ -91,7 +111,17 @@ void ShowtimeSection::loadShowtimesForDate(int dateIndex) {
         const auto& st = allShowtimes[i];
         if (st.date == targetDate) {
             if (filterMovieId.isEmpty() || st.movie_id == filterMovieId) {
-                tempShowtimes.push_back(st);
+                // Nếu là hôm nay, chỉ lấy suất chiếu chưa qua giờ
+                if (isToday) {
+                    int showtimeMinutes = timeToMinutes(st.time);
+                    // Chỉ hiển thị suất chiếu còn ít nhất 10 phút trước giờ chiếu
+                    if (showtimeMinutes > currentMinutes + 10) {
+                        tempShowtimes.push_back(st);
+                    }
+                } else {
+                    // Ngày khác thì lấy tất cả
+                    tempShowtimes.push_back(st);
+                }
             }
         }
     }

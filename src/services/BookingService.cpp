@@ -9,6 +9,7 @@ BookingService::BookingService(const string& usersPath,
                                const string& ticketsPath,
                                const string& seatsPath)
     : userRepository(make_unique<UserRepository>(usersPath)),
+      voucherService(make_shared<VoucherService>()),
       ticketRepository(ticketsPath),
       seatRepository(seatsPath) {
 }
@@ -27,11 +28,11 @@ void BookingService::getUserInfo(const string& email, string& fullName, string& 
 
 double BookingService::applyVoucher(const string& email, const string& voucherCode,
                                      int subtotal, bool commit) {
-    return voucherManager.applyVoucher(email, voucherCode, subtotal, commit);
+    return voucherService->applyVoucher(email, voucherCode, subtotal, commit);
 }
 
 vector<VoucherDisplay> BookingService::getUserVouchers(const string& email) {
-    return voucherManager.getVouchersByUser(email);
+    return voucherService->getVouchersByUser(email);
 }
 
 Ticket BookingService::createTicket(const BookingInfo& info) {
