@@ -4,19 +4,19 @@
 #include <codecvt>
 #include <cstring>
 
-// Map Vietnamese characters to lowercase without diacritics
+// Chuyen ky tu tieng Viet ve dang thuong khong dau
 string normalizeString(const string& str) {
     string result;
     
     for (size_t i = 0; i < str.length(); ) {
         unsigned char c = str[i];
         
-        // ASCII characters - just lowercase
+        // Ky tu ASCII -> viet thuong
         if (c < 128) {
             result += tolower(c);
             i++;
         }
-        // 2-byte UTF-8 sequences
+        // Chuoi UTF-8 2 byte
         else if ((c & 0xE0) == 0xC0 && i + 1 < str.length()) {
             unsigned char c1 = str[i], c2 = str[i + 1];
             
@@ -101,17 +101,17 @@ string normalizeString(const string& str) {
                 result += 'a';
             }
             else {
-                // Keep other 2-byte sequences as-is (lowercase if possible)
+                // Giu nguyen cac chuoi 2 byte khac
                 result += tolower(c1);
                 result += tolower(c2);
             }
             i += 2;
         }
-        // 3-byte UTF-8 sequences (Vietnamese with tone marks)
+        // Chuoi UTF-8 3 byte (dau tieng Viet)
         else if ((c & 0xF0) == 0xE0 && i + 2 < str.length()) {
             unsigned char c1 = str[i], c2 = str[i + 1], c3 = str[i + 2];
             
-            // Vietnamese characters in E1 BA/BB range
+            // Cac ky tu trong khoang E1 BA/BB
             if (c1 == 0xE1) {
                 // Ạ-Ặ, ạ-ặ (U+1EA0-U+1EB7) -> a
                 if ((c2 == 0xBA && c3 >= 0xA0) || (c2 == 0xBB && c3 <= 0x97)) {
@@ -141,17 +141,17 @@ string normalizeString(const string& str) {
                     result += 'y';
                 }
                 else {
-                    // Keep as-is
+                    // Giu nguyen
                     result += c1; result += c2; result += c3;
                 }
             }
             else {
-                // Keep as-is
+                // Giu nguyen
                 result += c1; result += c2; result += c3;
             }
             i += 3;
         }
-        // 4-byte UTF-8
+        // Chuoi UTF-8 4 byte
         else if ((c & 0xF8) == 0xF0 && i + 3 < str.length()) {
             result += str[i]; result += str[i+1]; result += str[i+2]; result += str[i+3];
             i += 4;
@@ -165,11 +165,11 @@ string normalizeString(const string& str) {
     return result;
 }
 
-// ===== ChildNode Implementation =====
+// ===== Cai dat ChildNode =====
 ChildNode::ChildNode(unsigned char k, TrieNode* c) 
     : key(k), child(c), next(nullptr) {}
 
-// ===== TrieNode Implementation =====
+// ===== Cai dat TrieNode =====
 TrieNode::TrieNode() : isEnd(false), childrenHead(nullptr) {}
 
 TrieNode::~TrieNode() {
@@ -177,7 +177,7 @@ TrieNode::~TrieNode() {
     while (current != nullptr) {
         ChildNode* temp = current;
         current = current->next;
-        delete temp->child;  // Recursively delete
+        delete temp->child;  // Xoa de quy
         delete temp;
     }
 }
@@ -194,24 +194,24 @@ TrieNode* TrieNode::findChild(unsigned char key) {
 }
 
 TrieNode* TrieNode::addChild(unsigned char key) {
-    // Check if already exists
+    // Kiem tra xem da ton tai chua
     TrieNode* existing = findChild(key);
     if (existing != nullptr) {
         return existing;
     }
     
-    // Create new child
+    // Tao child moi
     TrieNode* newChild = new TrieNode();
     ChildNode* newNode = new ChildNode(key, newChild);
     
-    // Add to front of list (O(1))
+    // Chen vao dau danh sach (O(1))
     newNode->next = childrenHead;
     childrenHead = newNode;
     
     return newChild;
 }
 
-// ===== StringArray Implementation =====
+// ===== Cai dat StringArray =====
 StringArray::StringArray() : data(nullptr), size(0), capacity(0) {}
 
 StringArray::~StringArray() {
@@ -236,7 +236,7 @@ void StringArray::add(const char* str) {
         capacity = newCapacity;
     }
     
-    // Copy string
+    // Sao chuoi
     int len = strlen(str);
     data[size] = new char[len + 1];
     strcpy(data[size], str);
@@ -260,7 +260,7 @@ void StringArray::clear() {
     capacity = 0;
 }
 
-// ===== Trie Implementation =====
+// ===== Cai dat Trie =====
 Trie::Trie() {
     root = new TrieNode();
 }
@@ -320,7 +320,7 @@ void Trie::dfs(TrieNode* node, char* current, int currentLen, StringArray& resul
     if (results.size >= limit) return;
     
     if (node->isEnd) {
-        current[currentLen] = '\0';  // Null terminate
+        current[currentLen] = '\0';  // Ket thuc chuoi
         results.add(current);
     }
     
@@ -341,20 +341,20 @@ StringArray Trie::getSuggestions(const string& prefix, int limit) {
     string normalized = normalizeString(prefix);
     TrieNode* current = root;
     
-    // Navigate to the prefix node
+    // Duyet den node ung voi tien to
     for (size_t i = 0; i < normalized.length(); i++) {
         unsigned char c = (unsigned char)normalized[i];
         current = current->findChild(c);
         
         if (current == nullptr) {
-            return results;  // Prefix not found
+            return results;  // Khong tim thay tien to
         }
     }
     
-    // DFS to find all words with this prefix
-    char buffer[256];  // Buffer for building words
+    // DFS tim cac tu co tien to nay
+    char buffer[256];  // Bo dem tam
     
-    // Copy prefix to buffer
+    // Sao tien to vao buffer
     for (size_t i = 0; i < normalized.length(); i++) {
         buffer[i] = normalized[i];
     }

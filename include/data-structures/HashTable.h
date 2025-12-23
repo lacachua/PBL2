@@ -19,16 +19,14 @@ private:
     int capacity;
     int size;
     
-    // Hash function for strings
     int hashFunction(const K& key) const {
         if constexpr (is_same<K, string>::value) {
             unsigned long hash = 5381;
             for (char c : key) {
-                hash = ((hash << 5) + hash) + c;  // hash * 33 + c
+                hash = ((hash << 5) + hash) + c;
             }
             return hash % capacity;
         }
-        // Hash function for int
         else if constexpr (is_same<K, int>::value) {
             return key % capacity;
         }
@@ -94,7 +92,6 @@ public:
     void insert(const K& key, const V& value) {
         int index = hashFunction(key);
         
-        // Check if key exists - update value
         Node* current = buckets[index];
         while (current) {
             if (current->key == key) {
@@ -104,7 +101,6 @@ public:
             current = current->next;
         }
         
-        // Insert new node at head
         Node* newNode = new Node(key, value);
         newNode->next = buckets[index];
         buckets[index] = newNode;
@@ -154,7 +150,6 @@ public:
         return find(key) != nullptr;
     }
     
-    // Alias for exists() - more readable
     bool contains(const K& key) const {
         int index = hashFunction(key);
         Node* current = buckets[index];
@@ -168,14 +163,12 @@ public:
         return false;
     }
     
-    // Get value (const version for const objects)
     V* get(const K& key) {
         return find(key);
     }
     
     int getSize() const { return size; }
     
-    // Iterator support
     void forEach(function<void(const K&, V&)> callback) {
         for (int i = 0; i < capacity; i++) {
             Node* current = buckets[i];

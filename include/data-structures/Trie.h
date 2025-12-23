@@ -19,9 +19,7 @@ public:
     TrieNode();
     ~TrieNode();
     
-    // Tìm child theo key
     TrieNode* findChild(unsigned char key);
-    // Thêm child mới
     TrieNode* addChild(unsigned char key);
 };
 

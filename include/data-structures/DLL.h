@@ -17,7 +17,7 @@ public:
 template <typename T>
 class DLL {
 public:
-    // ===== STL-Compatible Iterator =====
+    // ===== Iterator tuong thich STL =====
     class Iterator {
     public:
         using iterator_category = std::bidirectional_iterator_tag;
@@ -156,13 +156,13 @@ public:
 
     ~DLL() { clear(); }
 
-    // ===== STL-like size methods =====
+    // ===== Ham kich thuoc kieu STL =====
     bool empty() const { return _size == 0; }
-    bool isEmpty() const { return _size == 0; }  // Legacy support
+    bool isEmpty() const { return _size == 0; }  // Giu de tuong thich cu
     int size() const { return _size; }
-    int getSize() const { return _size; }  // Legacy support
+    int getSize() const { return _size; }  // Giu de tuong thich cu
 
-    // ===== Iterator support (STL-compatible) =====
+    // ===== Ho tro iterator kieu STL =====
     Iterator begin() { return Iterator(head); }
     Iterator end() { return Iterator(nullptr); }
     ConstIterator begin() const { return ConstIterator(head); }
@@ -170,7 +170,7 @@ public:
     ConstIterator cbegin() const { return ConstIterator(head); }
     ConstIterator cend() const { return ConstIterator(nullptr); }
 
-    // ===== Front/Back access =====
+    // ===== Truy cap dau va cuoi =====
     T& front() { 
         if (!head) throw out_of_range("DLL front() on empty list");
         return head->data; 
@@ -224,7 +224,7 @@ public:
         --_size;
     }
 
-    // ===== Erase with iterator (STL-compatible) =====
+    // ===== Xoa bang iterator tuong thich STL =====
     Iterator erase(Iterator pos) {
         if (pos == end()) return end();
         Node<T>* cur = pos.getNode();
